@@ -1,14 +1,14 @@
-module link{{#}}
+module link_{{#}}
 
-    link_state{{#}}: [{{range_state}}] init {{init_state}};
+    link_state_{{#}}: [{{range_state}}] init {{init_state}};
 
-    [{{cmd_working_to_error}}] link_state{{#}} = {{const_working}} -> (1 - {{prob_working_to_error}}) : link_state{{#}}' = link_state{{#}}
-                                                            + {{prob_to_error}} : link_state{{#}}' = {{const_error}};
+    [{{cmd_working_to_error}}] link_state_{{#}} = {{const_working}} -> (1 - {{prob_working_to_error}}) : link_state_{{#}}' = link_state_{{#}}
+                                                            + {{prob_to_error}} : link_state_{{#}}' = {{const_error}};
 
-    [{{cmd_error_to_working}}] link_state{{#}} = {{const_error}} -> (1 - {{prob_error_to_working}}) : link_state{{#}}' = link_state{{#}}
-                                                          + {{prob_is_detected}} : link_state{{#}}' = {{const_failure}};
+    [{{cmd_error_to_working}}] link_state_{{#}} = {{const_error}} -> (1 - {{prob_error_to_working}}) : link_state_{{#}}' = link_state_{{#}}
+                                                          + {{prob_is_detected}} : link_state_{{#}}' = {{const_failure}};
 
-    [{{cmd_failure_to_working}}] link_state{{#}} = {{const_failure}} -> (1 - {{prob_failure_to_working}}) : link_state{{#}}' = link_state{{#}}
-                                                               + {{prob_is_repaired}} : link_state{{#}}' = {{const_working}};
+    [{{cmd_failure_to_working}}] link_state_{{#}} = {{const_failure}} -> (1 - {{prob_failure_to_working}}) : link_state_{{#}}' = link_state_{{#}}
+                                                               + {{prob_is_repaired}} : link_state_{{#}}' = {{const_working}};
 
 endmodule
