@@ -16,7 +16,7 @@ It represents a device on the communication network. It can have one or more *in
 
 #### Variables
 
-- state [ **ns** ] := *on* | *off*
+- node_state := *on* | *off*
 
 ### Interface
 
@@ -24,18 +24,8 @@ It represents a network interface of the *node*.
 
 #### Variables
 
-- state [ **is** ] := *on* | *off*
-- buffer [ **ib** ] := [1..N]
-
-### Local Session
-
-It respresents the local state of a *session* from the perspective of a *node*.
-
-#### Variables
-
-- state [ **lss** ] := [0..N]
-- session [ **ss** ] := ***#ss***
-- compromised [ **lsc** ] := true | false
+- interface_state := *on* | *off*
+- interface_buffer := [1..N]
 
 ### Session
 
@@ -43,7 +33,17 @@ It respresents a session between two or more *nodes*, maintained locally by *loc
 
 #### Varaibles
 
-- leaked [ **sl** ] := true | false
+- leaked := true | false
+
+### Local Session
+
+It respresents the local state of a *session* from the perspective of a *node*.
+
+#### Variables
+
+- local_session_state := [0..N]
+- session_leaked := ***#session_leaked***
+- local_session_compromised := true | false
 
 ### Link
 
@@ -51,11 +51,7 @@ It represents a communication channel between two *interfaces*.
 
 #### Variables
 
-- state [ **ls** ] := *up* | *down* | *error* | *failure*
-- tx state [ **is_tx** ] := ***#is***
-- tx buffer [ **ib_tx** ] := ***#ib***
-- rx state [ **is_rx** ] := ***#is***
-- rx buffer [ **ib_rx** ] := ***#ib***
+- link_state := *working* | *error* | *failure*
 
 ### Single-Session Path [ WIP ]
 

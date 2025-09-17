@@ -1,0 +1,16 @@
+module interface{{#}}
+
+    interface_state{{#}}: [{{range_state}}] init {{init_state}};
+    interface_buffer{{#}}: [0..{{size_buffer}}] init {{init_buffer}};
+
+    [{{cmd_working_to_error}}] interface_state{{#}} = {{const_working}} -> (1 - {{prob_working_to_error}}) : interface_state{{#}}' = interface_state{{#}}
+                                                            + {{prob_to_error}} : interface_state{{#}}' = {{const_error}};
+
+    [{{cmd_error_to_working}}] interface_state{{#}} = {{const_error}} -> (1 - {{prob_error_to_working}}) : interface_state{{#}}' = interface_state{{#}}
+                                                          + {{prob_is_detected}} : interface_state{{#}}' = {{const_failure}};
+
+    [{{cmd_failure_to_working}}] interface_state{{#}} = {{const_failure}} -> (1 - {{prob_failure_to_working}}) : interface_state{{#}}' = interface_state{{#}}
+                                                               + {{prob_is_repaired}} : interface_state{{#}}' = {{const_working}};
+
+
+endmodule

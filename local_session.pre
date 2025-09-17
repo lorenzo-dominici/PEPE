@@ -1,0 +1,15 @@
+module local_session{{#}}
+
+    local_session_state{{#}}: [{{range_state}}] init {{init_state}};
+    local_session_buffer{{#}}: [0..{{size_buffer}}] init {{init_buffer}};
+    local_session_compromised{{#}}: bool init {{init_compromised}};
+
+    [{{cmd_false_compromised}}] session_leaked{{ref_session_leaked}} = false -> (1 - {{prob_false_compromised}}) : local_session_compromised{{#}}' = local_session_compromised{{#}}
+                                                     + {{prob_false_compromised}} : local_session_compromised{{#}}' = true;
+                                                
+    [{{cmd_true_compromised}}] session_leaked{{ref_session_leaked}} = true -> (1 - {{prob_true_compromised}}) : local_session_compromised{{#}}' = local_session_compromised{{#}}
+                                                    + {{prob_true_compromised}} : local_session_compromised{{#}}' = true;
+
+    // TODO: handle decompromisation
+
+endmodule
