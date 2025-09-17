@@ -1,0 +1,13 @@
+module session_path_{{#}}
+
+    session_path_state_{{#}}: [{{range_depth}}] init {{init_state}};
+
+    [{{cmd_run}}] node_state_{{ref_node_sender}} = {{const_on}} -> (1 - {{prob_run}}) : (session_path_state_{{#}}' = {{const_wait}})
+                                                                 + {{prob_run}} : (session_path_state_{{#}}' = {{const_run}});
+
+    [{{cmd_send}}] session_path_state_{{#}} = {{const_run}} -> (session_path_state_{{#}}' = {{const_idle}})
+                                                             ^loop|first_links|61|link_prev_{{#}}' = {{const_root}}$;
+
+    ^loop|node_receivers|4|[{{}}]$ //TODO: handle session check for each receiver
+
+endmodule
