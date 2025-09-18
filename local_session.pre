@@ -1,13 +1,14 @@
 module local_session_{{#}}
 
     local_session_state_{{#}}: [{{range_state}}] init {{init_state}};
-    local_session_buffer_{{#}}: [0..{{size_buffer}}] init {{init_buffer}};
     local_session_compromised_{{#}}: bool init {{init_compromised}};
 
-    [{{cmd_false_compromised}}] session_leaked{{ref_session_leaked}} = false -> (1 - {{prob_false_compromised}}) : local_session_compromised_{{#}}' = local_session_compromised_{{#}}
+    [{{cmd_false_compromised}}] (session_leaked_{{ref_session_leaked}} = false)
+                              & (local_session_compromised_{{#}} = false) -> (1 - {{prob_false_compromised}}) : local_session_compromised_{{#}}' = local_session_compromised_{{#}}
                                                      + {{prob_false_compromised}} : local_session_compromised_{{#}}' = true;
                                                 
-    [{{cmd_true_compromised}}] session_leaked{{ref_session_leaked}} = true -> (1 - {{prob_true_compromised}}) : local_session_compromised_{{#}}' = local_session_compromised_{{#}}
+    [{{cmd_true_compromised}}] (session_leaked_{{ref_session_leaked}} = true)
+                             & (local_session_compromised_{{#}} = false) -> (1 - {{prob_true_compromised}}) : local_session_compromised_{{#}}' = local_session_compromised_{{#}}
                                                     + {{prob_true_compromised}} : local_session_compromised_{{#}}' = true;
 
     // TODO: handle decompromisation

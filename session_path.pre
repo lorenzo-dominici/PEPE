@@ -1,13 +1,22 @@
 module session_path_{{#}}
 
     session_path_state_{{#}}: [{{range_depth}}] init {{init_state}};
+    session_path_link_counter_{{#}}: [0..{{size_link_counter}}] init {{init_link_counter}};
+    session_path_checker_counter_{{#}}: [0..{{size_checker_counter}}] init {{init_checker_counter}};
 
-    [{{cmd_run}}] node_state_{{ref_node_sender}} = {{const_on}} -> (1 - {{prob_run}}) : (session_path_state_{{#}}' = {{const_wait}})
-                                                                 + {{prob_run}} : (session_path_state_{{#}}' = {{const_run}});
+    [{{cmd_run}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
+                  (session_path_state_{{#}} = {{const_idle}}) -> (1 - {{prob_run}}) : (session_path_state_{{#}}' = {{const_idle}})
+                                                               + {{prob_run}} : (session_path_state_{{#}}' = {{const_run}});
 
-    [{{cmd_send}}] session_path_state_{{#}} = {{const_run}} -> (session_path_state_{{#}}' = {{const_idle}})
-                                                             ^loop|first_links|61|link_prev_{{#}}' = {{const_root}}$;
+    [{{cmd_send}}] (session_path_state_{{#}} = {{const_run}}) &
+                   (node_buffer_{{ref_node_sender}} < {{size_buffer_sender}}) -> (session_path_state_{{#}}' = {{const_wait}})
+                                                                               & (node_buffer_{{ref_node_sender}}' = node_buffer_{{ref_node_sender}} + 1)
+                                                                               ^loop|first_links|61|& (link_prev_{{#}}' = true)$;
 
-    ^loop|node_receivers|4|[{{}}]$ //TODO: handle session check for each receiver
+    [{{cmd_counter_reset}}] (session_path_link_counter_{{#}} = 0) &
+                            (session_path_checker_counter_{{#}} = 0) &
+                            (session_path_state_{{#}} = {{const_wait}}) -> (session_path_link_counter_{{#}}' = {{init_link_counter}})
+                                                                         & (session_path_checker_counter_{{#}}' = {{init_checker_counter}})
+                                                                         & (session_path_state{{#}}' = {{const_idle}});
 
 endmodule

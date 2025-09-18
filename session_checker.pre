@@ -1,0 +1,18 @@
+module session_checker_{{#}}
+
+    session_checker_state_{{#}}: [{{range_state}}] init {{init_state}};
+    session_checker_sender_local_session_state_{{#}}: [{{range_sender_local_session_state}}] init {{init_sender_local_session_state}};
+
+    [{{cmd_freeze}}] true -> session_checker_sender_local_session_state_{{#}}' = local_session_state_{{ref_sender_local_session_state}};
+
+    [{{cmd_trigger}}] true -> session_checker_state_{{#}}' = {{const_check}};
+
+    [{{cmd_check_success}}] (session_checker_state_{{#}} = {{const_check}}) &
+                    (local_session_state_{{ref_local_session_receiver}} = session_checker_sender_local_session_state_{{#}}) -> (node_buffer_{{ref_node_receiver}}' = node_buffer_{{ref_node_receiver}} - 1)
+                                                                                                                             & (session_checker_state = {{const_idle}})
+                                                                                                                             & (session_path_checker_counter_{{ref_session_path}}' = session_path_checker_counter_{{ref_session_path}} - 1);
+    
+    [{{cmd_check_failure}}] (session_checker_state_{{#}} = {{const_check}}) &
+                    (local_session_state_{{ref_local_session_receiver}} != session_checker_sender_local_session_state_{{#}}) -> // TODO: handle failed session check
+
+endmodule
