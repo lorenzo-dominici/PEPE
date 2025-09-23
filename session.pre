@@ -1,8 +1,0 @@
-module session_{{#}}
-
-    session_leaked_{{#}}: bool init {{init_leaked}};
-
-    [{{cmd_leak}}] session_leaked_{{#}} = false -> (1 - {{prob_leak}}) : session_leaked_{{#}}' = session_leaked_{{#}}
-                                                          + {{prob_leak}} : session_leaked_{{#}}' = true;
-
-endmodule

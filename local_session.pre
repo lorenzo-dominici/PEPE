@@ -26,14 +26,10 @@ module local_session_{{#}}
                                                                                                         ? {{const_reset}}
                                                                                                         : {{const_valid}});
 
-    [{{cmd_false_compromised}}] (session_leaked_{{ref_session_leaked}} = false)
-                              & (local_session_compromised_{{#}} = false) -> (1 - {{prob_false_compromised}}) : local_session_compromised_{{#}}' = local_session_compromised_{{#}}
-                                                     + {{prob_false_compromised}} : local_session_compromised_{{#}}' = true;
-                                                
-    [{{cmd_true_compromised}}] (session_leaked_{{ref_session_leaked}} = true)
-                             & (local_session_compromised_{{#}} = false) -> (1 - {{prob_true_compromised}}) : local_session_compromised_{{#}}' = local_session_compromised_{{#}}
-                                                    + {{prob_true_compromised}} : local_session_compromised_{{#}}' = true;
+    [{{cmd_compromise}}] local_session_compromised_{{#}} = false -> (1 - {{prob_compromised}}) : local_session_compromised_{{#}}' = local_session_compromised_{{#}}
+                                                     + {{prob_compromised}} : local_session_compromised_{{#}}' = true;
 
-    // TODO: handle decompromisation
+    [{{cmd_decompromise}}] local_session_compromised_{{#}} = true -> (local_session_state_{{#}}' = {{const_reset}})
+                                                                   & (local_session_compromised_{{#}}' = false);
 
 endmodule
