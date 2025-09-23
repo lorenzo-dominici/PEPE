@@ -1,18 +1,26 @@
 module session_checker_{{#}}
 
     session_checker_state_{{#}}: [{{range_state}}] init {{init_state}};
-    session_checker_sender_local_session_state_{{#}}: [{{range_sender_local_session_state}}] init {{init_sender_local_session_state}};
+    session_checker_sender_local_session_epoch_{{#}}: [{{range_sender_local_session_epoch}}] init {{init_sender_local_session_epoch}};
 
-    [{{cmd_freeze}}] true -> session_checker_sender_local_session_state_{{#}}' = local_session_state_{{ref_sender_local_session_state}};
+    [{{cmd_freeze}}] true -> (session_checker_sender_local_session_epoch_{{#}}' = local_session_epoch_{{ref_local_session_sender}});
 
-    [{{cmd_trigger}}] true -> session_checker_state_{{#}}' = {{const_check}};
+    [{{cmd_trigger}}] true -> (session_checker_state_{{#}}' = {{const_update}})
+                            & (local_session_state_{{ref_local_session_receiver}}' = {{const_update}});
+
+    [{{cmd_update_success}}] (session_checker_state_{{#}} = {{const_update}}) &
+                             (local_session_state_{{ref_local_session_receiver}} = {{const_valid}}) -> session_checker_state_{{#}}' = {{const_check}};
+
+    [{{cmd_update_failure}}] (session_checker_state_{{#}} = {{const_update}}) &
+                             (local_session_state_{{ref_local_session_receiver}} = {{const_reset}}) -> (session_checker_state_{{#}}' = {{const_reset}})
+                                                                                                     & (node_buffer_{{ref_node_receiver}}' = node_buffer_{{ref_node_receiver}} - 1);
 
     [{{cmd_check_success}}] (session_checker_state_{{#}} = {{const_check}}) &
-                    (local_session_state_{{ref_local_session_receiver}} = session_checker_sender_local_session_state_{{#}}) -> (node_buffer_{{ref_node_receiver}}' = node_buffer_{{ref_node_receiver}} - 1)
+                    (local_session_epoch_{{ref_local_session_receiver}} = session_checker_sender_local_session_epoch_{{#}}) -> (node_buffer_{{ref_node_receiver}}' = node_buffer_{{ref_node_receiver}} - 1)
                                                                                                                              & (session_checker_state = {{const_idle}})
                                                                                                                              & (session_path_checker_counter_{{ref_session_path}}' = session_path_checker_counter_{{ref_session_path}} - 1);
     
     [{{cmd_check_failure}}] (session_checker_state_{{#}} = {{const_check}}) &
-                    (local_session_state_{{ref_local_session_receiver}} != session_checker_sender_local_session_state_{{#}}) -> // TODO: handle failed session check
+                    (local_session_epoch_{{ref_local_session_receiver}} != session_checker_sender_local_session_epoch_{{#}}) -> session_checker_state_{{#}}' = {{const_failure}};
 
 endmodule
