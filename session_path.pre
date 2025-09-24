@@ -6,15 +6,19 @@ module session_path_{{#}}
 
     [{{cmd_run}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
                   (session_path_state_{{#}} = {{const_idle}}) -> (1 - {{prob_run}}) : (session_path_state_{{#}}' = {{const_idle}})
-                                                               + {{prob_run}} : (session_path_state_{{#}}' = {{const_update}});
+                                                               + {{prob_run}} : (session_path_state_{{#}}' = {{const_update}})
+                                                                              & (local_session_message_{{ref_local_session_sender}}' = {{const_message_data}});
 
-    [{{cmd_update}}] session_path_state_{{#}} = {{const_update}} -> (local_session_state_{{ref_local_session_sender}}' = {{const_update}})
-                                                                  & (session_path_state_{{#}}' = {{const_wait}});
+    [{{cmd_update}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
+                     (session_path_state_{{#}} = {{const_update}}) -> (local_session_state_{{ref_local_session_sender}}' = {{const_update}})
+                                                                    & (session_path_state_{{#}}' = {{const_wait}});
 
-    [{{cmd_update_success}}] (session_path_state_{{#}} = {{const_wait}}) &
+    [{{cmd_update_success}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
+                             (session_path_state_{{#}} = {{const_wait}}) &
                              (local_session_state_{{ref_local_session_sender}} = {{const_valid}}) -> session_path_state_{{#}}' = {{const_run}};
 
-    [{{cmd_send}}] (session_path_state_{{#}} = {{const_run}}) &
+    [{{cmd_send}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
+                   (session_path_state_{{#}} = {{const_run}}) &
                    (node_buffer_{{ref_node_sender}} < {{size_buffer_sender}}) -> (session_path_state_{{#}}' = {{const_resolve}})
                                                                                & (node_buffer_{{ref_node_sender}}' = node_buffer_{{ref_node_sender}} + 1)
                                                                                ^loop|first_links|61|& (link_prev_{{#}}' = true)$;
