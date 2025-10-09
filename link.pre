@@ -59,7 +59,9 @@ module link_{{#}}
                                                                                                           & (link_ref_counter_{{ref_link_ref_counter}}' = link_ref_counter_{{ref_link_ref_counter}} - 1)
                                                                                                           & (session_path_link_counter_{{#}}' = session_path_link_counter_{{#}} - 1)
                                                                                                           & (node_buffer_{{ref_node_buffer_receiver}}' = node_buffer_{{ref_node_buffer_receiver}} + 1)
-                                                                                                          ^loop|next_links|82|& (link_prev_{{ref_link_next}}' = true)$;
+                                                                                                          ^loop|next_links|
+                                                                                                          & (link_prev_{{ref_link_next}}' = true)
+                                                                                                          $;
     
     [{{cmd_receive_failure}}] (link_receiving_{{#}} = true) & (
                         (link_state_{{#}} != {{cons_working}}) |
@@ -75,7 +77,9 @@ module link_{{#}}
                                                                                                                             & (channel_state_{{ref_channel}}' = (channel_state_{{ref_channel}} = {{const_error}}
                                                                                                                                                                 ? {{const_failure}}
                                                                                                                                                                 : channel_state_{{ref_channel}}))
-                                                                                                                            ^loop|next_links|82|& (link_prev_{{ref_link_next}}' = false)$;
+                                                                                                                            ^loop|next_links|
+                                                                                                                            & (link_prev_{{ref_link_next}}' = false)
+                                                                                                                            $;
                                                                                                      + {{prob_retry}} : (link_receiving_{{#}}' = false)
                                                                                                                       & (channel_bandwidth_{{ref_channel_bandwidth}}' = channel_bandwidth_{{ref_channel_bandwidth}} - 1)
                                                                                                                       & (link_prev_{{#}} = true)
