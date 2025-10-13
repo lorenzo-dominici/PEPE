@@ -1,0 +1,14 @@
+{
+    "consts" : [
+        {"name" : "value"}
+    ],
+    "items" : [
+        {
+            "name" : "subset",
+            "template" : "template.pre",
+            "instances" : [
+                {}
+            ]
+        }
+    ]
+}

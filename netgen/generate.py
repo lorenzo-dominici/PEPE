@@ -1,0 +1,1 @@
+# This module generates the output elements according to the input data.

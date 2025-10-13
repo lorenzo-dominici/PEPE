@@ -1,0 +1,1 @@
+# This module handles the replacement of names in the templates.
