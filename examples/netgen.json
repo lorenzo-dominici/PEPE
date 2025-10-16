@@ -1,0 +1,8 @@
+{
+    "params": {
+        "num_nodes": "n",
+        "net_type": "type",
+        "protocol": "protocol",
+        "seed": "s"
+    }
+}
