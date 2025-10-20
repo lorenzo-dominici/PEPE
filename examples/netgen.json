@@ -1,6 +1,12 @@
 {
-    "num_nodes": "n",
     "net_type": "type",
+    "range_num_nodes": "range_num_nodes",
+    "range_node_buffer": "range_node_buffer",
+    "range_interfaces_per_node": "range_interfaces_per_node",
+    "compromised_probability_range": "compromised_probability_range" ,
+    
+
+    
     "protocol": "protocol",
     "seed": "s"
 }

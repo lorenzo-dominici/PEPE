@@ -11,7 +11,6 @@ class NetworkGenerator:
         random.seed(self.seed)
 
     def generate_network(self):
-
         network = {
             "items": self._generate_items
         }
