@@ -1,8 +1,6 @@
 {
-    "params": {
-        "num_nodes": "10",
-        "net_type": "mesh",
-        "protocol": "hpke",
-        "seed": "42"
-    }
+    "num_nodes": 10,
+    "net_type": "MESH",
+    "protocol": "HPKE",
+    "seed": 42
 }
