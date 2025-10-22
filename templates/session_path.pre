@@ -73,9 +73,9 @@ module session_path_{{#}}
                    (session_path_state_{{#}} = {{const_run}}) &
                    (node_buffer_{{ref_node_sender}} < {{size_buffer_sender}}) -> (session_path_state_{{#}}' = {{const_resolve}})
                                                                                & (node_buffer_{{ref_node_sender}}' = node_buffer_{{ref_node_sender}} + 1)
-                                                                               ^loop|first_links|
-                                                                               & (link_prev_{{#}}' = true)
-                                                                               $;
+                                                                               {^loop||first_links||
+                                                                               & (link_prev_{{first_links[].#}}' = true)
+                                                                               $};
 
     [{{cmd_counter_reset}}] (session_path_link_counter_{{#}} = 0) &
                             (session_path_checker_counter_{{#}} = 0) &
