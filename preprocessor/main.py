@@ -2,74 +2,64 @@
 
 Command-line entry point for the preprocessor.
 
-Usage (simple):
-
-  python -m preprocessor.main --data examples/preprocessor.json --out generated
-
-The input JSON should have the following (minimal) shape:
-
-{
-  "consts": { ... },
-  "items": [
-    { "name": "id", "template": "templates/foo.pre", "instances": [ {...}, ... ] },
-    ...
-  ]
-}
-
-Each `item` defines a template and a list of instances. Each instance is a
-mapping merged with `consts` and passed to the template processor.
+This module wires together the loader, processor and store. It uses the
+Pydantic models in `models.py` to validate input data and config files.
 """
 from __future__ import annotations
 
 import argparse
 import multiprocessing as mp
-from functools import partial
+ 
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-from .load import load_json, load_config
+from pydantic import ValidationError
+
+from .load import load_data, load_data_dir, load_config
 from .process import process_instance
 from .store import write_file, ensure_dir
+from .models import Config, PreprocessorData
+from .logger import configure_logging, get_logger
+from tqdm import tqdm
 
 
-def _process_item(config: Dict[str, Any], template_base: str, consts: Dict[str, Any], instance: Dict[str, Any]):
-    # Helper wrapper for Pool.map - calls process_instance and returns target path and content.
-    out_name, content = process_instance(config, template_base, instance, consts,)
-    return out_name, content
+def run(config_path: str | Path, data_path: str | Path) -> List[Path]:
+    # Load and validate data and config using the loader helpers
+    input: List[PreprocessorData] = load_data_dir(data_path) if Path(data_path).is_dir() else [load_data(data_path)]
+    config = load_config(config_path)
 
+    ensure_dir(config.output_dir)
 
-def run(config_path: str | Path, data_file: str | Path) -> List[Path]:
-    data = load_json(data_file)
-    config = load_config(config_path) if config_path else {}
-    consts: Dict[str, Any] = data.get("consts") or {}
-    items: List[Any] = data.get("items") or []
-
-    out_dir = Path(config.get("output_dir") or "./")
-    ensure_dir(out_dir)
-
-    # Build a list of (template_path, name, instance) pairs
-    tasks: List[Tuple[str, str, Any]] = []
-    for item in items:
-        template = item.get("template")
-        name = item.get("name")
-        if not template or not name:
-            continue
-        instances: List[Any] = item.get("instances") or []
-        for inst in instances:
-            tasks.append((template, name, inst))
+    # Build a list of (template_path, instance) pairs where instance is a mapping
+    tasks: List[Tuple[Config, str, Dict[str, Any], Dict[str, Any]]] = []
+    for data in input:
+        for item in data.items:
+            for instance in item.instances:
+                # include config in the task tuple so workers can be simple top-level callables
+                tasks.append((config, item.template, data.consts, instance))
 
     results: List[Path] = []
-    # Use multiprocessing to process instances in parallel
+    # Use multiprocessing to process instances in parallel and show progress
     cpu_count = mp.cpu_count()
-    jobs = config.get("jobs")
-    pool_size = jobs if jobs and jobs > 0 else max(1, cpu_count - 1)
+    pool_size = (config.jobs if config and config.jobs and config.jobs > 0 else max(1, cpu_count - 1))
+    logger = get_logger("preprocessor.main")
+    logger.info("Starting processing: %d tasks, pool size=%d", len(tasks), pool_size)
+
+    # Use imap_unordered so we can update progress as results come in.
+    # On Windows multiprocessing, top-level callables are safer; provide a small wrapper that
+    # accepts a single tuple per task.
+    def _worker_task(args_tuple: tuple[Config, str, Dict[str, Any], Dict[str, Any]]):
+        # args_tuple is (config, template_base, consts, instance)
+        cfg, template_base, consts, instance = args_tuple
+        return process_instance(cfg, template_base, consts, instance)
+
     with mp.Pool(pool_size) as pool:
-        func = partial(_process_item, config=config, consts=consts)
-        for out_name, content in pool.starmap(func, tasks):
-            target = out_dir / out_name
+        for out_name, content in tqdm(pool.imap_unordered(_worker_task, tasks), total=len(tasks), desc="Processing", unit="item"):
+            target = config.output_dir / out_name
             write_file(target, content)
             results.append(target)
 
+    logger.info("Processing complete, generated %d files", len(results))
     return results
 
 
@@ -77,9 +67,18 @@ def main(argv: List[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="preprocessor")
     ap.add_argument("--config", default=None, help="Path to preprocessor configuration file")
     ap.add_argument("--data", required=True, help="Path to preprocessor JSON data file or directory")
+    ap.add_argument("--log-level", default="INFO", help="Logging level (DEBUG, INFO, WARNING, ERROR)")
     args = ap.parse_args(argv)
 
-    generated = run(args.config, args.data)
+    configure_logging(args.log_level)
+    logger = get_logger("preprocessor.cli")
+    logger.debug("CLI args: %s", args)
+
+    try:
+        generated = run(args.config, args.data)
+    except ValidationError as exc:
+        raise SystemExit(f"Error parsing input or config: {exc}")
+
     for p in generated:
         print(p)
     return 0
