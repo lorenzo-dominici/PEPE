@@ -41,8 +41,8 @@ module session_checker_{{#}}
                             (session_checker_state_{{#}} = {{const_check}}) &
                             (local_session_epoch_{{ref_local_session_receiver}} != session_checker_sender_local_session_epoch_{{#}}) -> session_checker_state_{{#}}' = {{const_failure}};
 
-    ^match|protocol
-          |hpke|
+    {^match||protocol
+          ||hpke||
     [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                          (session_checker_state_{{#}} = {{const_triggered}}) &
                          (session_checker_sender_local_session_system_message_{{#}} = {{const_message_reset}}) -> (session_checker_state_{{#}}' = {{const_check}})
@@ -78,7 +78,7 @@ module session_checker_{{#}}
                            (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}})
                                                                                                  & (local_session_epoch_{{ref_local_session_receiver}}' = 0)
                                                                                                  & (session_path_state_{{ref_session_path_to_sender}}' = {{const_update}});
-          |double_ratchet|
+          ||double_ratchet||
     [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                          (session_checker_state_{{#}} = {{const_triggered}}) &
                          (session_checker_sender_local_session_system_message_{{#}} = {{const_message_reset}}) -> (session_checker_state_{{#}}' = {{const_check}})
@@ -114,7 +114,7 @@ module session_checker_{{#}}
                                      (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}})
                                                                                                            & (local_session_epoch_{{ref_local_session_receiver}}' = 0)
                                                                                                            & (session_path_state_{{ref_session_path_to_sender}}' = {{const_update}});
-          |sender_key|
+          ||sender_key||
     [{{cmd_freeze_new_key}}] true -> session_checker_sender_local_session_epoch_{{#}}' = (session_checker_sender_local_session_system_message_{{ref_session_checker}} = {{const_message_sender_new_key}}
                                                                                          ? local_session_epoch_{{ref_local_session_sender}}
                                                                                          : session_checker_sender_local_session_epoch_{{#}});
@@ -128,7 +128,7 @@ module session_checker_{{#}}
                                  (session_checker_state_{{#}} = {{const_failure}}) &
                                  (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_path_state_{{ref_session_path_to_sender}}' = {{const_update}})
                                                                                                        & (session_path_data_message_{{ref_session_path_to_sender}}' = {{const_message_sender_refresh}});
-          |mls|
+          ||mls||
     [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                          (session_checker_state_{{#}} = {{const_triggered}}) &
                          (session_checker_sender_local_session_system_message_{{#}} = {{const_message_reset}}) -> (session_checker_state_{{#}}' = {{const_check}})
@@ -163,6 +163,6 @@ module session_checker_{{#}}
                           (session_path_state_{{ref_session_path_to_sender}}) = {{const_idle}} -> (session_checker_state_{{#}}' = {{const_cleanup}})
                                                                                                 & (session_path_state_{{ref_session_path_to_sender}}' = {{const_update}})
                                                                                                 & (session_path_system_message_{{ref_session_path_to_sender}}' = {{const_message_tree_refresh}});
-    $
+    $}
 
 endmodule
