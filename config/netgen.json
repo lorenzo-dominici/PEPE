@@ -1,6 +1,6 @@
 {
-    "num_nodes": 10,
-    "net_type": "MESH",
-    "protocol": "HPKE",
-    "seed": 42
+    "seed": 10,
+    "node_range": [15, 25],
+    "buffer_size_range": [30, 90],
+    "channel_bandwidth_range": [15, 120]
 }
