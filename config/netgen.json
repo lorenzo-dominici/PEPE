@@ -1,6 +1,10 @@
 {
     "seed": 10,
-    "node_range": [15, 25],
+    "node_range": [100, 100],
+    "degree_distr": {
+                        "type": "UNIFORM",
+                        "params": [50, 80]
+                    },
     "buffer_size_range": [30, 90],
     "channel_bandwidth_range": [15, 120]
 }

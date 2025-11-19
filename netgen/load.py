@@ -51,20 +51,28 @@ def validate_data(data):
                 if not isinstance(params, list):
                     raise ValueError("degree_distr.params must be a list of parameters")
                 if type == "BINOMIAL":
-                    if len(params) != 2 or not all(isinstance(p, int) for p in params):
-                        raise ValueError("For BINOMIAL, degree_distr.params must be [n: int, p: int]")
+                    if len(params) != 2 or not(isinstance(params[0], int)) or not(isinstance(params[1], float)):
+                        raise ValueError("For BINOMIAL, degree_distr.params must be [n: int, p: float]")
+                    if not(1 <= params[0] <= node_range[1] - 1) or not(0.0 <= params[1] <= 1.0):
+                        raise ValueError("For BINOMIAL, degree_distr.params must be [1 <= n <= node_range[max] - 1, 0.0 <= p <= 1.0]")
                 elif type == "UNIFORM":
                     if len(params) != 2 or not all(isinstance(p, int) for p in params):
                         raise ValueError("For UNIFORM, degree_distr.params must be [min: int, max: int]")
+                    if params[0] < 0 or params[1] > node_range[1]:
+                        raise ValueError("For UNIFORM, degree_distr.params must be [min >= 0, max <= node_range[max]]")
                 elif type == "NORMAL":
-                    if len(params) != 2 or not all(isinstance(p, (int, float)) for p in params):
-                        raise ValueError("For NORMAL, degree_distr.params must be [mean: float, stddev: float]")
+                    if len(params) != 2 or not all(isinstance(p, int) for p in params):
+                        raise ValueError("For NORMAL, degree_distr.params must be [mean: int, stddev: int]")
+                    if not(0 <= params[0] <= node_range[1]) or (params[1] < 0):
+                        raise ValueError("For NORMAL, degree_distr.params must be [0 <= mean <= node_range[max], stddev >= 0]")
                 elif type == "POWERLAW":
                     if len(params) != 2 or not all(isinstance(p, (int, float)) for p in params):
                         raise ValueError("For POWERLAW, degree_distr.params must be [exponent: float, min: float]")
+                    if params[0] <= 1 or params[1] > node_range[1]:
+                        raise ValueError("For POWERLAW, degree_distr.params must be [exponent > 1: , 0 <= min <= node_range[max]]")
                 elif type == "CUSTOM":
-                    if not all(isinstance(p, int) for p in params):
-                        raise ValueError("For CUSTOM, degree_distr.params must be a list of integers")
+                    if (not all(isinstance(p, int) for p in params)) or (p < 0 for p in params):
+                        raise ValueError("For CUSTOM, degree_distr.params must be a list of non-negative integers")
             else:
                 raise ValueError("Missing parameter: degree_distr.params")
         else:
