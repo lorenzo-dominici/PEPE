@@ -19,11 +19,7 @@ def validate_data(data):
     if seed:
         if not isinstance(seed, int):
             raise ValueError("seed must be an integer")
-    else:
-        seed = 42  # default seed
-
-    random.seed(seed)
-
+   
     node_range = data.get("node_range")
     if node_range:
         if (not isinstance(node_range, list) or len(node_range) != 2 or
@@ -34,6 +30,19 @@ def validate_data(data):
         raise ValueError("Missing parameter: node_range")
     
     node_number = random.randint(node_range[0], node_range[1])
+
+    connected = data.get("connected")
+    if connected:
+        if not(isinstance(connected, bool)):
+            raise ValueError("connected must be a bool")
+        
+    gen_model = data.get("gen_model")
+    if gen_model:
+        if gen_model not in {"RANDOM", "SMART-WORLD", "SCALE-FREE"}:
+            raise ValueError("gen_model must be one of RANDOM, SMART-WORLD, SCALE-FREE")
+        
+
+    # RANDOM GRAPH PARAMETERS
         
     conn_prob = data.get("conn_prob")
     if conn_prob:
@@ -49,7 +58,13 @@ def validate_data(data):
             params = degree_distr.get("params")
             if params:
                 if not isinstance(params, list):
-                    raise ValueError("degree_distr.params must be a list of parameters")
+                    if type == "CUSTOM":
+                        if not(isinstance(params, str)):
+                            raise ValueError("For CUSTOM, degree_distr.params must be a list of non-negative integers or a string")
+                        if isinstance(params, str) and not isinstance(eval(params), list):
+                            raise ValueError("invalid params for the CUSTOM distribuiton")
+                    else:
+                        raise ValueError("degree_distr.params must be a list of parameters")
                 if type == "BINOMIAL":
                     if len(params) != 2 or not(isinstance(params[0], int)) or not(isinstance(params[1], float)):
                         raise ValueError("For BINOMIAL, degree_distr.params must be [n: int, p: float]")
@@ -70,9 +85,6 @@ def validate_data(data):
                         raise ValueError("For POWERLAW, degree_distr.params must be [exponent: float, min: float]")
                     if params[0] <= 1 or params[1] > node_range[1]:
                         raise ValueError("For POWERLAW, degree_distr.params must be [exponent > 1: , 0 <= min <= node_range[max]]")
-                elif type == "CUSTOM":
-                    if (not all(isinstance(p, int) for p in params)) or (p < 0 for p in params):
-                        raise ValueError("For CUSTOM, degree_distr.params must be a list of non-negative integers")
             else:
                 raise ValueError("Missing parameter: degree_distr.params")
         else:
@@ -85,10 +97,28 @@ def validate_data(data):
             if_range[0] <= 0 or if_range[1] < if_range[0]):
             raise ValueError("if_range must be a list of two positive integers [min, max] with min <= max")
         
+
+    # SMART-WORLD GRAPH PARAMETERS
+
+    mean_degree_range = data.get("mean_degree_range")
+    if mean_degree_range:
+        if (not isinstance(mean_degree_range, list) or len(mean_degree_range) != 2 or
+            not all(isinstance(n, int) for n in mean_degree_range) or
+            mean_degree_range[0] <= 0 or mean_degree_range[1] < mean_degree_range[0]):
+            raise ValueError("mean_degree_range must be a list of two positive integers [min, max] with min <= max")  
+        
     rewiring_prob = data.get("rewiring_prob")
     if rewiring_prob:
         if not (isinstance(rewiring_prob, float) and 0.0 <= rewiring_prob <= 1.0):
             raise ValueError("rewiring_prob must be a float between 0.0 and 1.0")
+        
+    delete_rewired = data.get("delete_rewired")
+    if delete_rewired:
+        if not(isinstance(delete_rewired, bool)):
+            raise ValueError("delete_rewired must be a bool")
+        
+
+    # CLUSTERING PARAMETERS
         
     local_clustering_coeff = data.get("local_clustering_coeff") 
     if local_clustering_coeff:
@@ -167,6 +197,7 @@ def validate_data(data):
     network_params = {
         "seed": seed,
         "node_number": node_number,
+        "connected": connected,
         "conn_prob": conn_prob,
         "degree_distr": degree_distr,
         "if_range": if_range,

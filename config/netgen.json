@@ -1,10 +1,10 @@
 {
     "seed": 10,
-    "node_range": [100, 100],
-    "degree_distr": {
-                        "type": "UNIFORM",
-                        "params": [50, 80]
-                    },
+    "node_range": [20, 20],
+    "connected": true,
+    "conn_prob": 0.4,
+    "degree_distr": null,
+    "if_range": [10, 15],
     "buffer_size_range": [30, 90],
     "channel_bandwidth_range": [15, 120]
 }
