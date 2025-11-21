@@ -168,8 +168,7 @@ def replace_placeholders(text: str, data: Dict[str, Any], seps: Separators) -> s
 		if end_idx == -1:
 			# No closing token found; treat as error
 			logger.error(f"Unclosed placeholder starting at position {start_idx}")
-			raise ValueError("Unclosed placeholder starting at position {}".format(start_idx))
-			break
+			raise ValueError(f"Unclosed placeholder starting at position {start_idx}")
 
 		# Append text before placeholder
 		result_parts.append(text[pos:start_idx])

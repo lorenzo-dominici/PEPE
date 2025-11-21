@@ -63,7 +63,7 @@ def run(
     cpu_count = mp.cpu_count()
     pool_size = (config.jobs if config and config.jobs and config.jobs > 0 else max(1, cpu_count - 1))
     logger = get_logger("preprocessor.main")
-    logger.info("Starting processing: %d tasks, pool size=%d", len(tasks), pool_size)
+    logger.info(f"Starting processing: {len(tasks)} tasks, pool size={pool_size}")
 
     with mp.Pool(
         pool_size,
@@ -75,7 +75,7 @@ def run(
             write_file(target, content)
             results.append(target)
 
-    logger.info("Processing complete, generated %d files", len(results))
+    logger.info(f"Processing complete, generated {len(results)} files")
     return results
 
 
@@ -91,7 +91,7 @@ def main(argv: List[str] | None = None) -> int:
     listener = configure_logging(args.log_level, args.log_file, queue=log_queue, start_listener=True)
     set_task_label("main")
     logger = get_logger("preprocessor.cli")
-    logger.debug("CLI args: %s", args)
+    logger.debug(f"CLI args: {args}")
 
     try:
         generated = run(args.config, args.data, args.log_level, args.log_file, log_queue=log_queue)
