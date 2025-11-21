@@ -21,6 +21,9 @@ class NetworkGenerator:
         self.rewiring_prob = params.get("rewiring_prob")
         self.delete_rewired = params.get("delete_rewired")
 
+        self.initial_degree_range = params.get("initial_degree_range")
+        self.new_edges_prob = params.get("new_edges_prob")
+
         self.local_clustering_coeff = params.get("local_clustering_coeff")
         self.clusters_number_range = params.get("clusters_number_range")
         self.nodes_range_per_cluster = params.get("nodes_range_per_cluster")
@@ -69,7 +72,7 @@ class NetworkGenerator:
             # generate the subgraphs
             for i in range(len(clusters_sizes)):
                 size = clusters_sizes[i]
-                subgraphs[i] = self._generate_graph(size)
+                subgraphs.append(self._generate_graph(size))
             # concatenate the subgraphs
             self._join_subgraphs(subgraphs)
 
@@ -84,7 +87,10 @@ class NetworkGenerator:
         # return the partition of the nodes in each cluster
 
         min_c, max_c = self.clusters_number_range[0], self.clusters_number_range[1]
-        clusters_number = self.rng.integers(min_c, max_c)
+        if min_c == max_c:
+            clusters_number = min_c
+        else:
+            clusters_number = self.rng.integers(min_c, max_c)
         while clusters_number > self.node_number:
                 clusters_number = self.rng.integers(min_c, max_c)
 
@@ -160,7 +166,7 @@ class NetworkGenerator:
                     G = nx.gnp_random_graph(size, self.conn_prob, seed = self.rng)
                     tries += 1
                 if not(nx.is_connected(G)):
-                    raise nx.NetworkXUnfeasible("Can't generate a connected graph")
+                    raise nx.NetworkXUnfeasible("can't generate a connected graph with theese parameters")
             return G
         
         # graph generation with the Havel-Hakimi algorithm using a degree distribution
@@ -176,7 +182,7 @@ class NetworkGenerator:
                     nx.double_edge_swap(G, nswap=5*len(G.edges()), max_tries=100*len(G.edges()))
                     tries += 1
                 if not(nx.is_connected(G)):
-                    raise nx.NetworkXUnfeasible("Can't generate a connected graph")
+                    raise nx.NetworkXUnfeasible("Ccan't generate a connected graph with theese parameters")
             return G
         
         # graph generation in exixts the bound for the interfces. Uses the uniform distribution 
@@ -189,7 +195,7 @@ class NetworkGenerator:
                     nx.double_edge_swap(G, nswap=5*len(G.edges()), max_tries=100*len(G.edges()))
                     tries += 1
                 if not(nx.is_connected(G)):
-                    raise nx.NetworkXUnfeasible("Can't generate a connected graph")
+                    raise nx.NetworkXUnfeasible("can't generate a connected graph with theese parameters")
             return G
 
 
@@ -216,7 +222,7 @@ class NetworkGenerator:
                 try:
                     G = nx.connected_watts_strogatz_graph(size, mean, p, tries = 1000, seed = self.rng)
                 except Exception:
-                    raise nx.NetworkXUnfeasible("Can't generate a connected graph")
+                    raise nx.NetworkXUnfeasible("Can't generate a connected graph with theese parameters")
             else:
                 G = nx.watts_strogatz_graph(size, mean, p, seed = self.rng)
         # else use the Newmann-Watts_Strogatz algorithm that doesn't delete the rewired edges
@@ -226,7 +232,40 @@ class NetworkGenerator:
                     
 
     def _generate_scale_free_graph(self, size):
-        pass
+        # generation of scale free graph with the extended Albert_Barabasi algorithm
+
+        n = self.node_number
+        if self.initial_degree_range == None:
+            m = n // 2
+        else:
+            min_d, max_d = self.initial_degree_range[0], self.initial_degree_range[1]
+            if min_d >= n:
+                m = n - 1
+            elif min_d == max_d:
+                m = min_d
+            else:
+                m = self.rng.integers(min_d, max_d)
+                while m >= n:
+                    m = self.rng.integers(min_d, max_d)
+        if self.new_edges_prob == None:
+            p = 0
+        else:
+            p = self.new_edges_prob
+        if self.rewiring_prob == None:
+            q = 0
+        else:
+            q = self.rewiring_prob
+
+        G = nx.Graph()
+        G = nx.extended_barabasi_albert_graph(n, m, p, q, seed = self.rng)
+        if self.connected:
+            tries = 0
+            while not(nx.is_connected(G)) and tries < 1000:
+                G = nx.extended_barabasi_albert_graph(n, m, p, q, seed = self.rng)
+            if not(nx.is_connected(G)):
+                raise nx.NetworkXUnfeasible("can't generate a connected graph with theese parameters")
+            
+        return G
     
     
     def _get_degrees_from_distr(self, type = None, params = None):
@@ -341,9 +380,8 @@ class NetworkGenerator:
                 raise nx.NetworkXUnfeasible("can't bound the number of interfaces for each node")
         
     
-    def _join_subraphs(self, subgraphs):
-        pass
-
+    def _join_subgraphs(self, subgraphs):
+        self.G = nx.disjoint_union_all(subgraphs)
     
     def _handle_central_nodes(self):
         # Logic to identify and handle central nodes

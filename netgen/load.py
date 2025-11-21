@@ -118,6 +118,26 @@ def validate_data(data):
             raise ValueError("delete_rewired must be a bool")
         
 
+    # SCALE-FREE PARAMETERS
+
+    initial_degree_range = data.get("initial_degree_range")
+    if initial_degree_range:
+        if (not isinstance(initial_degree_range, list) or len(initial_degree_range) != 2 or
+            not all(isinstance(n, int) for n in initial_degree_range) or
+            initial_degree_range[0] <= 0 or initial_degree_range[1] < initial_degree_range[0]):
+            raise ValueError("initial_degree_range must be a list of two positive integers [min, max] with min <= max")  
+        if initial_degree_range[0] > node_range[1]:
+            raise ValueError("min initial_degree_range must be lower than max number of nodes")
+        
+    new_edges_prob = data.get("new_edges_prob")
+    if new_edges_prob:
+        if not (isinstance(new_edges_prob, float) and 0.0 <= new_edges_prob <= 1.0):
+            raise ValueError("new_edges_prob must be a float between 0.0 and 1.0")
+        if rewiring_prob:
+            if rewiring_prob + new_edges_prob >= 1.0:
+                raise ValueError("the sum of rewiring_prob and new_edges_prob must be lower than 1")
+
+
     # CLUSTERING PARAMETERS
         
     local_clustering_coeff = data.get("local_clustering_coeff") 
@@ -131,9 +151,8 @@ def validate_data(data):
             not all(isinstance(n, int) for n in clusters_number_range) or
             clusters_number_range[0] <= 0 or clusters_number_range[1] < clusters_number_range[0]):
             raise ValueError("clusters_number_range must be a list of two positive integers [min, max] with min <= max")
-        if clusters_number_range[1] > node_number:
-            raise ValueError("The maximum of clusters_number_range cannot exceed the total number of nodes")
-        cluster_number = random.randint(clusters_number_range[0], clusters_number_range[1])
+        if clusters_number_range[0] > node_range[0]:
+            raise ValueError("min number of clusters must be non higher than the min number of nodes")
         
     nodes_range_per_cluster = data.get("nodes_range_per_cluster")
     if nodes_range_per_cluster:
@@ -205,6 +224,8 @@ def validate_data(data):
         "mean_degree_range": mean_degree_range,
         "rewiring_prob": rewiring_prob,
         "delete_rewired": delete_rewired,
+        "initial_degree_range": initial_degree_range,
+        "new_edges_prob": new_edges_prob,
         "local_clustering_coeff": local_clustering_coeff,
         "clusters_number_range": clusters_number_range,
         "nodes_range_per_cluster": nodes_range_per_cluster,

@@ -67,6 +67,15 @@ The highest is this probability, the lower is the local clustering coefficient
 - `delete_rewired`: true, false
 - for the edge (u, v) with the rewired edge (u, w), choose if (u, v) have to be deleted or not
 
+### SCALE-FREE PARAMETERS
+
+- `initial_degree_range`: [min, max]
+- the initial min degree for the new nodes
+
+- `new_edges_prob`: [0.0-1.0]
+- the probability to add new edges after the between existents nodes
+
+
 ### Clustering 
 
 - `local_clustering_coeff`: [0.0-1.0]
