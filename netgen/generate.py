@@ -38,7 +38,14 @@ class NetworkGenerator:
         if self.seed == None:
             self.seed = 42 # default seed
         self.rng = np.random.default_rng(seed = self.seed)
-        random.seed(self.seed)
+        
+        if self.connected == None:
+            self.connected = False
+
+        if self.gen_model == None:
+            self.gen_model = "RANDOM"
+
+
         self.G = nx.Graph()
 
 
@@ -74,6 +81,8 @@ class NetworkGenerator:
 
     
     def _partition(self):
+        # return the partition of the nodes in each cluster
+
         min_c, max_c = self.clusters_number_range[0], self.clusters_number_range[1]
         clusters_number = self.rng.integers(min_c, max_c)
         while clusters_number > self.node_number:
@@ -123,17 +132,10 @@ class NetworkGenerator:
     def _generate_graph(self, size: int = None):
         if size == None:
             size = self.node_number
-        
-        if self.connected == None:
-            self.connected = False
-
-        model = self.gen_model
-        if model == None:
-            model = "RANDOM"
 
         G = nx.Graph()
 
-        match model:
+        match self.gen_model:
             case "RANDOM":
                 G = self._generate_random_graph(size)
             case "SMART-WORLD":
@@ -151,11 +153,11 @@ class NetworkGenerator:
     def _generate_random_graph(self, size):
         # random graph generation with the Erdős–Rényi algorithm if the conn_prob exists
         if self.conn_prob != None:
-            G = nx.gnp_random_graph(size, self.conn_prob)
+            G = nx.gnp_random_graph(size, self.conn_prob, seed = self.rng)
             if self.connected:
                 tries = 0
                 while not(nx.is_connected(G)) and tries <= 1000:
-                    G = nx.gnp_random_graph(size, self.conn_prob)
+                    G = nx.gnp_random_graph(size, self.conn_prob, seed = self.rng)
                     tries += 1
                 if not(nx.is_connected(G)):
                     raise nx.NetworkXUnfeasible("Can't generate a connected graph")
@@ -177,6 +179,7 @@ class NetworkGenerator:
                     raise nx.NetworkXUnfeasible("Can't generate a connected graph")
             return G
         
+        # graph generation in exixts the bound for the interfces. Uses the uniform distribution 
         if self.if_range != None:
             degrees = self._get_degrees_from_distr(type = "UNIFORM", params = self.if_range)
             G = nx.havel_hakimi_graph(degrees)
@@ -190,20 +193,37 @@ class NetworkGenerator:
             return G
 
 
-
-            # min_val = min(degrees)
-            # max_val = max(degrees)
-            # bordi_bins = np.arange(min_val - 0.5, max_val + 1.5, 1)
-            # plt.hist(degrees, bins=bordi_bins, edgecolor='black')
-            # plt.xticks(np.arange(min_val, max_val + 1, 1))
-            # plt.show()
-
-            return nx.Graph()
-        
-
     def _generate_smart_world_graph(self, size):
-        pass
+        # Graph generation using the Watts-Strogatz algorithm in 2 variants: deleting or not the rewired edge
+        if self.mean_degree_range is None:
+            mean = size // 2
+        elif self.mean_degree_range[0] >= size:
+            mean = size - 1
+        else:
+            mean = self.rng.integers(self.mean_degree_range[0], self.mean_degree_range[1])
+            while mean >= size:
+                mean = self.rng.integers(self.mean_degree_range[0], self.mean_degree_range[1])
+        
+        if self.rewiring_prob is None:
+            p = 0.5
+        else:
+            p = self.rewiring_prob
 
+        G = nx.Graph()
+        # if delete_rewired is true, use the Watts-Strogatz algorithm
+        if self.delete_rewired == True:
+            if self.connected:
+                try:
+                    G = nx.connected_watts_strogatz_graph(size, mean, p, tries = 1000, seed = self.rng)
+                except Exception:
+                    raise nx.NetworkXUnfeasible("Can't generate a connected graph")
+            else:
+                G = nx.watts_strogatz_graph(size, mean, p, seed = self.rng)
+        # else use the Newmann-Watts_Strogatz algorithm that doesn't delete the rewired edges
+        else:
+            G = nx.newman_watts_strogatz_graph(size, mean, p, seed = self.rng)
+        return G
+                    
 
     def _generate_scale_free_graph(self, size):
         pass
@@ -331,7 +351,7 @@ class NetworkGenerator:
 
 
     def _draw_graph(self):
-        pos = nx.spring_layout(self.G)
+        pos = nx.spring_layout(self.G, seed = self.seed)
         plt.figure(figsize=(10, 10))
         nx.draw(self.G, pos, with_labels=True, node_size=200, node_color='skyblue', font_size=7, font_weight='bold')
         plt.title("Grafo")
@@ -347,6 +367,3 @@ class NetworkGenerator:
     def _generate_json(self):
         # Logic to convert the network structure into JSON format
         pass
-
-
-        
