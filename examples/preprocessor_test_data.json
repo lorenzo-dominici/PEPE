@@ -10,6 +10,10 @@
         "const_update": 5,
         "const_ratchet": 6,
         "const_check": 7,
+        "const_local_session_update": 5,
+        "const_local_session_ratchet": 6,
+        "const_local_session_check": 7,
+        "const_local_session_reset": 4,
         "const_idle": 0,
         "const_wait": 1,
         "const_run": 2,
@@ -45,8 +49,8 @@
                     "cmd_on_to_off": "node_alpha_power_off",
                     "prob_on_to_off": 0.05,
                     "interfaces": [
-                        "interface_alpha_main",
-                        "interface_alpha_backup"
+                        { "#": "interface_alpha_main" },
+                        { "#": "interface_alpha_backup" }
                     ]
                 },
                 {
@@ -61,7 +65,7 @@
                     "cmd_on_to_off": "node_beta_power_off",
                     "prob_on_to_off": 0.1,
                     "interfaces": [
-                        "interface_beta_main"
+                        { "#": "interface_beta_main" }
                     ]
                 }
             ]
@@ -187,12 +191,11 @@
                     "ref_channel": "channel_backbone",
                     "ref_channel_bandwidth": "channel_backbone",
                     "ref_link_ref_counter": "linkref_beta_receiver",
-                    "ref_link_next": "link_beta_branch",
                     "size_node_buffer_receiver": 4,
                     "number_next_links": 2,
                     "next_links": [
-                        "link_beta_branch",
-                        "link_beta_monitor"
+                        { "ref_link_next": "link_beta_branch" },
+                        { "ref_link_next": "link_beta_monitor" }
                     ]
                 }
             ]
@@ -279,12 +282,12 @@
                     "ref_session_checker_receiver": "session_checker_hpke",
                     "ref_session_path": "session_path_double_ratchet_proxy",
                     "one_to_one": [
-                        "session_path_double_ratchet_proxy",
-                        "session_path_sender_key_bridge"
+                        { "ref_session_path": "session_path_double_ratchet_proxy" },
+                        { "ref_session_path": "session_path_sender_key_bridge" }
                     ],
                     "first_links": [
-                        "link_alpha_beta",
-                        "link_alpha_beta_backup"
+                        { "#": "link_alpha_beta" },
+                        { "#": "link_alpha_beta_backup" }
                     ]
                 },
                 {
@@ -317,10 +320,10 @@
                     "ref_session_checker_receiver": "session_checker_double_ratchet",
                     "ref_session_path": "session_path_sender_key_bridge",
                     "one_to_one": [
-                        "session_path_sender_key_bridge"
+                        { "ref_session_path": "session_path_sender_key_bridge" }
                     ],
                     "first_links": [
-                        "link_alpha_beta"
+                        { "#": "link_alpha_beta" }
                     ]
                 },
                 {
@@ -353,10 +356,10 @@
                     "ref_session_checker_receiver": "session_checker_sender_key",
                     "ref_session_path": "session_path_mls_controller",
                     "one_to_one": [
-                        "session_path_mls_controller"
+                        { "ref_session_path": "session_path_mls_controller" }
                     ],
                     "first_links": [
-                        "link_alpha_beta"
+                        { "#": "link_alpha_beta" }
                     ]
                 },
                 {
@@ -389,10 +392,10 @@
                     "ref_session_checker_receiver": "session_checker_mls",
                     "ref_session_path": "session_path_hpke_main",
                     "one_to_one": [
-                        "session_path_hpke_main"
+                        { "ref_session_path": "session_path_hpke_main" }
                     ],
                     "first_links": [
-                        "link_alpha_beta"
+                        { "#": "link_alpha_beta" }
                     ]
                 }
             ]

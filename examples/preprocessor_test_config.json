@@ -2,9 +2,9 @@
 	"output_dir": "examples/preprocessor_test",
 	"jobs": -1,
 	"separators": {
-		"macro_open": "^",
-		"macro_separator": "|",
-		"macro_close": "$",
+		"macro_open": "{^",
+		"macro_separator": "||",
+		"macro_close": "$}",
 		"match_default": "_",
 		"placeholder_open": "{{",
 		"placeholder_close": "}}"

@@ -18,9 +18,9 @@ def resolve_macros(text: str, data: Dict[str, Any], seps: Separators) -> str:
         match (open, close, len(stack)):
             case (-1, -1, 0):
                 finished = True
-            case (o, c, _) if o < c:
+            case (o, c, _) if o < c and o != -1:
                 stack.append(o)
-            case (o, c, n) if c < o and n > 0:
+            case (o, c, n) if (c < o or (c != -1 and o == -1)) and n > 0:
                 start = stack.pop()
                 fields = get_macro_fields(start + len(seps.macro_open), close, text, seps)
                 result: str
