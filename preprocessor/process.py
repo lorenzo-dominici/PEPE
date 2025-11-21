@@ -26,7 +26,7 @@ def process_instance(config: Config, template_path: str | Path, consts: Dict[str
     filename is taken from instance['name'] or falls back to the template
     basename with a suffix.
     """
-    logger.debug("Processing instance for template=%s name=%s", template_path, instance.get("name"))
+    logger.debug(f"Processing instance for template={template_path} name={instance.get('name')}")
     template = load_template(template_path)
     data: Dict[str, Any] = dict(consts)
     data.update(instance)
@@ -37,16 +37,16 @@ def process_instance(config: Config, template_path: str | Path, consts: Dict[str
         # Then replace placeholders
         generated = replace_placeholders(text, data, config.separators)
     except Exception:
-        logger.exception("Error processing instance %s", instance.get("name"))
+        logger.error(f"Error processing instance {instance.get('name')}")
         raise
 
     # Determine output filename
     out_name = data.get("name")
 
     if not out_name:
-        logger.error("Instance missing 'name' key: %s", instance)
+        logger.error(f"Instance missing 'name' key: {instance}")
         raise ValueError("Instance data must contain a 'name' key for output filename generation.")
     
     out_filename = f"{out_name}.prism"
-    logger.debug("Generated file %s (len=%d)", out_filename, len(generated))
+    logger.debug(f"Generated file {out_filename} (len={len(generated)})")
     return out_filename, generated

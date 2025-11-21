@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import multiprocessing as mp
  
+from multiprocessing import Queue
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -19,11 +20,30 @@ from .load import load_data, load_data_dir, load_config
 from .process import process_instance
 from .store import write_file, ensure_dir
 from .models import Config, PreprocessorData
-from .logger import configure_logging, get_logger
+from .logger import configure_logging, get_logger, task_context, set_task_label
 from tqdm import tqdm
 
+# Use imap_unordered so we can update progress as results come in.
+    # On Windows multiprocessing, top-level callables are safer; provide a small wrapper that
+    # accepts a single tuple per task.
+def _worker_task(args_tuple: tuple[Config, str, Dict[str, Any], Dict[str, Any]]):
+    # args_tuple is (config, template_base, consts, instance)
+    cfg, template_base, consts, instance = args_tuple
+    task_label = f"{Path(template_base).stem}:{instance.get('name', 'unnamed')}"
+    with task_context(task_label):
+        return process_instance(cfg, template_base, consts, instance)
 
-def run(config_path: str | Path, data_path: str | Path) -> List[Path]:
+def _worker_init(log_level: str, log_file: str | None, log_queue: Any | None):
+    configure_logging(log_level, log_file, queue=log_queue)
+
+def run(
+    config_path: str | Path,
+    data_path: str | Path,
+    log_level: str = "INFO",
+    log_file: str | None = None,
+    log_queue: Any | None = None,
+) -> List[Path]:
+    set_task_label("main")
     # Load and validate data and config using the loader helpers
     input: List[PreprocessorData] = load_data_dir(data_path) if Path(data_path).is_dir() else [load_data(data_path)]
     config = load_config(config_path)
@@ -45,15 +65,11 @@ def run(config_path: str | Path, data_path: str | Path) -> List[Path]:
     logger = get_logger("preprocessor.main")
     logger.info("Starting processing: %d tasks, pool size=%d", len(tasks), pool_size)
 
-    # Use imap_unordered so we can update progress as results come in.
-    # On Windows multiprocessing, top-level callables are safer; provide a small wrapper that
-    # accepts a single tuple per task.
-    def _worker_task(args_tuple: tuple[Config, str, Dict[str, Any], Dict[str, Any]]):
-        # args_tuple is (config, template_base, consts, instance)
-        cfg, template_base, consts, instance = args_tuple
-        return process_instance(cfg, template_base, consts, instance)
-
-    with mp.Pool(pool_size) as pool:
+    with mp.Pool(
+        pool_size,
+        initializer=_worker_init,
+        initargs=(log_level, log_file, log_queue),
+    ) as pool:
         for out_name, content in tqdm(pool.imap_unordered(_worker_task, tasks), total=len(tasks), desc="Processing", unit="item"):
             target = config.output_dir / out_name
             write_file(target, content)
@@ -68,16 +84,23 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("--config", default=None, help="Path to preprocessor configuration file")
     ap.add_argument("--data", required=True, help="Path to preprocessor JSON data file or directory")
     ap.add_argument("--log-level", default="INFO", help="Logging level (DEBUG, INFO, WARNING, ERROR)")
+    ap.add_argument("--log-file", default=None, help="Path for log output; defaults to stderr")
     args = ap.parse_args(argv)
 
-    configure_logging(args.log_level)
+    log_queue: Queue[Any] = mp.Queue()
+    listener = configure_logging(args.log_level, args.log_file, queue=log_queue, start_listener=True)
+    set_task_label("main")
     logger = get_logger("preprocessor.cli")
     logger.debug("CLI args: %s", args)
 
     try:
-        generated = run(args.config, args.data)
+        generated = run(args.config, args.data, args.log_level, args.log_file, log_queue=log_queue)
     except ValidationError as exc:
-        raise SystemExit(f"Error parsing input or config: {exc}")
+        exc_any: Any = exc
+        raise SystemExit(f"Error parsing input or config: {exc_any}")
+    finally:
+        if listener:
+            listener.stop()
 
     for p in generated:
         print(p)

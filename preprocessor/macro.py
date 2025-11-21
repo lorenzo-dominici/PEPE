@@ -4,7 +4,9 @@ from typing import Any, Dict, List, Optional, Iterator, Tuple
 
 from preprocessor.models import Separators
 from preprocessor.replace import resolve_key
+from preprocessor.logger import get_logger
 
+logger = get_logger(__name__)
 
 @dataclass
 class Macro:
@@ -104,12 +106,13 @@ class MacroTree:
 
         # nothing to do if separators missing or empty
         if not open_s or not close_s or not sep_s:
+            logger.error("Macro separators must be defined and non-empty")
             raise ValueError("Macro separators must be defined and non-empty")
 
         text_len = len(text)
         # ensure root covers the whole text
         self.root.macro.start = 0
-        self.root.macro.end = max(0, text_len)
+        self.root.macro.end = text_len
 
         # collect open/close events in text order
         events: List[Tuple[str, int]] = []
@@ -132,12 +135,15 @@ class MacroTree:
         for typ, pos in events:
             if typ == "open":
                 stack.append(pos)
+                logger.debug(f"MACRO {text[pos:pos+10]}")
             else:  # close
                 if not stack:
+                    logger.error(f"Closing separator at position {pos} without matching open")
                     raise ValueError(f"Closing separator at position {pos} without matching open")
                 start = stack.pop()
                 end = pos + len(close_s)
                 if end <= start:
+                    logger.error(f"Invalid macro span for open at {start} and close at {pos}")
                     raise ValueError(f"Invalid macro span for open at {start} and close at {pos}")
                 # derive a simple type name from the inner content (first token) or default to "macro"
                 inner = text[start + len(open_s) : end - len(close_s)]
@@ -145,6 +151,7 @@ class MacroTree:
                 spans.append(Macro(mtype, start, end))
 
         if stack:
+            logger.error("Unclosed macro opens at positions: " + ", ".join(map(str, stack)))
             raise ValueError("Unclosed macro open(s) at positions: " + ", ".join(map(str, stack)))
 
         # build nodes and insert into tree ensuring proper nesting (no overlaps)
@@ -168,6 +175,7 @@ class MacroTree:
             # ensure no overlapping with existing siblings
             for child in parent.children:
                 if not (child.end <= node.start or child.start >= node.end):
+                    logger.error(f"Macro spans overlap or are not properly nested: {child} vs {node}")
                     raise ValueError(f"Macro spans overlap or are not properly nested: {child} vs {node}")
 
             parent.add_child(node)
@@ -198,6 +206,7 @@ def resolve_macro(macro: MacroNode, text: str, data: Dict[str, Any], seps: Separ
         case "loop":
             return resolve_loop(macro, text, data, seps)
         case _:
+            logger.error(f"Unknown macro type: {macro.type}")
             raise ValueError(f"Unknown macro type: {macro.type}")
 
 def get_macro_fields(macro: MacroNode, text: str, seps: Separators) -> List[str]:
@@ -215,7 +224,12 @@ def get_macro_fields(macro: MacroNode, text: str, seps: Separators) -> List[str]
         elif nested > 0:
             buffer += chunk + seps.macro_separator
         else:
-            raise ValueError("Unbalanced macro separators in match macro")
+            logger.error("Unbalanced macro separators in macro")
+            raise ValueError("Unbalanced macro separators in macro")
+
+    if len(fields) == 0:
+        logger.error("Macro contains no fields")
+        raise ValueError("Macro contains no fields")
     
     return fields
             
@@ -224,18 +238,22 @@ def resolve_match(macro: MacroNode, text: str, data: Dict[str, Any], seps: Separ
     fields: List[str] = get_macro_fields(macro, text, seps)
 
     if len(fields) % 2 != 0:
+        logger.error("Match macro must have an even number of fields (pairs of value and output)")
         raise ValueError("Match macro must have an even number of fields (pairs of value and output)")
     
     if fields[0].strip() != "match":
+        logger.error("First field of match macro must be 'match'")
         raise ValueError("First field of match macro must be 'match'")
     
     match_key = fields[1].strip()
     match_value = resolve_key(data, match_key)
 
     if match_value is None:
+        logger.error(f"Match key '{match_key}' not found in data")
         raise ValueError(f"Match key '{match_key}' not found in data")
     
     if isinstance(match_value, (dict, list)):
+        logger.error(f"Match key '{match_key}' must resolve to a primitive value, got {type(match_value).__name__}") # type: ignore
         raise TypeError(f"Match key '{match_key}' must resolve to a primitive value, got {type(match_value).__name__}") # type: ignore
     
     branches = [(fields[i].strip(), fields[i+1]) for i in range(2, len(fields), 2)]
@@ -247,6 +265,7 @@ def resolve_match(macro: MacroNode, text: str, data: Dict[str, Any], seps: Separ
                 text = resolve_macro(child, text, data, seps)
             return text
     
+    logger.error(f"No matching branch found for key '{match_key}' with value '{match_value}'")
     raise ValueError(f"No matching branch found for key '{match_key}' with value '{match_value}'")
 
 def resolve_loop(macro: MacroNode, text: str, data: Dict[str, Any], seps: Separators) -> str:
@@ -254,18 +273,22 @@ def resolve_loop(macro: MacroNode, text: str, data: Dict[str, Any], seps: Separa
     fields: List[str] = get_macro_fields(macro, text, seps)
 
     if len(fields) != 3:
+        logger.error("Loop macro must have exactly three fields: 'loop', list_key, body_template")
         raise ValueError("Loop macro must have exactly three fields: 'loop', list_key, body_template")
     
     if fields[0].strip() != "loop":
+        logger.error("First field of loop macro must be 'loop'")
         raise ValueError("First field of loop macro must be 'loop'")
     
     list_key: str = fields[1].strip()
     loop_list = resolve_key(data, list_key)
 
     if loop_list is None:
+        logger.error(f"Loop key '{list_key}' not found in data")
         raise ValueError(f"Loop key '{list_key}' not found in data")
     
     if not isinstance(loop_list, list):
+        logger.error(f"Loop key '{list_key}' must resolve to a list, got {type(loop_list).__name__}")
         raise TypeError(f"Loop key '{list_key}' must resolve to a list, got {type(loop_list).__name__}")
 
     body = fields[-1]
