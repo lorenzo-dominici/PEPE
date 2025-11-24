@@ -390,8 +390,11 @@ class NetworkGenerator:
 
     def _draw_graph(self):
         pos = nx.spring_layout(self.G, seed = self.seed)
+        centrality = nx.degree_centrality(self.G)
+        nodes_sizes = list(v * 3000 + 50 for v in centrality.values())
+        print(nodes_sizes)
         plt.figure(figsize=(10, 10))
-        nx.draw(self.G, pos, with_labels=True, node_size=200, node_color='skyblue', font_size=7, font_weight='bold')
+        nx.draw(self.G, pos, with_labels=True, node_size=nodes_sizes, node_color='green', font_size=7, font_weight='bold')
         plt.title("Grafo")
         plt.axis('off')
         plt.show()
