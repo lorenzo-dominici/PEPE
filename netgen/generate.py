@@ -68,17 +68,24 @@ class NetworkGenerator:
         clustering = self.clusters_number_range is not None
         if clustering:
             clusters_sizes = self._partition()
+            
             subgraphs = []
             # generate the subgraphs
             for i in range(len(clusters_sizes)):
                 size = clusters_sizes[i]
                 subgraphs.append(self._generate_graph(size))
+                color = tuple(self.rng.random(3))
+                nx.set_node_attributes(subgraphs[i], color, 'color')
+                nx.set_edge_attributes(subgraphs[i], color, 'color')
             # concatenate the subgraphs
             self._join_subgraphs(subgraphs)
 
         else:
             # no clusters, a single subgraph is created
             self.G = self._generate_graph()
+            nx.set_node_attributes(self.G, "orange", 'color')
+            nx.set_edge_attributes(self.G, "black", 'color')
+
 
         self._draw_graph()
 
@@ -102,37 +109,37 @@ class NetworkGenerator:
             for i in range(remaining):
                 sizes[i] += 1
                 return sizes
-            
-        # if the min nodes per cluster is too high
-        if self.nodes_range_per_cluster[0] * min_c > self.node_number:
-            clusters_number = min_c
-            nodes_per_cluster = self.node_number // clusters_number
-            sizes = [nodes_per_cluster] * clusters_number
-            remaining = self.node_number % clusters_number
-            for i in range(remaining):
-                sizes[i] += 1
-                return sizes
+        else:  
+            # if the min nodes per cluster is too high
+            if self.nodes_range_per_cluster[0] * min_c > self.node_number:
+                clusters_number = min_c
+                nodes_per_cluster = self.node_number // clusters_number
+                sizes = [nodes_per_cluster] * clusters_number
+                remaining = self.node_number % clusters_number
+                for i in range(remaining):
+                    sizes[i] += 1
+                    return sizes
 
-        # if the max nodes per cluster is too small
-        if self.nodes_range_per_cluster[1] * max_c < self.node_number:
-            clusters_number = max_c
-            nodes_per_cluster = self.node_number // clusters_number
-            sizes = [nodes_per_cluster] * clusters_number
-            remaining = self.node_number % clusters_number
-            for i in range(remaining):
-                sizes[i] += 1
-                return sizes
-            
-        # if there is the nodes range per cluster
-        while (clusters_number * self.nodes_range_per_cluster[0] > self.node_number or clusters_number * self.nodes_range_per_cluster[1] < self.node_number):
-            clusters_number = self.rng.integers(min_c, max_c)
+            # if the max nodes per cluster is too small
+            if self.nodes_range_per_cluster[1] * max_c < self.node_number:
+                clusters_number = max_c
+                nodes_per_cluster = self.node_number // clusters_number
+                sizes = [nodes_per_cluster] * clusters_number
+                remaining = self.node_number % clusters_number
+                for i in range(remaining):
+                    sizes[i] += 1
+                    return sizes
+                
+            # if there is the nodes range per cluster
+            while (clusters_number * self.nodes_range_per_cluster[0] > self.node_number or clusters_number * self.nodes_range_per_cluster[1] < self.node_number):
+                clusters_number = self.rng.integers(min_c, max_c)
 
-        sizes = [self.nodes_range_per_cluster[0]] * clusters_number
-        while sum(sizes) < self.node_number:
-            i = self.rng.integers(0, len(sizes) - 1)
-            if sizes[i] < self.nodes_range_per_cluster[1]:
-                sizes[i] += 1
-        return sizes
+            sizes = [self.nodes_range_per_cluster[0]] * clusters_number
+            while sum(sizes) < self.node_number:
+                i = self.rng.integers(0, len(sizes) - 1)
+                if sizes[i] < self.nodes_range_per_cluster[1]:
+                    sizes[i] += 1
+            return sizes
     
     
     def _generate_graph(self, size: int = None):
@@ -205,6 +212,8 @@ class NetworkGenerator:
             mean = size // 2
         elif self.mean_degree_range[0] >= size:
             mean = size - 1
+        elif self.mean_degree_range[0] == self.mean_degree_range[1]:
+            mean = self.mean_degree_range[0]
         else:
             mean = self.rng.integers(self.mean_degree_range[0], self.mean_degree_range[1])
             while mean >= size:
@@ -234,7 +243,7 @@ class NetworkGenerator:
     def _generate_scale_free_graph(self, size):
         # generation of scale free graph with the extended Albert_Barabasi algorithm
 
-        n = self.node_number
+        n = size
         if self.initial_degree_range == None:
             m = n // 2
         else:
@@ -381,7 +390,27 @@ class NetworkGenerator:
         
     
     def _join_subgraphs(self, subgraphs):
+        n_clusters = len(subgraphs)
+        p = self.inter_clusters_coeff
+        if p == None:
+            p = 0.01
         self.G = nx.disjoint_union_all(subgraphs)
+        all_nodes = list(self.G.nodes())
+        cluster_boundaries = [i * len(subgraphs[i]) for i in range(n_clusters)] + [len(all_nodes)]
+        for i in range(n_clusters):
+            for j in range(i + 1, n_clusters):
+                nodes_i = np.arange(cluster_boundaries[i], cluster_boundaries[i+1])
+                nodes_j = np.arange(cluster_boundaries[j], cluster_boundaries[j+1])
+                u_mesh, v_mesh = np.meshgrid(nodes_i, nodes_j, indexing='ij')
+                u_flat = u_mesh.ravel()
+                v_flat = v_mesh.ravel()
+                mask = self.rng.random(len(u_flat)) < p
+                for u, v in zip(u_flat[mask], v_flat[mask]):
+                    self.G.add_edge(u, v, color = "black")
+
+
+        
+
     
     def _handle_central_nodes(self):
         # Logic to identify and handle central nodes
@@ -391,10 +420,16 @@ class NetworkGenerator:
     def _draw_graph(self):
         pos = nx.spring_layout(self.G, seed = self.seed)
         centrality = nx.degree_centrality(self.G)
-        nodes_sizes = list(v * 3000 + 50 for v in centrality.values())
-        print(nodes_sizes)
+        print(np.var(list(centrality.values())))
+        # nodes_sizes = list(v * ((1 / self.node_number) * (200000000 * np.var(list(centrality.values())))) + 50 for v in centrality.values())
+        scale_factor = 10000
+        nodes_sizes = [ (v ** 2) * scale_factor + 50 for v in centrality.values() ]
+
+        node_colors = [data['color'] for _, data in self.G.nodes(data=True)]
+        edge_colors = [data['color'] for _, _, data in self.G.edges(data=True)]
+
         plt.figure(figsize=(10, 10))
-        nx.draw(self.G, pos, with_labels=True, node_size=nodes_sizes, node_color='green', font_size=7, font_weight='bold')
+        nx.draw(self.G, pos, with_labels=True, node_size=nodes_sizes, node_color=node_colors, edge_color = edge_colors, font_size=7, font_weight='bold')
         plt.title("Grafo")
         plt.axis('off')
         plt.show()

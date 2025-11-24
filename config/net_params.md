@@ -50,7 +50,7 @@ The parameters of the network must be included in a json file with this structur
         "type": BINOMIAL | UNIFORM | NORMAL | POWERLAW | CUSTOM
         "params": [...] 
     }
-- the distribution of the grade of the nodes. If a node has grade k, k interfaces and channels are created. 
+- the distribution of the grade of the nodes. If a node has grade k, k interfaces and channels are created.
 
 - `if_range`: [min, max], positive integers values
 - the range of the number of interfaces for each node, that represent the nodes degree. The same as uniform degree distribution
@@ -73,13 +73,10 @@ The highest is this probability, the lower is the local clustering coefficient
 - the initial min degree for the new nodes
 
 - `new_edges_prob`: [0.0-1.0]
-- the probability to add new edges after the between existents nodes
+- the probability to add new edges after the generation between existents nodes
 
 
 ### Clustering 
-
-- `local_clustering_coeff`: [0.0-1.0]
-- the coefficient for the local clustering
 
 - `clusters_number_range`: [min, max]
 - the number of clusters
@@ -89,18 +86,6 @@ The highest is this probability, the lower is the local clustering coefficient
 
 - `inter_clusters_coeff`: [0.0-1.0]
 - the probability of the inter-clusters connection
-
-
-### Nodes centrality
-
-- `edge_per_new_node`: [min, max]
-- the number of new edges added for a new node. A small value (1, 2) implies a small number of hubs with a high edges, a high value (20) implies a network densed and more balanced
-
-- `central_nodes_min_degree`: min
-- the minimum degree for a node to be considered central node. This value must be lower than number of nodes.
-
-- `central_nodes_range`: [min, max]
-- the number of central nodes. This parameter can modify the degree distribution or the connectivity probability to set the expected number of central nodes.
 
 
 ### Nodes Buffer size
