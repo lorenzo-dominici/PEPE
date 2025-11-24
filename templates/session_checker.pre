@@ -40,7 +40,6 @@ module session_checker_{{#}}
     [{{cmd_check_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                             (session_checker_state_{{#}} = {{const_check}}) &
                             (local_session_epoch_{{ref_local_session_receiver}} != session_checker_sender_local_session_epoch_{{#}}) -> session_checker_state_{{#}}' = {{const_failure}};
-
     {^match||protocol
           ||hpke||
     [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
@@ -164,5 +163,4 @@ module session_checker_{{#}}
                                                                                                 & (session_path_state_{{ref_session_path_to_sender}}' = {{const_update}})
                                                                                                 & (session_path_system_message_{{ref_session_path_to_sender}}' = {{const_message_tree_refresh}});
     $}
-
 endmodule
