@@ -15,6 +15,17 @@ def load_json(file_path):
     
 def validate_data(data):
 
+    protocol = data.get("protocol")
+    if protocol:
+        if protocol not in {"HPKE", "DOUBLE-RATCHET", "SENDER-KEY", "MLS"}:
+                raise ValueError("protocol must be one of HPKE, DOUBLE-RATCHET, SENDER-KEY, MLS")
+    else:
+        raise ValueError("protocol parameter must be setted")
+    
+    
+    
+    
+    
     seed = data.get("seed")
     if seed:
         if not isinstance(seed, int):
@@ -187,6 +198,9 @@ def validate_data(data):
         if not (isinstance(edge_per_new_node, int) and 0 < edge_per_new_node < node_number):
             raise ValueError("edge_per_new_node must be a positive integer less than the total number of nodes")
         
+    
+    # ATTRIBUTES PARAMETERS
+    
     buffer_size_range = data.get("buffer_size_range")
     if buffer_size_range:
            if (not isinstance(buffer_size_range, list) or len(buffer_size_range) != 2 or
@@ -196,12 +210,12 @@ def validate_data(data):
     else:
         raise ValueError("Missing parameter: buffer_size_range")
     
-    central_nodes_buffer_size = data.get("central_nodes_buffer_size")
-    if central_nodes_buffer_size:
-        if not (isinstance(central_nodes_buffer_size, int) and central_nodes_buffer_size > 0):
-            raise ValueError("central_nodes_buffer_size must be a positive integer")
-    else:
-        central_nodes_buffer_size = buffer_size_range  # default to buffer_size_range if not provided
+    # central_nodes_buffer_size = data.get("central_nodes_buffer_size")
+    # if central_nodes_buffer_size:
+    #     if not (isinstance(central_nodes_buffer_size, int) and central_nodes_buffer_size > 0):
+    #         raise ValueError("central_nodes_buffer_size must be a positive integer")
+    # else:
+    #     central_nodes_buffer_size = buffer_size_range  # default to buffer_size_range if not provided
 
     channel_bandwidth_range = data.get("channel_bandwidth_range")
     if channel_bandwidth_range:
@@ -211,9 +225,16 @@ def validate_data(data):
             raise ValueError("channel_bandwidth_range must be a list of two positive integers [min, max] with min <= max")
     else:
         raise ValueError("Missing parameter: channel_bandwidth_range")
+    
+
+    path_perc = data.get("path_perc")
+    if path_perc:
+        if not (isinstance(path_perc, float) and 0.0 <= path_perc <= 1.0):
+            raise ValueError("path_perc must be a float between 0.0 and 1.0")
 
     
     network_params = {
+        "protocol": protocol,
         "seed": seed,
         "node_number": node_number,
         "connected": connected,
@@ -234,8 +255,9 @@ def validate_data(data):
         "central_nodes_min_degree": central_nodes_min_degree,
         "edge_per_new_node": edge_per_new_node,
         "buffer_size_range": buffer_size_range,
-        "central_nodes_buffer_size": central_nodes_buffer_size,
-        "channel_bandwidth_range": channel_bandwidth_range
+#        "central_nodes_buffer_size": central_nodes_buffer_size,
+        "channel_bandwidth_range": channel_bandwidth_range,
+        "path_perc": path_perc
     }
 
     return network_params

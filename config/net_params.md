@@ -20,6 +20,13 @@ The parameters of the network must be included in a json file with this structur
 - `net_type`: STAR | RING | CHAIN | TREE | MESH | FULLY_CONNECTED | REGULAR_GRAPH | CUSTOM
 - the type of the network
 
+
+### Protocol
+
+- `protocol`: HPKE | DOUBLE-RATCHET | SENDER-KEY | MLS
+- the protocol used in the network
+
+
 ### Seed
 - `seed`: integer
 - the seed for the random generator
@@ -96,9 +103,15 @@ The highest is this probability, the lower is the local clustering coefficient
 - `central_nodes_buffer_size`: [min, max]
 - Optional, the dimension of the node message queue for the central nodes
 
+
 ### Channel bandwidth
 
 - `channel_bandwidth_range`: [min, max]
 - the number of links that can use the channel
 
+
+### Path generation
+
+- `path_perc`: [0.0-1.0]
+- the percentage of the total possible paths
 

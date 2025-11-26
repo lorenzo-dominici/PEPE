@@ -7,6 +7,7 @@ from scipy.stats import zipf
 
 class NetworkGenerator: 
     def __init__(self, params):
+        self.protocol = params.get("protocol")
         self.seed = params.get("seed")
         self.node_number = params.get("node_number")
         self.connected = params.get("connected")
@@ -37,6 +38,7 @@ class NetworkGenerator:
         self.buffer_size_range = params.get("buffer_size_range")
         self.central_nodes_buffer_size = params.get("central_nodes_buffer_size")
         self.channel_bandwidth_range = params.get("channel_bandwidth_range")
+        self.path_perc = params.get("path_perc")
 
         if self.seed == None:
             self.seed = 42 # default seed
@@ -50,6 +52,7 @@ class NetworkGenerator:
 
 
         self.G = nx.Graph()
+        self.attributes = {}
 
 
     def generate_network(self):
@@ -108,7 +111,7 @@ class NetworkGenerator:
             remaining = self.node_number % clusters_number
             for i in range(remaining):
                 sizes[i] += 1
-                return sizes
+            return sizes
         else:  
             # if the min nodes per cluster is too high
             if self.nodes_range_per_cluster[0] * min_c > self.node_number:
@@ -396,7 +399,14 @@ class NetworkGenerator:
             p = 0.01
         self.G = nx.disjoint_union_all(subgraphs)
         all_nodes = list(self.G.nodes())
-        cluster_boundaries = [i * len(subgraphs[i]) for i in range(n_clusters)] + [len(all_nodes)]
+        cluster_boundaries = []
+        start = 0
+        for g in subgraphs:
+            cluster_boundaries.append(start)
+            start += g.number_of_nodes()
+        cluster_boundaries.append(start)
+
+        # cluster_boundaries = [i * len(subgraphs[i]) for i in range(n_clusters)] + [len(all_nodes)]
         for i in range(n_clusters):
             for j in range(i + 1, n_clusters):
                 nodes_i = np.arange(cluster_boundaries[i], cluster_boundaries[i+1])
@@ -406,10 +416,7 @@ class NetworkGenerator:
                 v_flat = v_mesh.ravel()
                 mask = self.rng.random(len(u_flat)) < p
                 for u, v in zip(u_flat[mask], v_flat[mask]):
-                    self.G.add_edge(u, v, color = "black")
-
-
-        
+                    self.G.add_edge(int(u), int(v), color = "black")
 
     
     def _handle_central_nodes(self):
@@ -420,7 +427,6 @@ class NetworkGenerator:
     def _draw_graph(self):
         pos = nx.spring_layout(self.G, seed = self.seed)
         centrality = nx.degree_centrality(self.G)
-        print(np.var(list(centrality.values())))
         # nodes_sizes = list(v * ((1 / self.node_number) * (200000000 * np.var(list(centrality.values())))) + 50 for v in centrality.values())
         scale_factor = 10000
         nodes_sizes = [ (v ** 2) * scale_factor + 50 for v in centrality.values() ]
@@ -436,10 +442,48 @@ class NetworkGenerator:
 
     
     def _assign_attributes(self):
-        # Logic to assign attributes like buffer sizes and channel bandwidths
-        pass
+        # Logic to assign attributes like buffer sizes and channel bandwidths and paths
+        self._generate_paths()
 
-    
+        buffer_size = self.rng.integers(self.buffer_size_range[0], self.buffer_size_range[1])
+        self.attributes["buffer_size"] = buffer_size
+
+        channel_bandwidth = self.rng.integers(self.channel_bandwidth_range[0], self.channel_bandwidth_range[1])
+        self.attributes["channel_bandwidth"] = channel_bandwidth
+
+        
+
+    def _generate_paths(self):
+        nodes = list(self.G.nodes())
+        #if the protocol is hpke or double ratchet, we need only one-to-one paths
+        if self.protocol in {"HPKE", "DOUBLE-RATCHET"}:
+            paths = []
+            for i in range(len(nodes)):
+                for j in range(len(nodes)):
+                    if i != j:
+                        a = nodes[i]
+                        b = nodes[j]
+                        if self.rng.random() < self.path_perc:
+                            path = nx.shortest_path(self.G, a, b)
+                            paths.append(path)
+            self.attributes["paths"] = paths
+            
+
+        # for sender key, we need one-to-many paths and all the one-to-one return paths to the sender
+        else:
+            one_to_many_paths = {}
+            for i in range(len(nodes)):
+                path = []
+                a = nodes[i]
+                for j in range(len(nodes)):
+                    if i != j and self.rng.random() < self.path_perc:
+                        b = nodes[j]
+                        path_to_add = nx.shortest_path(self.G, a, b)
+                        path.append(path_to_add)
+                one_to_many_paths[a] = path
+            self.attributes["paths"] = one_to_many_paths
+
+
     def _generate_json(self):
         # Logic to convert the network structure into JSON format
         pass
