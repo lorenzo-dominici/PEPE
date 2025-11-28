@@ -151,10 +151,10 @@ def validate_data(data):
 
     # CLUSTERING PARAMETERS
         
-    local_clustering_coeff = data.get("local_clustering_coeff") 
-    if local_clustering_coeff:
-        if not (isinstance(local_clustering_coeff, float) and 0.0 <= local_clustering_coeff <= 1.0):
-            raise ValueError("local_clustering_coeff must be a float between 0.0 and 1.0")
+    # local_clustering_coeff = data.get("local_clustering_coeff") 
+    # if local_clustering_coeff:
+    #     if not (isinstance(local_clustering_coeff, float) and 0.0 <= local_clustering_coeff <= 1.0):
+    #         raise ValueError("local_clustering_coeff must be a float between 0.0 and 1.0")
         
     clusters_number_range = data.get("clusters_number_range")
     if clusters_number_range:
@@ -179,27 +179,24 @@ def validate_data(data):
         if not (isinstance(inter_clusters_coeff, float) and 0.0 <= inter_clusters_coeff <= 1.0):
             raise ValueError("inter_clusters_coeff must be a float between 0.0 and 1.0")
     
-    central_nodes_range = data.get("central_nodes_range")
-    if central_nodes_range:
-        if (not isinstance(central_nodes_range, list) or len(central_nodes_range) != 2 or
-            not all(isinstance(n, int) for n in central_nodes_range) or
-            central_nodes_range[0] <= 0 or central_nodes_range[1] < central_nodes_range[0]):
-            raise ValueError("central_nodes_range must be a list of two positive integers [min, max] with min <= max")
-        if central_nodes_range[1] > node_number:
-            raise ValueError("The maximum of central_nodes_range cannot exceed the total number of nodes")
+    # central_nodes_range = data.get("central_nodes_range")
+    # if central_nodes_range:
+    #     if (not isinstance(central_nodes_range, list) or len(central_nodes_range) != 2 or
+    #         not all(isinstance(n, int) for n in central_nodes_range) or
+    #         central_nodes_range[0] <= 0 or central_nodes_range[1] < central_nodes_range[0]):
+    #         raise ValueError("central_nodes_range must be a list of two positive integers [min, max] with min <= max")
+    #     if central_nodes_range[1] > node_number:
+    #         raise ValueError("The maximum of central_nodes_range cannot exceed the total number of nodes")
         
-    central_nodes_min_degree = data.get("central_nodes_min_degree")
-    if central_nodes_min_degree:
-        if not (isinstance(central_nodes_min_degree, int) and 0 < central_nodes_min_degree < node_number):
-            raise ValueError("central_nodes_min_degree must be a positive integer less than the total number of nodes")
-        
-    edge_per_new_node = data.get("edge_per_new_node")
-    if edge_per_new_node:
-        if not (isinstance(edge_per_new_node, int) and 0 < edge_per_new_node < node_number):
-            raise ValueError("edge_per_new_node must be a positive integer less than the total number of nodes")
+    # central_nodes_min_degree = data.get("central_nodes_min_degree")
+    # if central_nodes_min_degree:
+    #     if not (isinstance(central_nodes_min_degree, int) and 0 < central_nodes_min_degree < node_number):
+    #         raise ValueError("central_nodes_min_degree must be a positive integer less than the total number of nodes")
         
     
-    # ATTRIBUTES PARAMETERS
+    # ATTRIBUTES
+
+    # NODE PARAMETERS
     
     buffer_size_range = data.get("buffer_size_range")
     if buffer_size_range:
@@ -209,6 +206,20 @@ def validate_data(data):
                 raise ValueError("buffer_size_range must be a list of two positive integers [min, max] with min <= max")  
     else:
         raise ValueError("Missing parameter: buffer_size_range")
+
+    node_prob_off_to_on = data.get("node_prob_off_to_on")
+    if node_prob_off_to_on:
+        if not (isinstance(node_prob_off_to_on, float) and 0.0 <= node_prob_off_to_on <= 1.0):
+            raise ValueError("node_prob_off_to_on must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: node_prob_off_to_on")
+
+    node_prob_on_to_off = data.get("node_prob_on_to_off")
+    if node_prob_on_to_off:
+        if not (isinstance(node_prob_on_to_off, float) and 0.0 <= node_prob_on_to_off <= 1.0):
+            raise ValueError("node_prob_on_to_off must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: node_prob_on_to_off")
     
     # central_nodes_buffer_size = data.get("central_nodes_buffer_size")
     # if central_nodes_buffer_size:
@@ -216,6 +227,9 @@ def validate_data(data):
     #         raise ValueError("central_nodes_buffer_size must be a positive integer")
     # else:
     #     central_nodes_buffer_size = buffer_size_range  # default to buffer_size_range if not provided
+
+
+    # CHANNEL PARAMETERS
 
     channel_bandwidth_range = data.get("channel_bandwidth_range")
     if channel_bandwidth_range:
@@ -231,8 +245,176 @@ def validate_data(data):
     if path_perc:
         if not (isinstance(path_perc, float) and 0.0 <= path_perc <= 1.0):
             raise ValueError("path_perc must be a float between 0.0 and 1.0")
+        
 
-    
+    channel_prob_working_to_error = data.get("channel_prob_working_to_error")
+    if channel_prob_working_to_error:
+        if not (isinstance(channel_prob_working_to_error, float) and 0.0 <= channel_prob_working_to_error <= 1.0):
+            raise ValueError("channel_prob_working_to_error must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: channel_prob_working_to_error")
+
+    channel_prob_error_to_working = data.get("channel_prob_error_to_working")
+    if channel_prob_error_to_working:
+        if not (isinstance(channel_prob_error_to_working, float) and 0.0 <= channel_prob_error_to_working <= 1.0):
+            raise ValueError("channel_prob_error_to_working must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: channel_prob_error_to_working")
+
+    channel_prob_failure_to_working = data.get("channel_prob_failure_to_working")
+    if channel_prob_failure_to_working:
+        if not (isinstance(channel_prob_failure_to_working, float) and 0.0 <= channel_prob_failure_to_working <= 1.0):
+            raise ValueError("channel_prob_failure_to_working must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: channel_prob_failure_to_working")
+
+
+    # INTERFACE PARAMETERS
+
+    if_prob_off_to_working = data.get("if_prob_off_to_working")
+    if if_prob_off_to_working:
+        if not (isinstance(if_prob_off_to_working, float) and 0.0 <= if_prob_off_to_working <= 1.0):
+            raise ValueError("if_prob_off_to_working must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: if_prob_off_to_working")
+
+    if_prob_off_to_error = data.get("if_prob_off_to_error")
+    if if_prob_off_to_error:
+        if not (isinstance(if_prob_off_to_error, float) and 0.0 <= if_prob_off_to_error <= 1.0):
+            raise ValueError("if_prob_off_to_error must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: if_prob_off_to_error")
+
+    if_prob_off_to_failure = data.get("if_prob_off_to_failure")
+    if if_prob_off_to_failure:
+        if not (isinstance(if_prob_off_to_failure, float) and 0.0 <= if_prob_off_to_failure <= 1.0):
+            raise ValueError("if_prob_off_to_failure must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: if_prob_off_to_failure")
+
+    if if_prob_off_to_working + if_prob_off_to_error + if_prob_off_to_failure >= 1.0:
+        raise ValueError("the sum of if_prob_off_to_working, if_prob_off_to_error and if_prob_off_to_failure must be lower than 1")
+
+    if_prob_working_to_error = data.get("if_prob_working_to_error")
+    if if_prob_working_to_error:
+        if not (isinstance(if_prob_working_to_error, float) and 0.0 <= if_prob_working_to_error <= 1.0):
+            raise ValueError("if_prob_working_to_error must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: if_prob_working_to_error")
+
+    if_prob_error_to_working = data.get("if_prob_error_to_working")
+    if if_prob_error_to_working:
+        if not (isinstance(if_prob_error_to_working, float) and 0.0 <= if_prob_error_to_working <= 1.0):
+            raise ValueError("if_prob_error_to_working must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: if_prob_error_to_working")
+
+    if_prob_failure_to_working = data.get("if_prob_failure_to_working")
+    if if_prob_failure_to_working:
+        if not (isinstance(if_prob_failure_to_working, float) and 0.0 <= if_prob_failure_to_working <= 1.0):
+            raise ValueError("if_prob_failure_to_working must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: if_prob_failure_to_working")
+
+
+    # LINK PARAMETERS
+
+    link_prob_working_to_error = data.get("link_prob_working_to_error")
+    if link_prob_working_to_error:
+        if not (isinstance(link_prob_working_to_error, float) and 0.0 <= link_prob_working_to_error <= 1.0):
+            raise ValueError("link_prob_working_to_error must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: link_prob_working_to_error")
+
+    link_prob_error_to_working = data.get("link_prob_error_to_working")
+    if link_prob_error_to_working:
+        if not (isinstance(link_prob_error_to_working, float) and 0.0 <= link_prob_error_to_working <= 1.0):
+            raise ValueError("link_prob_error_to_working must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: link_prob_error_to_working")
+
+    link_prob_failure_to_working = data.get("link_prob_failure_to_working")
+    if link_prob_failure_to_working:
+        if not (isinstance(link_prob_failure_to_working, float) and 0.0 <= link_prob_failure_to_working <= 1.0):
+            raise ValueError("link_prob_failure_to_working must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: link_prob_failure_to_working")
+
+    link_prob_retry = data.get("link_prob_retry")
+    if link_prob_retry:
+        if not (isinstance(link_prob_retry, float) and 0.0 <= link_prob_retry <= 1.0):
+            raise ValueError("link_prob_retry must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: link_prob_retry")
+
+    link_prob_sending = data.get("link_prob_sending")
+    if link_prob_sending:       
+        if not (isinstance(link_prob_sending, float) and 0.0 <= link_prob_sending <= 1.0):
+            raise ValueError("link_prob_sending must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: link_prob_sending")
+
+
+    # LOCAL SESSION PARAMETERS
+
+    ls_size_epoch_range = data.get("ls_size_epoch_range")
+    if ls_size_epoch_range:
+        if (not isinstance(ls_size_epoch_range, list) or len(ls_size_epoch_range) != 2 or
+            not all(isinstance(n, int) for n in ls_size_epoch_range) or
+            ls_size_epoch_range[0] <= 0 or ls_size_epoch_range[1] < ls_size_epoch_range[0]):
+            raise ValueError("ls_size_epoch_range must be a list of two positive integers [min, max] with min <= max")
+    else:
+        raise ValueError("Missing parameter: ls_size_epoch_range")      
+
+    ls_size_ratchet_range = data.get("ls_size_ratchet_range")
+    if ls_size_ratchet_range:
+        if (not isinstance(ls_size_ratchet_range, list) or len(ls_size_ratchet_range) != 2 or
+            not all(isinstance(n, int) for n in ls_size_ratchet_range) or
+            ls_size_ratchet_range[0] <= 0 or ls_size_ratchet_range[1] < ls_size_ratchet_range[0]):
+            raise ValueError("ls_size_ratchet_range must be a list of two positive integers [min, max] with min <= max")
+    else:
+        raise ValueError("Missing parameter: ls_size_ratchet_range")
+
+    ls_prob_session_reset = data.get("ls_prob_session_reset")
+    if ls_prob_session_reset:
+        if not (isinstance(ls_prob_session_reset, float) and 0.0 <= ls_prob_session_reset <= 1.0):
+            raise ValueError("ls_prob_session_reset must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: ls_prob_session_reset")
+
+    ls_prob_ratchet_reset = data.get("ls_prob_ratchet_reset")
+    if ls_prob_ratchet_reset:
+        if not (isinstance(ls_prob_ratchet_reset, float) and 0.0 <= ls_prob_ratchet_reset <= 1.0):
+            raise ValueError("ls_prob_ratchet_reset must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: ls_prob_ratchet_reset")
+
+
+    ls_prob_none = data.get("ls_prob_none")
+    if ls_prob_none:
+        if not (isinstance(ls_prob_none, float) and 0.0 <= ls_prob_none <= 1.0):
+            raise ValueError("ls_prob_none must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: ls_prob_none")
+
+    ls_prob_compromised = data.get("ls_prob_compromised")
+    if ls_prob_compromised:
+        if not (isinstance(ls_prob_compromised, float) and 0.0 <= ls_prob_compromised <= 1.0):
+            raise ValueError("ls_prob_compromised must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: ls_prob_compromised")
+
+
+    # SESSION PATH PARAMETERS
+
+    sp_prob_run = data.get("sp_prob_run")
+    if sp_prob_run:
+        if not (isinstance(sp_prob_run, float) and 0.0 <= sp_prob_run <= 1.0):
+            raise ValueError("sp_prob_run must be a float between 0.0 and 1.0")
+    else:
+        raise ValueError("Missing parameter: sp_prob_run")
+
+
     network_params = {
         "protocol": protocol,
         "seed": seed,
@@ -247,17 +429,35 @@ def validate_data(data):
         "delete_rewired": delete_rewired,
         "initial_degree_range": initial_degree_range,
         "new_edges_prob": new_edges_prob,
-        "local_clustering_coeff": local_clustering_coeff,
         "clusters_number_range": clusters_number_range,
         "nodes_range_per_cluster": nodes_range_per_cluster,
         "inter_clusters_coeff": inter_clusters_coeff,
-        "central_nodes_range": central_nodes_range,
-        "central_nodes_min_degree": central_nodes_min_degree,
-        "edge_per_new_node": edge_per_new_node,
         "buffer_size_range": buffer_size_range,
-#        "central_nodes_buffer_size": central_nodes_buffer_size,
+        "node_prob_off_to_on": node_prob_off_to_on,
+        "node_prob_on_to_off": node_prob_on_to_off,
         "channel_bandwidth_range": channel_bandwidth_range,
-        "path_perc": path_perc
+        "path_perc": path_perc,
+        "channel_prob_working_to_error": channel_prob_working_to_error,
+        "channel_prob_error_to_working": channel_prob_error_to_working,
+        "channel_prob_failure_to_working": channel_prob_failure_to_working,
+        "if_prob_off_to_working": if_prob_off_to_working,
+        "if_prob_off_to_error": if_prob_off_to_error,
+        "if_prob_off_to_failure": if_prob_off_to_failure,
+        "if_prob_working_to_error": if_prob_working_to_error,
+        "if_prob_error_to_working": if_prob_error_to_working,
+        "if_prob_failure_to_working": if_prob_failure_to_working,
+        "link_prob_working_to_error": link_prob_working_to_error,
+        "link_prob_error_to_working": link_prob_error_to_working,
+        "link_prob_failure_to_working": link_prob_failure_to_working,
+        "link_prob_retry": link_prob_retry,
+        "link_prob_sending": link_prob_sending,
+        "ls_size_epoch_range": ls_size_epoch_range,
+        "ls_size_ratchet_range": ls_size_ratchet_range,
+        "ls_prob_session_reset": ls_prob_session_reset,
+        "ls_prob_ratchet_reset": ls_prob_ratchet_reset,
+        "ls_prob_none": ls_prob_none,
+        "ls_prob_compromised": ls_prob_compromised,
+        "sp_prob_run": sp_prob_run
     }
 
     return network_params

@@ -95,7 +95,7 @@ The highest is this probability, the lower is the local clustering coefficient
 - the probability of the inter-clusters connection
 
 
-### Nodes Buffer size
+### Nodes parameters
 
 - `buffer_size_range`: [min, max]
 - the dimension of the node message queue
@@ -103,15 +103,76 @@ The highest is this probability, the lower is the local clustering coefficient
 - `central_nodes_buffer_size`: [min, max]
 - Optional, the dimension of the node message queue for the central nodes
 
+- `node_prob_off_to_on`: [0.0-1.0]
 
-### Channel bandwidth
+- `node_prob_on_to_off`: [0.0-1.0]
+
+
+### Channel parameters
 
 - `channel_bandwidth_range`: [min, max]
 - the number of links that can use the channel
+
+- `channel_prob_working_to_error`: [0.0-1.0]
+
+- `channel_prob_error_to_working`: [0.0-1.0]
+
+- `channel_prob_failure_to_working`: [0.0-1.0]
 
 
 ### Path generation
 
 - `path_perc`: [0.0-1.0]
 - the percentage of the total possible paths
+
+
+### Interface parameters
+
+- `if_prob_off_to_working`: [0.0-1.0]
+
+- `if_prob_off_to_error`: [0.0-1.0]
+
+- `if_prob_off_to_failure`: [0.0-1.0]
+
+- `if_prob_working_to_error`: [0.0-1.0]
+
+- `if_prob_error_to_working`: [0.0-1.0]
+
+- `if_prob_failure_to_working`: [0.0-1.0]
+
+
+### Link parameters
+
+- `link_prob_working_to_error`: [0.0-1.0]
+
+- `link_prob_error_to_working`: [0.0-1.0]
+
+- `link_prob_failure_to_working`: [0.0-1.0]
+
+- `link_prob_retry`: [0.0-1.0]
+
+- `link_prob_sending`: [0.0-1.0]
+
+
+### Local Session parameters
+
+- `ls_size_epoch_range`: [min, max]
+
+- `ls_size_ratchet_range`: [min, max]
+
+- `ls_prob_session_reset`: [0.0-1.0]
+
+- `ls_prob_ratchet_reset`: [0.0-1.0]
+
+- `ls_prob_none`: [0.0-1.0]
+
+- `ls_prob_compromised`: [0.0-1.0]
+
+
+### Session Path parameters
+
+- `sp_prob_run`: [0.0-1.0]
+
+
+
 
