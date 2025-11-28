@@ -1,0 +1,12 @@
+{
+    "consts" : "netgen/consts.json",
+    "ranges" : "netgen/ranges.json",
+    "channel_template" : "templates/channel.pre",
+    "interface_template" : "templates/interface.pre",   
+    "link_ref_template" : "templates/link_ref.pre",
+    "link_template" : "templates/link.pre",
+    "local_session_template" : "templates/local_session.pre",
+    "node_template" : "templates/node.pre",
+    "session_checker_template" : "templates/session_checker.pre",
+    "session_path_template" : "templates/session_path.pre"
+}

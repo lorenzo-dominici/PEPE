@@ -1,12 +1,14 @@
 # This module generates the output elements according to the input data.
-import random
+from networkx.classes.function import neighbors
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import zipf
+import json
 
 class NetworkGenerator: 
     def __init__(self, params):
+        self.params = params
         self.protocol = params.get("protocol")
         self.seed = params.get("seed")
         self.node_number = params.get("node_number")
@@ -40,24 +42,6 @@ class NetworkGenerator:
         self.channel_bandwidth_range = params.get("channel_bandwidth_range")
         self.path_perc = params.get("path_perc")
 
-        self.link_prob_failure_to_working = params.get("link_prob_failure_to_working")
-        self.link_prob_retry = params.get("link_prob_retry")
-        self.link_prob_sending = params.get("link_prob_sending")
-        self.channel_prob_working_to_error = params.get("channel_prob_working_to_error")
-        self.channel_prob_error_to_working = params.get("channel_prob_error_to_working")
-        self.channel_prob_failure_to_working = params.get("channel_prob_failure_to_working")
-        self.if_prob_off_to_working = params.get("if_prob_off_to_working")
-        self.if_prob_off_to_error = params.get("if_prob_off_to_error")
-        self.if_prob_off_to_failure = params.get("if_prob_off_to_failure")
-        self.if_prob_working_to_error = params.get("if_prob_working_to_error")  
-        self.ls_size_epoch_range = params.get("ls_size_epoch_range")
-        self.ls_size_ratchet_range = params.get("ls_size_ratchet_range")
-        self.ls_prob_session_reset = params.get("ls_prob_session_reset")
-        self.ls_prob_ratchet_reset = params.get("ls_prob_ratchet_reset")
-        self.ls_prob_none = params.get("ls_prob_none")
-        self.ls_prob_compromised = params.get("ls_prob_compromised")
-        self.sp_prob_run = params.get("sp_prob_run")
-
 
         if self.seed == None:
             self.seed = 42 # default seed
@@ -77,7 +61,7 @@ class NetworkGenerator:
     def generate_network(self):
         self._generate_topology()
 
-        self._handle_central_nodes()
+        self._generate_paths()
 
         self._assign_attributes()
 
@@ -461,20 +445,27 @@ class NetworkGenerator:
 
     
     def _assign_attributes(self):
-        # Logic to assign attributes like buffer sizes and channel bandwidths and paths
-        self._generate_paths()
-
-        buffer_size = self.rng.integers(self.buffer_size_range[0], self.buffer_size_range[1])
-        self.attributes["buffer_size"] = buffer_size
-
-        channel_bandwidth = self.rng.integers(self.channel_bandwidth_range[0], self.channel_bandwidth_range[1])
-        self.attributes["channel_bandwidth"] = channel_bandwidth
-
+        # Logic to assign attributes like buffer sizes and channel bandwidths and all the probabilities
+        
+        attributes_to_add = [
+            "buffer_size_range", "node_prob_off_to_on", "node_prob_on_to_off",
+            "channel_bandwidth_range", 
+            "channel_prob_working_to_error", "channel_prob_error_to_working", "channel_prob_failure_to_working",
+            "if_prob_off_to_working", "if_prob_off_to_error", "if_prob_off_to_failure",
+            "if_prob_working_to_error", "if_prob_error_to_working", "if_prob_failure_to_working",
+            "link_prob_working_to_error", "link_prob_error_to_working", "link_prob_failure_to_working",
+            "link_prob_retry", "link_prob_sending",
+            "ls_prob_session_reset", "ls_prob_ratchet_reset", "ls_prob_none", "ls_prob_compromised",
+            "sp_prob_run"
+        ]
+        
+        for attr_name in attributes_to_add:
+            self.attributes[attr_name] = self.params[attr_name]
+        
         for attr in self.attributes:
             print(f"{attr}: {self.attributes[attr]}")
 
         
-
     def _generate_paths(self):
         nodes = list(self.G.nodes())
         #if the protocol is hpke or double ratchet, we need only one-to-one paths
@@ -525,13 +516,64 @@ class NetworkGenerator:
                     paths_to_add.append(return_path)
                 one_to_one_paths[tuple(group)] = paths_to_add
             self.attributes["one_to_one_return_paths"] = one_to_one_paths
-            # for group, paths in one_to_one_paths.items():
-            #     print(f"Group: {group}")
-            #     for path in paths:
-            #         print(f"  Return Path: {path}")
-            # print("\n")     
 
 
     def _generate_json(self):
         # Logic to convert the network structure into JSON format
-        pass
+        # first add the constants from the consts.json file
+
+        with open("config/netgen_files.json", "r") as f:
+            files_config = json.load(f)
+
+        with open(files_config.get("consts"), "r") as f:
+            consts = json.load(f)
+        with open(files_config.get("ranges"), "r") as f:
+            ranges = json.load(f)
+        
+        network_dict = {}
+
+        network_dict["consts"] = consts
+        network_dict["items"] = []
+
+        # add nodes
+        nodes_dict = {}
+        nodes_dict["name"] = "node_modules"
+        nodes_dict["template"] = files_config.get("node_template")
+        nodes_dict["instances"] = []
+        range = ranges.get("node_range_state")
+        nodes = list(self.G.nodes())
+        for node in nodes:
+            node_to_add = {}
+            node_to_add["name"] = f"node_{node}"
+            node_to_add["#"] = node
+            node_to_add["range_state"] = range
+            if self.attributes.get("buffer_size_range")[0] == self.attributes.get("buffer_size_range")[1]:
+                size_buffer = self.attributes.get("buffer_size_range")[0]
+            else:
+                size_buffer = self.rng.integers(self.attributes.get("buffer_size_range")[0], self.attributes.get("buffer_size_range")[1] + 1)
+            node_to_add["size_buffer"] = size_buffer    
+            node_to_add["init_buffer"] = 0
+            if self.attributes.get("node_prob_off_to_on")[0] == self.attributes.get("node_prob_off_to_on")[1]:
+                prob_off_to_on = self.attributes.get("node_prob_off_to_on")[0]
+            else:
+                prob_off_to_on = self.rng.uniform(self.attributes.get("node_prob_off_to_on")[0], self.attributes.get("node_prob_off_to_on")[1])
+            node_to_add["prob_off_to_on"] = prob_off_to_on
+            if self.attributes.get("node_prob_on_to_off")[0] == self.attributes.get("node_prob_on_to_off")[1]:
+                prob_on_to_off = self.attributes.get("node_prob_on_to_off")[0]
+            else:
+                prob_on_to_off = self.rng.uniform(self.attributes.get("node_prob_on_to_off")[0], self.attributes.get("node_prob_on_to_off")[1])
+            node_to_add["prob_on_to_off"] = prob_on_to_off
+
+            neighbors = list(self.G.neighbors(node))
+            node_to_add["interfaces"] = []
+            for neighbor in neighbors:
+                interface = {"#": f"interface_{node}_{neighbor}"}
+                node_to_add["interfaces"].append(interface)
+            nodes_dict["instances"].append(node_to_add)
+        network_dict["items"].append(nodes_dict)
+
+        print(network_dict)
+            
+
+
+
