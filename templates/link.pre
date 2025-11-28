@@ -6,13 +6,13 @@ module link_{{#}}
     link_receiving_{{#}}: bool init {{init_receiving}};
 
     [{{cmd_working_to_error}}] link_state_{{#}} = {{const_working}} -> (1 - {{prob_working_to_error}}) : link_state_{{#}}' = link_state_{{#}}
-                                                                     + {{prob_to_error}} : link_state_{{#}}' = {{const_error}};
+                                                                     + {{prob_working_to_error}} : link_state_{{#}}' = {{const_error}};
 
     [{{cmd_error_to_working}}] link_state_{{#}} = {{const_error}} -> (1 - {{prob_error_to_working}}) : link_state_{{#}}' = link_state_{{#}}
-                                                                   + {{prob_is_detected}} : link_state_{{#}}' = {{const_failure}};
+                                                                   + {{prob_error_to_working}} : link_state_{{#}}' = {{const_working}};
 
     [{{cmd_failure_to_working}}] link_state_{{#}} = {{const_failure}} -> (1 - {{prob_failure_to_working}}) : link_state_{{#}}' = link_state_{{#}}
-                                                                       + {{prob_is_repaired}} : link_state_{{#}}' = {{const_working}};
+                                                                       + {{prob_failure_to_working}} : link_state_{{#}}' = {{const_working}};
 
     [{{cmd_send_failure}}] (link_prev_{{#}} = true) & (
         (link_state_{{#}} != {{const_working}}) |

@@ -7,7 +7,7 @@ module channel_{{#}}
                                                                      + {{prob_working_to_error}} : channel_state_{{#}}' = {{const_error}};
 
     [{{cmd_error_to_working}}] channel_state_{{#}} = {{const_error}} -> (1 - {{prob_error_to_working}}) : channel_state_{{#}}' = channel_state_{{#}}
-                                                                   + {{prob_error_to_working}} : channel_state_{{#}}' = {{const_failure}};
+                                                                   + {{prob_error_to_working}} : channel_state_{{#}}' = {{const_working}};
 
     [{{cmd_failure_to_working}}] channel_state_{{#}} = {{const_failure}} -> (1 - {{prob_failure_to_working}}) : channel_state_{{#}}' = channel_state_{{#}}
                                                                        + {{prob_failure_to_working}} : channel_state_{{#}}' = {{const_working}};
