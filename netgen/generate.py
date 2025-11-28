@@ -40,6 +40,25 @@ class NetworkGenerator:
         self.channel_bandwidth_range = params.get("channel_bandwidth_range")
         self.path_perc = params.get("path_perc")
 
+        self.link_prob_failure_to_working = params.get("link_prob_failure_to_working")
+        self.link_prob_retry = params.get("link_prob_retry")
+        self.link_prob_sending = params.get("link_prob_sending")
+        self.channel_prob_working_to_error = params.get("channel_prob_working_to_error")
+        self.channel_prob_error_to_working = params.get("channel_prob_error_to_working")
+        self.channel_prob_failure_to_working = params.get("channel_prob_failure_to_working")
+        self.if_prob_off_to_working = params.get("if_prob_off_to_working")
+        self.if_prob_off_to_error = params.get("if_prob_off_to_error")
+        self.if_prob_off_to_failure = params.get("if_prob_off_to_failure")
+        self.if_prob_working_to_error = params.get("if_prob_working_to_error")  
+        self.ls_size_epoch_range = params.get("ls_size_epoch_range")
+        self.ls_size_ratchet_range = params.get("ls_size_ratchet_range")
+        self.ls_prob_session_reset = params.get("ls_prob_session_reset")
+        self.ls_prob_ratchet_reset = params.get("ls_prob_ratchet_reset")
+        self.ls_prob_none = params.get("ls_prob_none")
+        self.ls_prob_compromised = params.get("ls_prob_compromised")
+        self.sp_prob_run = params.get("sp_prob_run")
+
+
         if self.seed == None:
             self.seed = 42 # default seed
         self.rng = np.random.default_rng(seed = self.seed)
@@ -451,6 +470,9 @@ class NetworkGenerator:
         channel_bandwidth = self.rng.integers(self.channel_bandwidth_range[0], self.channel_bandwidth_range[1])
         self.attributes["channel_bandwidth"] = channel_bandwidth
 
+        for attr in self.attributes:
+            print(f"{attr}: {self.attributes[attr]}")
+
         
 
     def _generate_paths(self):
@@ -471,17 +493,43 @@ class NetworkGenerator:
 
         # for sender key, we need one-to-many paths and all the one-to-one return paths to the sender
         else:
+            # random generation of one-to-many paths
             one_to_many_paths = {}
             for i in range(len(nodes)):
                 path = []
+                group = []
                 a = nodes[i]
+                group.append(a)
                 for j in range(len(nodes)):
                     if i != j and self.rng.random() < self.path_perc:
                         b = nodes[j]
                         path_to_add = nx.shortest_path(self.G, a, b)
                         path.append(path_to_add)
-                one_to_many_paths[a] = path
-            self.attributes["paths"] = one_to_many_paths
+                        group.append(b)
+                one_to_many_paths[tuple(group)] = path
+            self.attributes["one_to_many_paths"] = one_to_many_paths
+            # for group, paths in one_to_many_paths.items():
+            #     print(f"Group: {group}")
+            #     for path in paths:
+            #         print(f"  Path: {path}")
+            # print("\n")
+
+            # generation of all the one-to-one return paths to the sender
+            one_to_one_paths = {}
+            for group, paths in one_to_many_paths.items():
+                sender = group[0]
+                paths_to_add = []
+                for path in paths:
+                    receiver = path[-1]
+                    return_path = nx.shortest_path(self.G, receiver, sender)
+                    paths_to_add.append(return_path)
+                one_to_one_paths[tuple(group)] = paths_to_add
+            self.attributes["one_to_one_return_paths"] = one_to_one_paths
+            # for group, paths in one_to_one_paths.items():
+            #     print(f"Group: {group}")
+            #     for path in paths:
+            #         print(f"  Return Path: {path}")
+            # print("\n")     
 
 
     def _generate_json(self):
