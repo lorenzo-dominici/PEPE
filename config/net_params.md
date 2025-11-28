@@ -103,9 +103,9 @@ The highest is this probability, the lower is the local clustering coefficient
 - `central_nodes_buffer_size`: [min, max]
 - Optional, the dimension of the node message queue for the central nodes
 
-- `node_prob_off_to_on`: [0.0-1.0]
+- `node_prob_off_to_on`: [min, max] where min, max are floats in [0.0, 1.0]
 
-- `node_prob_on_to_off`: [0.0-1.0]
+- `node_prob_on_to_off`: [min, max] where min, max are floats in [0.0, 1.0]
 
 
 ### Channel parameters
@@ -113,11 +113,11 @@ The highest is this probability, the lower is the local clustering coefficient
 - `channel_bandwidth_range`: [min, max]
 - the number of links that can use the channel
 
-- `channel_prob_working_to_error`: [0.0-1.0]
+- `channel_prob_working_to_error`: [min, max] where min, max are floats in [0.0, 1.0]
 
-- `channel_prob_error_to_working`: [0.0-1.0]
+- `channel_prob_error_to_working`: [min, max] where min, max are floats in [0.0, 1.0]
 
-- `channel_prob_failure_to_working`: [0.0-1.0]
+- `channel_prob_failure_to_working`: [min, max] where min, max are floats in [0.0, 1.0]
 
 
 ### Path generation
@@ -128,30 +128,30 @@ The highest is this probability, the lower is the local clustering coefficient
 
 ### Interface parameters
 
-- `if_prob_off_to_working`: [0.0-1.0]
+- `if_prob_off_to_working`: [min, max] where min, max are floats in [0.0, 1.0]
 
-- `if_prob_off_to_error`: [0.0-1.0]
+- `if_prob_off_to_error`: [min, max] where min, max are floats in [0.0, 1.0]
 
-- `if_prob_off_to_failure`: [0.0-1.0]
+- `if_prob_off_to_failure`: [min, max] where min, max are floats in [0.0, 1.0]
 
-- `if_prob_working_to_error`: [0.0-1.0]
+- `if_prob_working_to_error`: [min, max] where min, max are floats in [0.0, 1.0]
 
-- `if_prob_error_to_working`: [0.0-1.0]
+- `if_prob_error_to_working`: [min, max] where min, max are floats in [0.0, 1.0]
 
-- `if_prob_failure_to_working`: [0.0-1.0]
+- `if_prob_failure_to_working`: [min, max] where min, max are floats in [0.0, 1.0]
 
 
 ### Link parameters
 
-- `link_prob_working_to_error`: [0.0-1.0]
+- `link_prob_working_to_error`: [min, max] where min, max are floats in [0.0, 1.0]
 
-- `link_prob_error_to_working`: [0.0-1.0]
+- `link_prob_error_to_working`: [min, max] where min, max are floats in [0.0, 1.0]
 
-- `link_prob_failure_to_working`: [0.0-1.0]
+- `link_prob_failure_to_working`: [min, max] where min, max are floats in [0.0, 1.0]
 
-- `link_prob_retry`: [0.0-1.0]
+- `link_prob_retry`: [min, max] where min, max are floats in [0.0, 1.0]
 
-- `link_prob_sending`: [0.0-1.0]
+- `link_prob_sending`: [min, max] where min, max are floats in [0.0, 1.0]
 
 
 ### Local Session parameters
@@ -160,18 +160,18 @@ The highest is this probability, the lower is the local clustering coefficient
 
 - `ls_size_ratchet_range`: [min, max]
 
-- `ls_prob_session_reset`: [0.0-1.0]
+- `ls_prob_session_reset`: [min, max] where min, max are floats in [0.0, 1.0]
 
-- `ls_prob_ratchet_reset`: [0.0-1.0]
+- `ls_prob_ratchet_reset`: [min, max] where min, max are floats in [0.0, 1.0]
 
-- `ls_prob_none`: [0.0-1.0]
+- `ls_prob_none`: [min, max] where min, max are floats in [0.0, 1.0]
 
-- `ls_prob_compromised`: [0.0-1.0]
+- `ls_prob_compromised`: [min, max] where min, max are floats in [0.0, 1.0]
 
 
 ### Session Path parameters
 
-- `sp_prob_run`: [0.0-1.0]
+- `sp_prob_run`: [min, max] where min, max are floats in [0.0, 1.0]
 
 
 

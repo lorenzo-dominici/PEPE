@@ -22,10 +22,6 @@ def validate_data(data):
     else:
         raise ValueError("protocol parameter must be setted")
     
-    
-    
-    
-    
     seed = data.get("seed")
     if seed:
         if not isinstance(seed, int):
@@ -148,45 +144,26 @@ def validate_data(data):
             if rewiring_prob + new_edges_prob >= 1.0:
                 raise ValueError("the sum of rewiring_prob and new_edges_prob must be lower than 1")
 
-
     # CLUSTERING PARAMETERS
-        
-    # local_clustering_coeff = data.get("local_clustering_coeff") 
-    # if local_clustering_coeff:
-    #     if not (isinstance(local_clustering_coeff, float) and 0.0 <= local_clustering_coeff <= 1.0):
-    #         raise ValueError("local_clustering_coeff must be a float between 0.0 and 1.0")
-        
+
     clusters_number_range = data.get("clusters_number_range")
     if clusters_number_range:
         if (not isinstance(clusters_number_range, list) or len(clusters_number_range) != 2 or
             not all(isinstance(n, int) for n in clusters_number_range) or
             clusters_number_range[0] <= 0 or clusters_number_range[1] < clusters_number_range[0]):
             raise ValueError("clusters_number_range must be a list of two positive integers [min, max] with min <= max")
-        if clusters_number_range[0] > node_range[0]:
-            raise ValueError("min number of clusters must be non higher than the min number of nodes")
-        
+    
     nodes_range_per_cluster = data.get("nodes_range_per_cluster")
     if nodes_range_per_cluster:
         if (not isinstance(nodes_range_per_cluster, list) or len(nodes_range_per_cluster) != 2 or
             not all(isinstance(n, int) for n in nodes_range_per_cluster) or
             nodes_range_per_cluster[0] <= 0 or nodes_range_per_cluster[1] < nodes_range_per_cluster[0]):
             raise ValueError("nodes_range_per_cluster must be a list of two positive integers [min, max] with min <= max")
-        if nodes_range_per_cluster[1] > node_number:
-            raise ValueError("The maximum of nodes_range_per_cluster cannot exceed the total number of nodes")
-        
+    
     inter_clusters_coeff = data.get("inter_clusters_coeff")
     if inter_clusters_coeff:
         if not (isinstance(inter_clusters_coeff, float) and 0.0 <= inter_clusters_coeff <= 1.0):
             raise ValueError("inter_clusters_coeff must be a float between 0.0 and 1.0")
-    
-    # central_nodes_range = data.get("central_nodes_range")
-    # if central_nodes_range:
-    #     if (not isinstance(central_nodes_range, list) or len(central_nodes_range) != 2 or
-    #         not all(isinstance(n, int) for n in central_nodes_range) or
-    #         central_nodes_range[0] <= 0 or central_nodes_range[1] < central_nodes_range[0]):
-    #         raise ValueError("central_nodes_range must be a list of two positive integers [min, max] with min <= max")
-    #     if central_nodes_range[1] > node_number:
-    #         raise ValueError("The maximum of central_nodes_range cannot exceed the total number of nodes")
         
     # central_nodes_min_degree = data.get("central_nodes_min_degree")
     # if central_nodes_min_degree:
@@ -209,15 +186,21 @@ def validate_data(data):
 
     node_prob_off_to_on = data.get("node_prob_off_to_on")
     if node_prob_off_to_on:
-        if not (isinstance(node_prob_off_to_on, float) and 0.0 <= node_prob_off_to_on <= 1.0):
-            raise ValueError("node_prob_off_to_on must be a float between 0.0 and 1.0")
+        if (not isinstance(node_prob_off_to_on, list) or len(node_prob_off_to_on) != 2 or
+            not all(isinstance(p, float) for p in node_prob_off_to_on) or
+            not all(0.0 <= p <= 1.0 for p in node_prob_off_to_on) or
+            node_prob_off_to_on[0] > node_prob_off_to_on[1]):
+            raise ValueError("node_prob_off_to_on must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: node_prob_off_to_on")
 
     node_prob_on_to_off = data.get("node_prob_on_to_off")
     if node_prob_on_to_off:
-        if not (isinstance(node_prob_on_to_off, float) and 0.0 <= node_prob_on_to_off <= 1.0):
-            raise ValueError("node_prob_on_to_off must be a float between 0.0 and 1.0")
+        if (not isinstance(node_prob_on_to_off, list) or len(node_prob_on_to_off) != 2 or
+            not all(isinstance(p, float) for p in node_prob_on_to_off) or
+            not all(0.0 <= p <= 1.0 for p in node_prob_on_to_off) or
+            node_prob_on_to_off[0] > node_prob_on_to_off[1]):
+            raise ValueError("node_prob_on_to_off must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: node_prob_on_to_off")
     
@@ -249,22 +232,31 @@ def validate_data(data):
 
     channel_prob_working_to_error = data.get("channel_prob_working_to_error")
     if channel_prob_working_to_error:
-        if not (isinstance(channel_prob_working_to_error, float) and 0.0 <= channel_prob_working_to_error <= 1.0):
-            raise ValueError("channel_prob_working_to_error must be a float between 0.0 and 1.0")
+        if (not isinstance(channel_prob_working_to_error, list) or len(channel_prob_working_to_error) != 2 or
+            not all(isinstance(p, float) for p in channel_prob_working_to_error) or
+            not all(0.0 <= p <= 1.0 for p in channel_prob_working_to_error) or
+            channel_prob_working_to_error[0] > channel_prob_working_to_error[1]):
+            raise ValueError("channel_prob_working_to_error must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: channel_prob_working_to_error")
 
     channel_prob_error_to_working = data.get("channel_prob_error_to_working")
     if channel_prob_error_to_working:
-        if not (isinstance(channel_prob_error_to_working, float) and 0.0 <= channel_prob_error_to_working <= 1.0):
-            raise ValueError("channel_prob_error_to_working must be a float between 0.0 and 1.0")
+        if (not isinstance(channel_prob_error_to_working, list) or len(channel_prob_error_to_working) != 2 or
+            not all(isinstance(p, float) for p in channel_prob_error_to_working) or
+            not all(0.0 <= p <= 1.0 for p in channel_prob_error_to_working) or
+            channel_prob_error_to_working[0] > channel_prob_error_to_working[1]):
+            raise ValueError("channel_prob_error_to_working must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: channel_prob_error_to_working")
 
     channel_prob_failure_to_working = data.get("channel_prob_failure_to_working")
     if channel_prob_failure_to_working:
-        if not (isinstance(channel_prob_failure_to_working, float) and 0.0 <= channel_prob_failure_to_working <= 1.0):
-            raise ValueError("channel_prob_failure_to_working must be a float between 0.0 and 1.0")
+        if (not isinstance(channel_prob_failure_to_working, list) or len(channel_prob_failure_to_working) != 2 or
+            not all(isinstance(p, float) for p in channel_prob_failure_to_working) or
+            not all(0.0 <= p <= 1.0 for p in channel_prob_failure_to_working) or
+            channel_prob_failure_to_working[0] > channel_prob_failure_to_working[1]):
+            raise ValueError("channel_prob_failure_to_working must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: channel_prob_failure_to_working")
 
@@ -273,84 +265,125 @@ def validate_data(data):
 
     if_prob_off_to_working = data.get("if_prob_off_to_working")
     if if_prob_off_to_working:
-        if not (isinstance(if_prob_off_to_working, float) and 0.0 <= if_prob_off_to_working <= 1.0):
-            raise ValueError("if_prob_off_to_working must be a float between 0.0 and 1.0")
+        if (not isinstance(if_prob_off_to_working, list) or len(if_prob_off_to_working) != 2 or
+            not all(isinstance(p, float) for p in if_prob_off_to_working) or
+            not all(0.0 <= p <= 1.0 for p in if_prob_off_to_working) or
+            if_prob_off_to_working[0] > if_prob_off_to_working[1]):
+            raise ValueError("if_prob_off_to_working must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: if_prob_off_to_working")
 
     if_prob_off_to_error = data.get("if_prob_off_to_error")
     if if_prob_off_to_error:
-        if not (isinstance(if_prob_off_to_error, float) and 0.0 <= if_prob_off_to_error <= 1.0):
-            raise ValueError("if_prob_off_to_error must be a float between 0.0 and 1.0")
+        if (not isinstance(if_prob_off_to_error, list) or len(if_prob_off_to_error) != 2 or
+            not all(isinstance(p, float) for p in if_prob_off_to_error) or
+            not all(0.0 <= p <= 1.0 for p in if_prob_off_to_error) or
+            if_prob_off_to_error[0] > if_prob_off_to_error[1]):
+            raise ValueError("if_prob_off_to_error must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: if_prob_off_to_error")
 
     if_prob_off_to_failure = data.get("if_prob_off_to_failure")
     if if_prob_off_to_failure:
-        if not (isinstance(if_prob_off_to_failure, float) and 0.0 <= if_prob_off_to_failure <= 1.0):
-            raise ValueError("if_prob_off_to_failure must be a float between 0.0 and 1.0")
+        if (not isinstance(if_prob_off_to_failure, list) or len(if_prob_off_to_failure) != 2 or
+            not all(isinstance(p, float) for p in if_prob_off_to_failure) or
+            not all(0.0 <= p <= 1.0 for p in if_prob_off_to_failure) or
+            if_prob_off_to_failure[0] > if_prob_off_to_failure[1]):
+            raise ValueError("if_prob_off_to_failure must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: if_prob_off_to_failure")
 
-    if if_prob_off_to_working + if_prob_off_to_error + if_prob_off_to_failure >= 1.0:
-        raise ValueError("the sum of if_prob_off_to_working, if_prob_off_to_error and if_prob_off_to_failure must be lower than 1")
 
     if_prob_working_to_error = data.get("if_prob_working_to_error")
     if if_prob_working_to_error:
-        if not (isinstance(if_prob_working_to_error, float) and 0.0 <= if_prob_working_to_error <= 1.0):
-            raise ValueError("if_prob_working_to_error must be a float between 0.0 and 1.0")
+        if (not isinstance(if_prob_working_to_error, list) or len(if_prob_working_to_error) != 2 or
+            not all(isinstance(p, float) for p in if_prob_working_to_error) or
+            not all(0.0 <= p <= 1.0 for p in if_prob_working_to_error) or
+            if_prob_working_to_error[0] > if_prob_working_to_error[1]):
+            raise ValueError("if_prob_working_to_error must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: if_prob_working_to_error")
 
     if_prob_error_to_working = data.get("if_prob_error_to_working")
     if if_prob_error_to_working:
-        if not (isinstance(if_prob_error_to_working, float) and 0.0 <= if_prob_error_to_working <= 1.0):
-            raise ValueError("if_prob_error_to_working must be a float between 0.0 and 1.0")
+        if (not isinstance(if_prob_error_to_working, list) or len(if_prob_error_to_working) != 2 or
+            not all(isinstance(p, float) for p in if_prob_error_to_working) or
+            not all(0.0 <= p <= 1.0 for p in if_prob_error_to_working) or
+            if_prob_error_to_working[0] > if_prob_error_to_working[1]):
+            raise ValueError("if_prob_error_to_working must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: if_prob_error_to_working")
 
     if_prob_failure_to_working = data.get("if_prob_failure_to_working")
     if if_prob_failure_to_working:
-        if not (isinstance(if_prob_failure_to_working, float) and 0.0 <= if_prob_failure_to_working <= 1.0):
-            raise ValueError("if_prob_failure_to_working must be a float between 0.0 and 1.0")
+        if (not isinstance(if_prob_failure_to_working, list) or len(if_prob_failure_to_working) != 2 or
+            not all(isinstance(p, float) for p in if_prob_failure_to_working) or
+            not all(0.0 <= p <= 1.0 for p in if_prob_failure_to_working) or
+            if_prob_failure_to_working[0] > if_prob_failure_to_working[1]):
+            raise ValueError("if_prob_failure_to_working must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: if_prob_failure_to_working")
+
+    # Controllo che la somma delle probabilità interface sia matematicamente valida
+    min_sum = if_prob_off_to_working[0] + if_prob_off_to_error[0] + if_prob_off_to_failure[0]
+    max_sum = if_prob_off_to_working[1] + if_prob_off_to_error[1] + if_prob_off_to_failure[1]
+    
+    if min_sum >= 1.0:
+        raise ValueError("the sum of minimum values of if_prob_off_to_working, if_prob_off_to_error and if_prob_off_to_failure must be lower than 1.0")
+    
+    if max_sum >= 1.0:
+        raise ValueError("the sum of maximum values of if_prob_off_to_working, if_prob_off_to_error and if_prob_off_to_failure must be lower than 1.0")
 
 
     # LINK PARAMETERS
 
     link_prob_working_to_error = data.get("link_prob_working_to_error")
     if link_prob_working_to_error:
-        if not (isinstance(link_prob_working_to_error, float) and 0.0 <= link_prob_working_to_error <= 1.0):
-            raise ValueError("link_prob_working_to_error must be a float between 0.0 and 1.0")
+        if (not isinstance(link_prob_working_to_error, list) or len(link_prob_working_to_error) != 2 or
+            not all(isinstance(p, float) for p in link_prob_working_to_error) or
+            not all(0.0 <= p <= 1.0 for p in link_prob_working_to_error) or
+            link_prob_working_to_error[0] > link_prob_working_to_error[1]):
+            raise ValueError("link_prob_working_to_error must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: link_prob_working_to_error")
 
     link_prob_error_to_working = data.get("link_prob_error_to_working")
     if link_prob_error_to_working:
-        if not (isinstance(link_prob_error_to_working, float) and 0.0 <= link_prob_error_to_working <= 1.0):
-            raise ValueError("link_prob_error_to_working must be a float between 0.0 and 1.0")
+        if (not isinstance(link_prob_error_to_working, list) or len(link_prob_error_to_working) != 2 or
+            not all(isinstance(p, float) for p in link_prob_error_to_working) or
+            not all(0.0 <= p <= 1.0 for p in link_prob_error_to_working) or
+            link_prob_error_to_working[0] > link_prob_error_to_working[1]):
+            raise ValueError("link_prob_error_to_working must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: link_prob_error_to_working")
 
     link_prob_failure_to_working = data.get("link_prob_failure_to_working")
     if link_prob_failure_to_working:
-        if not (isinstance(link_prob_failure_to_working, float) and 0.0 <= link_prob_failure_to_working <= 1.0):
-            raise ValueError("link_prob_failure_to_working must be a float between 0.0 and 1.0")
+        if (not isinstance(link_prob_failure_to_working, list) or len(link_prob_failure_to_working) != 2 or
+            not all(isinstance(p, float) for p in link_prob_failure_to_working) or
+            not all(0.0 <= p <= 1.0 for p in link_prob_failure_to_working) or
+            link_prob_failure_to_working[0] > link_prob_failure_to_working[1]):
+            raise ValueError("link_prob_failure_to_working must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: link_prob_failure_to_working")
 
     link_prob_retry = data.get("link_prob_retry")
     if link_prob_retry:
-        if not (isinstance(link_prob_retry, float) and 0.0 <= link_prob_retry <= 1.0):
-            raise ValueError("link_prob_retry must be a float between 0.0 and 1.0")
+        if (not isinstance(link_prob_retry, list) or len(link_prob_retry) != 2 or
+            not all(isinstance(p, float) for p in link_prob_retry) or
+            not all(0.0 <= p <= 1.0 for p in link_prob_retry) or
+            link_prob_retry[0] > link_prob_retry[1]):
+            raise ValueError("link_prob_retry must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: link_prob_retry")
 
     link_prob_sending = data.get("link_prob_sending")
     if link_prob_sending:       
-        if not (isinstance(link_prob_sending, float) and 0.0 <= link_prob_sending <= 1.0):
-            raise ValueError("link_prob_sending must be a float between 0.0 and 1.0")
+        if (not isinstance(link_prob_sending, list) or len(link_prob_sending) != 2 or
+            not all(isinstance(p, float) for p in link_prob_sending) or
+            not all(0.0 <= p <= 1.0 for p in link_prob_sending) or
+            link_prob_sending[0] > link_prob_sending[1]):
+            raise ValueError("link_prob_sending must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: link_prob_sending")
 
@@ -377,30 +410,42 @@ def validate_data(data):
 
     ls_prob_session_reset = data.get("ls_prob_session_reset")
     if ls_prob_session_reset:
-        if not (isinstance(ls_prob_session_reset, float) and 0.0 <= ls_prob_session_reset <= 1.0):
-            raise ValueError("ls_prob_session_reset must be a float between 0.0 and 1.0")
+        if (not isinstance(ls_prob_session_reset, list) or len(ls_prob_session_reset) != 2 or
+            not all(isinstance(p, float) for p in ls_prob_session_reset) or
+            not all(0.0 <= p <= 1.0 for p in ls_prob_session_reset) or
+            ls_prob_session_reset[0] > ls_prob_session_reset[1]):
+            raise ValueError("ls_prob_session_reset must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: ls_prob_session_reset")
 
     ls_prob_ratchet_reset = data.get("ls_prob_ratchet_reset")
     if ls_prob_ratchet_reset:
-        if not (isinstance(ls_prob_ratchet_reset, float) and 0.0 <= ls_prob_ratchet_reset <= 1.0):
-            raise ValueError("ls_prob_ratchet_reset must be a float between 0.0 and 1.0")
+        if (not isinstance(ls_prob_ratchet_reset, list) or len(ls_prob_ratchet_reset) != 2 or
+            not all(isinstance(p, float) for p in ls_prob_ratchet_reset) or
+            not all(0.0 <= p <= 1.0 for p in ls_prob_ratchet_reset) or
+            ls_prob_ratchet_reset[0] > ls_prob_ratchet_reset[1]):
+            raise ValueError("ls_prob_ratchet_reset must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: ls_prob_ratchet_reset")
 
 
     ls_prob_none = data.get("ls_prob_none")
     if ls_prob_none:
-        if not (isinstance(ls_prob_none, float) and 0.0 <= ls_prob_none <= 1.0):
-            raise ValueError("ls_prob_none must be a float between 0.0 and 1.0")
+        if (not isinstance(ls_prob_none, list) or len(ls_prob_none) != 2 or
+            not all(isinstance(p, float) for p in ls_prob_none) or
+            not all(0.0 <= p <= 1.0 for p in ls_prob_none) or
+            ls_prob_none[0] > ls_prob_none[1]):
+            raise ValueError("ls_prob_none must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: ls_prob_none")
 
     ls_prob_compromised = data.get("ls_prob_compromised")
     if ls_prob_compromised:
-        if not (isinstance(ls_prob_compromised, float) and 0.0 <= ls_prob_compromised <= 1.0):
-            raise ValueError("ls_prob_compromised must be a float between 0.0 and 1.0")
+        if (not isinstance(ls_prob_compromised, list) or len(ls_prob_compromised) != 2 or
+            not all(isinstance(p, float) for p in ls_prob_compromised) or
+            not all(0.0 <= p <= 1.0 for p in ls_prob_compromised) or
+            ls_prob_compromised[0] > ls_prob_compromised[1]):
+            raise ValueError("ls_prob_compromised must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: ls_prob_compromised")
 
@@ -409,8 +454,11 @@ def validate_data(data):
 
     sp_prob_run = data.get("sp_prob_run")
     if sp_prob_run:
-        if not (isinstance(sp_prob_run, float) and 0.0 <= sp_prob_run <= 1.0):
-            raise ValueError("sp_prob_run must be a float between 0.0 and 1.0")
+        if (not isinstance(sp_prob_run, list) or len(sp_prob_run) != 2 or
+            not all(isinstance(p, float) for p in sp_prob_run) or
+            not all(0.0 <= p <= 1.0 for p in sp_prob_run) or
+            sp_prob_run[0] > sp_prob_run[1]):
+            raise ValueError("sp_prob_run must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: sp_prob_run")
 
@@ -461,4 +509,3 @@ def validate_data(data):
     }
 
     return network_params
-
