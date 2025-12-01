@@ -4,8 +4,8 @@ module link_ref_{{#}}
 
     [{{cmd_reset}}] (link_ref_counter_{{#}} = 0) &
                     (node_buffer_{{ref_node}} > 0) -> (link_ref_counter_{{#}}' = {{init_buffer}})
-                                                           & (node_buffer_{{ref_node}}' = ({{is_receiver}} = true
-                                                                                          ? node_buffer_{{ref_node}}
-                                                                                          : node_buffer_{{ref_node}} - 1));
+                                                    & (node_buffer_{{ref_node}}' = ({{is_receiver}} = true
+                                                                                   ? node_buffer_{{ref_node}}
+                                                                                   : node_buffer_{{ref_node}} - 1));
 
 endmodule
