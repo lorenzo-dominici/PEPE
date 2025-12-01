@@ -461,9 +461,6 @@ class NetworkGenerator:
         
         for attr_name in attributes_to_add:
             self.attributes[attr_name] = self.params[attr_name]
-        
-        for attr in self.attributes:
-            print(f"{attr}: {self.attributes[attr]}")
 
         
     def _generate_paths(self):
@@ -521,14 +518,12 @@ class NetworkGenerator:
     def _generate_json(self):
         # Logic to convert the network structure into JSON format
         # first add the constants from the consts.json file
-
         with open("config/netgen_files.json", "r") as f:
             files_config = json.load(f)
 
         with open(files_config.get("consts"), "r") as f:
             consts = json.load(f)
-        with open(files_config.get("ranges"), "r") as f:
-            ranges = json.load(f)
+       
         
         network_dict = {}
 
@@ -536,44 +531,226 @@ class NetworkGenerator:
         network_dict["items"] = []
 
         # add nodes
+        nodes_dict = self._add_nodes_to_dict()
+        network_dict["items"].append(nodes_dict)
+
+        # add interfaces
+        interfaces_dict = self._add_interfaces_to_dict()
+        network_dict["items"].append(interfaces_dict)
+
+        # add channels
+        channels_dict = self._add_channels_to_dict()
+        network_dict["items"].append(channels_dict)
+
+        # add links
+        links_dict = self._add_links_to_dict()
+        network_dict["items"].append(links_dict)
+
+        # Print del network_dict in modo leggibile
+        print("=== NETWORK DICTIONARY ===")
+        print(json.dumps(network_dict, indent=2, ensure_ascii=False))
+        print("=" * 27)
+
+        self._add_links_to_dict()
+
+    
+    def _add_nodes_to_dict(self):
+        with open("config/netgen_files.json", "r") as f:
+            files_config = json.load(f)
+
+        with open(files_config.get("ranges"), "r") as f:
+            ranges = json.load(f)
+
+
         nodes_dict = {}
         nodes_dict["name"] = "node_modules"
         nodes_dict["template"] = files_config.get("node_template")
         nodes_dict["instances"] = []
         range = ranges.get("node_range_state")
+        sizes = {}
         nodes = list(self.G.nodes())
         for node in nodes:
             node_to_add = {}
             node_to_add["name"] = f"node_{node}"
             node_to_add["#"] = node
             node_to_add["range_state"] = range
+            node_to_add["init_state"] = 0
             if self.attributes.get("buffer_size_range")[0] == self.attributes.get("buffer_size_range")[1]:
                 size_buffer = self.attributes.get("buffer_size_range")[0]
             else:
-                size_buffer = self.rng.integers(self.attributes.get("buffer_size_range")[0], self.attributes.get("buffer_size_range")[1] + 1)
+                size_buffer = int(self.rng.integers(self.attributes.get("buffer_size_range")[0], self.attributes.get("buffer_size_range")[1] + 1))
             node_to_add["size_buffer"] = size_buffer    
+            sizes[node] = size_buffer
             node_to_add["init_buffer"] = 0
             if self.attributes.get("node_prob_off_to_on")[0] == self.attributes.get("node_prob_off_to_on")[1]:
                 prob_off_to_on = self.attributes.get("node_prob_off_to_on")[0]
             else:
-                prob_off_to_on = self.rng.uniform(self.attributes.get("node_prob_off_to_on")[0], self.attributes.get("node_prob_off_to_on")[1])
+                prob_off_to_on = round(self.rng.uniform(self.attributes.get("node_prob_off_to_on")[0], self.attributes.get("node_prob_off_to_on")[1]), 2)
             node_to_add["prob_off_to_on"] = prob_off_to_on
             if self.attributes.get("node_prob_on_to_off")[0] == self.attributes.get("node_prob_on_to_off")[1]:
                 prob_on_to_off = self.attributes.get("node_prob_on_to_off")[0]
             else:
-                prob_on_to_off = self.rng.uniform(self.attributes.get("node_prob_on_to_off")[0], self.attributes.get("node_prob_on_to_off")[1])
+                prob_on_to_off = round(self.rng.uniform(self.attributes.get("node_prob_on_to_off")[0], self.attributes.get("node_prob_on_to_off")[1]), 2)
             node_to_add["prob_on_to_off"] = prob_on_to_off
 
             neighbors = list(self.G.neighbors(node))
             node_to_add["interfaces"] = []
             for neighbor in neighbors:
-                interface = {"#": f"interface_{node}_{neighbor}"}
+                interface = {"#": f"{node}_{neighbor}"}
                 node_to_add["interfaces"].append(interface)
             nodes_dict["instances"].append(node_to_add)
-        network_dict["items"].append(nodes_dict)
-
-        print(network_dict)
+        self.attributes["nodes_buffer_sizes"] = sizes
+        return nodes_dict
             
 
+    def _add_interfaces_to_dict(self):
+        with open("config/netgen_files.json", "r") as f:
+            files_config = json.load(f)
+
+        with open(files_config.get("ranges"), "r") as f:
+            ranges = json.load(f)
 
 
+        interfaces_dict = {}
+        interfaces_dict["name"] = "interface_modules"
+        interfaces_dict["template"] = files_config.get("interface_template")
+        interfaces_dict["instances"] = []
+        range_state = ranges.get("interface_range_state")
+        for edge in self.G.edges():
+            node_a = edge[0]
+            node_b = edge[1]
+            # interface from node_a to node_b
+            interface_ab = {}
+            interface_ab["name"] = f"interface_{node_a}_{node_b}"
+            interface_ab["#"] = f"{node_a}_{node_b}"
+            interface_ab["range_state"] = range_state
+            interface_ab["init_state"] = 0
+           
+            # add probabilities
+            interface_ab["prob_off_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_working")[0], self.attributes.get("if_prob_off_to_working")[1]), 2)
+            interface_ab["prob_off_to_error"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_error")[0], self.attributes.get("if_prob_off_to_error")[1]), 2)
+            interface_ab["prob_off_to_failure"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_failure")[0], self.attributes.get("if_prob_off_to_failure")[1]), 2)
+            interface_ab["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("if_prob_working_to_error")[0], self.attributes.get("if_prob_working_to_error")[1]), 2)
+            interface_ab["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_error_to_working")[0], self.attributes.get("if_prob_error_to_working")[1]), 2)
+            interface_ab["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_failure_to_working")[0], self.attributes.get("if_prob_failure_to_working")[1]), 2)
+            interface_ab["ref_node_state"] = f"{node_a}"
+            interfaces_dict["instances"].append(interface_ab)
+
+        return interfaces_dict
+
+
+    def _add_channels_to_dict(self):
+        with open("config/netgen_files.json", "r") as f:
+            files_config = json.load(f)
+
+        with open(files_config.get("ranges"), "r") as f:
+            ranges = json.load(f)
+
+
+        channels_dict = {}
+        channels_dict["name"] = "channel_modules"
+        channels_dict["template"] = files_config.get("channel_template")
+        channels_dict["instances"] = []
+        range_state = ranges.get("channel_range_state")
+        for edge in self.G.edges():
+            node_a = edge[0]
+            node_b = edge[1]
+            channel = {}
+            channel["name"] = f"channel_{node_a}_{node_b}"
+            channel["#"] = f"{node_a}_{node_b}"
+            channel["range_state"] = range_state
+            init_value = int(range_state.strip('[]').split('..')[0])
+            channel["init_state"] = init_value
+            if self.attributes.get("channel_bandwidth_range")[0] == self.attributes.get("channel_bandwidth_range")[1]:
+                size_bandwidth = self.attributes.get("channel_bandwidth_range")[0]
+            else:
+                size_bandwidth = int(self.rng.integers(self.attributes.get("channel_bandwidth_range")[0], self.attributes.get("channel_bandwidth_range")[1] + 1))
+            channel["size_bandwidth"] = size_bandwidth
+            channel["init_bandwidth"] = size_bandwidth
+            channel["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("channel_prob_working_to_error")[0], self.attributes.get("channel_prob_working_to_error")[1]), 2)
+            channel["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("channel_prob_error_to_working")[0], self.attributes.get("channel_prob_error_to_working")[1]), 2)
+            channel["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("channel_prob_failure_to_working")[0], self.attributes.get("channel_prob_failure_to_working")[1]), 2)
+            channels_dict["instances"].append(channel)
+
+        return channels_dict
+
+
+    def _add_links_to_dict(self):
+        with open("config/netgen_files.json", "r") as f:
+            files_config = json.load(f)
+
+        with open(files_config.get("ranges"), "r") as f:
+            ranges = json.load(f)
+
+        # generate links and link_ref_counters for each path
+        paths = self.attributes.get("paths")
+        links_dict = {}
+        links_dict["name"] = "link_modules"
+        links_dict["template"] = files_config.get("link_template")
+        links_dict["instances"] = []
+        range_state = ranges.get("link_range_state")
+        link_refs_dict = {}
+        link_refs_dict["name"] = "link_ref_modules"
+        link_refs_dict["template"] = files_config.get("link_ref_template")
+        link_refs_dict["instances"] = []
+        for path in paths:
+            for i in range(len(path) - 1):
+                node_a = path[i]
+                node_b = path[i + 1]
+
+                # links instances
+                link = {}
+                link["name"] = f"link_{node_a}_{node_b}_of_path_{path[0]}_{path[-1]}"
+                link["#"] = f"{node_a}_{node_b}_{path[0]}_{path[-1]}"
+
+                # states
+                link["range_state"] = range_state
+                init_value = int(range_state.strip('[]').split('..')[0])
+                link["init_state"] = init_value
+                link["init_prev"] = False
+                link["init_sending"] = False
+                link["init_receiving"] = False
+
+                # references
+                link["ref_channel"] = f"{node_a}_{node_b}"
+                link["ref_interface_sender"] = f"{node_a}_{node_b}"
+                link["ref_node_buffer_sender"] = f"{node_a}"
+                link["ref_link_ref_counter"] = f"{node_a}_{path[0]}_{path[-1]}"
+                number_next_links = len(path) - i - 2
+                link["number_next_links"] = number_next_links
+                next_links = []
+                for j in range(i + 1, len(path) - 1):
+                    na = path[j]
+                    nb = path[j + 1]
+                    next_links.append({"ref_link_next": f"{na}_{nb}_{path[0]}_{path[-1]}"})
+                link["next_links"] = next_links
+                link["ref_interface_receiver"] = f"{node_b}_{node_a}"
+                link["ref_node_buffer_receiver"] = f"{node_b}"
+                link["size_node_buffer_receiver"] = self.attributes["nodes_buffer_sizes"][node_b]
+
+                # probabilities
+                link["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("link_prob_working_to_error")[0], self.attributes.get("link_prob_working_to_error")[1]), 2)
+                link["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_error_to_working")[0], self.attributes.get("link_prob_error_to_working")[1]), 2)
+                link["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_failure_to_working")[0], self.attributes.get("link_prob_failure_to_working")[1]), 2)
+                link["prob_retry"] = round(self.rng.uniform(self.attributes.get("link_prob_retry")[0], self.attributes.get("link_prob_retry")[1]), 2)
+                link["prob_sending"] = round(self.rng.uniform(self.attributes.get("link_prob_sending")[0], self.attributes.get("link_prob_sending")[1]), 2)
+
+
+                # link_ref_counter instances
+                link_ref = {}
+                link_ref["name"] = f"link_ref_{node_a}_of_path_{path[0]}_{path[-1]}"
+                link_ref["#"] = f"{node_a}_{path[0]}_{path[-1]}"
+                if self.protocol in {"HPKE", "DOUBLE-RATCHET"}:
+                    link_ref["size_counter"] = 1
+                    link_ref["init_counter"] = 1
+                    link_ref["is_receiver"] = False
+                else:
+                    # TO-DO handle sender key protocol
+                    pass
+                link_ref["ref_node"] = f"{node_a}"
+
+                links_dict["instances"].append(link)
+                link_refs_dict["instances"].append(link_ref)
+            
+        return links_dict, link_refs_dict
+        
