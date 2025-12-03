@@ -1,7 +1,7 @@
 {
-    "protocol": "HPKE",
+    "protocol": "SENDER-KEY",
     "seed": 13,
-    "node_range": [5, 5],
+    "node_range": [10, 10],
     "connected": true,
     "gen_model": "RANDOM",
     "conn_prob": 0.5,

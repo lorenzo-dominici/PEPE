@@ -480,39 +480,48 @@ class NetworkGenerator:
             
 
         # for sender key, we need one-to-many paths and all the one-to-one return paths to the sender
-        else:
-            # random generation of one-to-many paths
-            one_to_many_paths = {}
-            for i in range(len(nodes)):
-                path = []
-                group = []
-                a = nodes[i]
-                group.append(a)
-                for j in range(len(nodes)):
-                    if i != j and self.rng.random() < self.path_perc:
-                        b = nodes[j]
-                        path_to_add = nx.shortest_path(self.G, a, b)
-                        path.append(path_to_add)
-                        group.append(b)
-                one_to_many_paths[tuple(group)] = path
+        elif self.protocol == "SENDER-KEY":
+            # first, select senders
+            senders = []
+            for node in nodes:
+                if self.rng.random() < self.path_perc:
+                    senders.append(node)
+            # now, for each sender, select receivers and generate paths
+            one_to_many_paths = []
+            for sender in senders:
+                destinations = []
+                for node in nodes:
+                    if node != sender and self.rng.random() < self.path_perc:
+                        destinations.append(node)
+                tree = nx.DiGraph()
+                tree.add_node(sender)
+                # for each destination, generate the shortest path from sender to destination and add it to the tree
+                for dest in destinations:
+                    path = nx.shortest_path(self.G, sender, dest)
+                    nx.add_path(tree, path)
+                    # mark the destination node as receiver
+                    tree.nodes[dest]['is_receiver'] = True
+                # for each node, set the counter of next nodes
+                for node in tree.nodes():
+                    count = len(list(tree.successors(node)))
+                    tree.nodes[node]['counter'] = count
+                one_to_many_paths.append(tree)
             self.attributes["one_to_many_paths"] = one_to_many_paths
-            # for group, paths in one_to_many_paths.items():
-            #     print(f"Group: {group}")
-            #     for path in paths:
-            #         print(f"  Path: {path}")
-            # print("\n")
 
-            # generation of all the one-to-one return paths to the sender
-            one_to_one_paths = {}
-            for group, paths in one_to_many_paths.items():
-                sender = group[0]
-                paths_to_add = []
-                for path in paths:
-                    receiver = path[-1]
-                    return_path = nx.shortest_path(self.G, receiver, sender)
-                    paths_to_add.append(return_path)
-                one_to_one_paths[tuple(group)] = paths_to_add
+            # now generate all the one-to-one return paths to the sender
+            one_to_one_paths = []
+            for tree in one_to_many_paths:
+                sender = list(tree.nodes())[0]
+                receivers = [n for n, attr in tree.nodes(data=True) if attr.get('is_receiver')]
+                for receiver in receivers:
+                    path = nx.shortest_path(self.G, receiver, sender)
+                    one_to_one_paths.append(path)
+            
             self.attributes["one_to_one_return_paths"] = one_to_one_paths
+
+            print("Generated one-to-many paths:")
+            for tree in one_to_many_paths:
+                print(list(tree.edges()))
 
 
     def _generate_json(self):
@@ -546,12 +555,18 @@ class NetworkGenerator:
         links_dict = self._add_links_to_dict()
         network_dict["items"].append(links_dict)
 
+        # add link_refs
+        link_refs_dict = self._add_link_refs_to_dict()
+        network_dict["items"].append(link_refs_dict)
+
+        # add session_paths
+        session_paths_dict = self._add_session_paths_to_dict()
+        network_dict["items"].append(session_paths_dict)
+
         # Print del network_dict in modo leggibile
         print("=== NETWORK DICTIONARY ===")
         print(json.dumps(network_dict, indent=2, ensure_ascii=False))
         print("=" * 27)
-
-        self._add_links_to_dict()
 
     
     def _add_nodes_to_dict(self):
@@ -683,74 +698,344 @@ class NetworkGenerator:
             ranges = json.load(f)
 
         # generate links and link_ref_counters for each path
-        paths = self.attributes.get("paths")
+
         links_dict = {}
         links_dict["name"] = "link_modules"
         links_dict["template"] = files_config.get("link_template")
         links_dict["instances"] = []
         range_state = ranges.get("link_range_state")
+
+        match self.protocol:
+            case "HPKE" | "DOUBLE-RATCHET":
+                paths = self.attributes.get("paths")
+                link_refs_dict["instances"] = []
+                for path in paths:
+                    for i in range(len(path) - 1):
+                        node_a = path[i]
+                        node_b = path[i + 1]
+
+                        # links instances
+                        link = {}
+                        link["name"] = f"link_{node_a}_{node_b}_of_path_{path[0]}_{path[-1]}"
+                        link["#"] = f"{node_a}_{node_b}_{path[0]}_{path[-1]}"
+
+                        # states
+                        link["range_state"] = range_state
+                        init_value = int(range_state.strip('[]').split('..')[0])
+                        link["init_state"] = init_value
+                        link["init_prev"] = False
+                        link["init_sending"] = False
+                        link["init_receiving"] = False
+
+                        # references
+                        link["ref_channel"] = f"{node_a}_{node_b}"
+                        link["ref_interface_sender"] = f"{node_a}_{node_b}"
+                        link["ref_node_buffer_sender"] = f"{node_a}"
+                        link["ref_link_ref_counter"] = f"{node_a}_{path[0]}_{path[-1]}"
+                        # number_next_links = len(path) - i - 2
+                        # link["number_next_links"] = number_next_links
+                        next_links = []
+                        for j in range(i + 1, len(path) - 1):
+                            na = path[j]
+                            nb = path[j + 1]
+                            next_links.append({"ref_link_next": f"{na}_{nb}_{path[0]}_{path[-1]}"})
+                        link["next_links"] = next_links
+                        link["ref_interface_receiver"] = f"{node_b}_{node_a}"
+                        link["ref_node_buffer_receiver"] = f"{node_b}"
+                        link["size_node_buffer_receiver"] = self.attributes["nodes_buffer_sizes"][node_b]
+
+                        # probabilities
+                        link["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("link_prob_working_to_error")[0], self.attributes.get("link_prob_working_to_error")[1]), 2)
+                        link["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_error_to_working")[0], self.attributes.get("link_prob_error_to_working")[1]), 2)
+                        link["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_failure_to_working")[0], self.attributes.get("link_prob_failure_to_working")[1]), 2)
+                        link["prob_retry"] = round(self.rng.uniform(self.attributes.get("link_prob_retry")[0], self.attributes.get("link_prob_retry")[1]), 2)
+                        link["prob_sending"] = round(self.rng.uniform(self.attributes.get("link_prob_sending")[0], self.attributes.get("link_prob_sending")[1]), 2)
+
+                        links_dict["instances"].append(link)
+
+            case "SENDER-KEY":
+                one_to_many_paths = self.attributes.get("one_to_many_paths")
+                for tree in one_to_many_paths:
+                    sender = list(tree.nodes())[0]
+                    receivers = [n for n, attr in tree.nodes(data = True) if attr.get("is_receiver")]
+                    path_str = "_".join(str(n) for n in [sender] + receivers)
+                    for edge in tree.edges():          
+                        # link instances
+                        node_a = edge[0]
+                        node_b = edge[1]
+                        link = {}
+                        link["name"] = f"link_{node_a}_{node_b}_of_{path_str}"
+                        link["#"] = f"{node_a}_{node_b}_{path_str}"
+
+                        # states
+                        link["range_state"] = range_state
+                        init_value = int(range_state.strip('[]').split('..')[0])
+                        link["init_state"] = init_value
+                        link["init_prev"] = False
+                        link["init_sending"] = False
+                        link["init_receiving"] = False
+
+                        # references
+                        link["ref_channel"] = f"{node_a}_{node_b}"
+                        link["ref_interface_sender"] = f"{node_a}_{node_b}"
+                        link["ref_node_buffer_sender"] = f"{node_a}"
+                        link["ref_link_ref_counter"] = f"{node_a}_{path_str}"
+                        next_links = []
+                        for succ in tree.successors(node_b):
+                            next_links.append({"ref_link_next": f"{node_b}_{succ}_{path_str}"})
+                        link["next_links"] = next_links
+                        link["ref_interface_receiver"] = f"{node_b}_{node_a}"
+                        link["ref_node_buffer_receiver"] = f"{node_b}"
+                        link["size_node_buffer_receiver"] = self.attributes["nodes_buffer_sizes"][node_b]
+
+                        # probabilities
+                        link["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("link_prob_working_to_error")[0], self.attributes.get("link_prob_working_to_error")[1]), 2)
+                        link["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_error_to_working")[0], self.attributes.get("link_prob_error_to_working")[1]), 2)
+                        link["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_failure_to_working")[0], self.attributes.get("link_prob_failure_to_working")[1]), 2)
+                        link["prob_retry"] = round(self.rng.uniform(self.attributes.get("link_prob_retry")[0], self.attributes.get("link_prob_retry")[1]), 2)
+                        link["prob_sending"] = round(self.rng.uniform(self.attributes.get("link_prob_sending")[0], self.attributes.get("link_prob_sending")[1]), 2)
+
+                        links_dict["instances"].append(link)
+            
+                one_to_one_paths = self.attributes.get("one_to_one_return_paths")
+                for path in one_to_one_paths:
+                    for i in range(len(path) - 1):
+                        node_a = path[i]
+                        node_b = path[i + 1]
+
+                        # links instances
+                        link = {}
+                        link["name"] = f"link_{node_a}_{node_b}_of_return_path_{path[0]}_{path[-1]}"
+                        link["#"] = f"{node_a}_{node_b}_{path[0]}_{path[-1]}"
+
+                        # states
+                        link["range_state"] = range_state
+                        init_value = int(range_state.strip('[]').split('..')[0])
+                        link["init_state"] = init_value
+                        link["init_prev"] = False
+                        link["init_sending"] = False
+                        link["init_receiving"] = False
+
+                        # references
+                        link["ref_channel"] = f"{node_a}_{node_b}"
+                        link["ref_interface_sender"] = f"{node_a}_{node_b}"
+                        link["ref_node_buffer_sender"] = f"{node_a}"
+                        link["ref_link_ref_counter"] = f"{node_a}_{path[0]}_{path[-1]}"
+                        # number_next_links = len(path) - i - 2
+                        # link["number_next_links"] = number_next_links
+                        next_links = []
+                        for j in range(i + 1, len(path) - 1):
+                            na = path[j]
+                            nb = path[j + 1]
+                            next_links.append({"ref_link_next": f"{na}_{nb}_{path[0]}_{path[-1]}"})
+                        link["next_links"] = next_links
+                        link["ref_interface_receiver"] = f"{node_b}_{node_a}"
+                        link["ref_node_buffer_receiver"] = f"{node_b}"
+                        link["size_node_buffer_receiver"] = self.attributes["nodes_buffer_sizes"][node_b]
+
+                        # probabilities
+                        link["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("link_prob_working_to_error")[0], self.attributes.get("link_prob_working_to_error")[1]), 2)
+                        link["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_error_to_working")[0], self.attributes.get("link_prob_error_to_working")[1]), 2)
+                        link["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_failure_to_working")[0], self.attributes.get("link_prob_failure_to_working")[1]), 2)
+                        link["prob_retry"] = round(self.rng.uniform(self.attributes.get("link_prob_retry")[0], self.attributes.get("link_prob_retry")[1]), 2)
+                        link["prob_sending"] = round(self.rng.uniform(self.attributes.get("link_prob_sending")[0], self.attributes.get("link_prob_sending")[1]), 2)
+
+                        links_dict["instances"].append(link)
+
+        return links_dict
+
+    
+    def _add_link_refs_to_dict(self):
+        with open("config/netgen_files.json", "r") as f:
+            files_config = json.load(f)
+
         link_refs_dict = {}
         link_refs_dict["name"] = "link_ref_modules"
         link_refs_dict["template"] = files_config.get("link_ref_template")
         link_refs_dict["instances"] = []
-        for path in paths:
-            for i in range(len(path) - 1):
-                node_a = path[i]
-                node_b = path[i + 1]
 
-                # links instances
-                link = {}
-                link["name"] = f"link_{node_a}_{node_b}_of_path_{path[0]}_{path[-1]}"
-                link["#"] = f"{node_a}_{node_b}_{path[0]}_{path[-1]}"
+        match self.protocol:
+            case "HPKE" | "DOUBLE-RATCHET":
+                paths = self.attributes.get("paths")
+                link_refs_dict["instances"] = []
+                for path in paths:
+                    for i in range(len(path) - 1):
+                        node_a = path[i]
+                        node_b = path[i + 1]
 
-                # states
-                link["range_state"] = range_state
-                init_value = int(range_state.strip('[]').split('..')[0])
-                link["init_state"] = init_value
-                link["init_prev"] = False
-                link["init_sending"] = False
-                link["init_receiving"] = False
+                        # link_ref_counter instances
+                        link_ref = {}
+                        link_ref["name"] = f"link_ref_{node_a}_of_path_{path[0]}_{path[-1]}"
+                        link_ref["#"] = f"{node_a}_{path[0]}_{path[-1]}"
+                        
+                        link_ref["size_counter"] = 1
+                        link_ref["init_counter"] = 1
+                        link_ref["is_receiver"] = False
+                        link_ref["ref_node"] = f"{node_a}"
 
-                # references
-                link["ref_channel"] = f"{node_a}_{node_b}"
-                link["ref_interface_sender"] = f"{node_a}_{node_b}"
-                link["ref_node_buffer_sender"] = f"{node_a}"
-                link["ref_link_ref_counter"] = f"{node_a}_{path[0]}_{path[-1]}"
-                number_next_links = len(path) - i - 2
-                link["number_next_links"] = number_next_links
-                next_links = []
-                for j in range(i + 1, len(path) - 1):
-                    na = path[j]
-                    nb = path[j + 1]
-                    next_links.append({"ref_link_next": f"{na}_{nb}_{path[0]}_{path[-1]}"})
-                link["next_links"] = next_links
-                link["ref_interface_receiver"] = f"{node_b}_{node_a}"
-                link["ref_node_buffer_receiver"] = f"{node_b}"
-                link["size_node_buffer_receiver"] = self.attributes["nodes_buffer_sizes"][node_b]
+                        link_refs_dict["instances"].append(link_ref)
 
-                # probabilities
-                link["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("link_prob_working_to_error")[0], self.attributes.get("link_prob_working_to_error")[1]), 2)
-                link["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_error_to_working")[0], self.attributes.get("link_prob_error_to_working")[1]), 2)
-                link["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_failure_to_working")[0], self.attributes.get("link_prob_failure_to_working")[1]), 2)
-                link["prob_retry"] = round(self.rng.uniform(self.attributes.get("link_prob_retry")[0], self.attributes.get("link_prob_retry")[1]), 2)
-                link["prob_sending"] = round(self.rng.uniform(self.attributes.get("link_prob_sending")[0], self.attributes.get("link_prob_sending")[1]), 2)
+            case "SENDER-KEY":
+                one_to_many_paths = self.attributes.get("one_to_many_paths")
+                for tree in one_to_many_paths:
+                    sender = list(tree.nodes())[0]
+                    receivers = [n for n, attr in tree.nodes(data = True) if attr.get("is_receiver")]
+                    path_str = "_".join(str(n) for n in [sender] + receivers)
+                    for node in tree.nodes():
+                        # link_ref_counter instances
+                        link_ref = {}
+                        link_ref["name"] = f"link_ref_{node}_of_{path_str}"
+                        link_ref["#"] = f"{node}_{path_str}"  
+                        counter = tree.nodes[node].get("counter", 1)
+                        link_ref["size_counter"] = counter
+                        link_ref["init_counter"] = counter
+                        link_ref["is_receiver"] = tree.nodes[node].get("is_receiver", False)
+                        link_ref["ref_node"] = f"{node}"
 
+                        link_refs_dict["instances"].append(link_ref)
 
-                # link_ref_counter instances
-                link_ref = {}
-                link_ref["name"] = f"link_ref_{node_a}_of_path_{path[0]}_{path[-1]}"
-                link_ref["#"] = f"{node_a}_{path[0]}_{path[-1]}"
-                if self.protocol in {"HPKE", "DOUBLE-RATCHET"}:
-                    link_ref["size_counter"] = 1
-                    link_ref["init_counter"] = 1
-                    link_ref["is_receiver"] = False
-                else:
-                    # TO-DO handle sender key protocol
-                    pass
-                link_ref["ref_node"] = f"{node_a}"
+                one_to_one_paths = self.attributes.get("one_to_one_return_paths")
+                for path in one_to_one_paths:
+                    for i in range(len(path) - 1):
+                        node_a = path[i]
+                        node_b = path[i + 1]
 
-                links_dict["instances"].append(link)
-                link_refs_dict["instances"].append(link_ref)
+                        # link_ref_counter instances
+                        link_ref = {}
+                        link_ref["name"] = f"link_ref_{node_a}_of_return_path_{path[0]}_{path[-1]}"
+                        link_ref["#"] = f"{node_a}_{path[0]}_{path[-1]}"
+                        
+                        link_ref["size_counter"] = 1
+                        link_ref["init_counter"] = 1
+                        link_ref["is_receiver"] = False
+                        link_ref["ref_node"] = f"{node_a}"  
+
+                        link_refs_dict["instances"].append(link_ref)
+                
+        return link_refs_dict
+        
+
+    def _add_session_paths_to_dict(self):
+
+        with open("config/netgen_files.json", "r") as f:
+            files_config = json.load(f)
+
+        with open(files_config.get("ranges"), "r") as f:
+            ranges = json.load(f)
+
+        with open(files_config.get("consts"), "r") as f:
+            consts = json.load(f)
+
+        session_paths_dict = {}
+        session_paths_dict["name"] = "session_path_modules"
+        session_paths_dict["template"] = files_config.get("session_path_template")
+        session_paths_dict["instances"] = []
+        range_state = ranges.get("session_path_state_range")
+        range_system_message = ranges.get("session_path_system_message_range")
+        range_data_message = ranges.get("session_path_data_message_range")
+        local_session_range_state = ranges.get("local_session_range_state")
+        consts_idle = consts.get("const_idle")
+        const_message_data = consts.get("const_message_data")
+        const_local_session_update = consts.get("const_local_session_update")
+        
+
+        match self.protocol:
+            case "HPKE" | "DOUBLE-RATCHET":
+                paths = self.attributes.get("paths")
+                for path in paths:
+                    session_path = {}
+                    session_path["name"] = f"session_path_{path[0]}_{path[-1]}"
+                    session_path["#"] = f"{path[0]}_{path[-1]}"
+                    session_path["protocol"] = self.protocol
+
+                    # states
+                    session_path["range_depth"] = range_state
+                    session_path["init_state"] = consts_idle
+                    session_path["range_system_message"] = range_system_message
+                    session_path["init_system_message"] = const_message_data # TO DO
+                    session_path["range_data_message"] = range_data_message
+                    session_path["init_data_message"] = const_message_data # TO DO
+                    session_path["range_prev_local_session_epoch_sender"] = local_session_range_state
+                    session_path["init_prev_local_session_epoch_sender"] = const_local_session_update
+                    session_path["size_link_counter"] = len(path) - 1
+                    session_path["init_link_counter"] = len(path) - 1
+                    session_path["size_checker_counter"] = 1 # TO DO
+                    session_path["init_checker_counter"] = 1 # TO DO
+
+                    # references
+                    session_path["ref_node_sender"] = f"{path[0]}"
+                    session_path["ref_local_session_sender"] = f"{path[0]}_{path[0]}_{path[-1]}"
+                    sessione_path["size_buffer_sender"] = self.attributes["nodes_buffer_sizes"][path[0]]
+                    first_links = [{"#": f"{path[0]}_{path[1]}_{path[0]}_{path[-1]}"}]
+                    session_path["first_links"] = first_links
+
+                    # probabilities
+                    if self.attributes.get("sp_prob_run")[0] == self.attributes.get("sp_prob_run")[1]:
+                        prob_run = self.attributes.get("sp_prob_run")[0]
+                    else:
+                        prob_run = round(self.rng.uniform(self.attributes.get("sp_prob_run")[0], self.attributes.get("sp_prob_run")[1]), 2)
+                    session_path["prob_run"] = prob_run
+
+                    session_paths_dict["instances"].append(session_path)
             
-        return links_dict, link_refs_dict
+            case "SENDER-KEY":
+                one_to_many_paths = self.attributes.get("one_to_many_paths")
+                for tree in one_to_many_paths:
+                    session_path = {}
+                    sender = list(tree.nodes())[0]
+                    receivers = [n for n, attr in tree.nodes(data = True) if attr.get("is_receiver")]
+                    path_str = "_".join(str(n) for n in [sender] + receivers)
+                    session_path["name"] = f"session_path_{path_str}"
+                    session_path["#"] = f"{path_str}"
+                    session_path["protocol"] = self.protocol
+
+                    # states
+                    session_path["range_depth"] = range_state
+                    session_path["init_state"] = consts_idle
+                    session_path["range_system_message"] = range_system_message
+                    session_path["init_system_message"] = const_message_data
+                    session_path["range_data_message"] = range_data_message
+                    session_path["init_data_message"] = const_message_data
+                    session_path["range_prev_local_session_epoch_sender"] = local_session_range_state
+                    session_path["init_prev_local_session_epoch_sender"] = const_local_session_update
+                    session_path["size_link_counter"] = len(tree.edges())
+                    session_path["init_link_counter"] = len(tree.edges())
+                    session_path["size_checker_counter"] = 1 # TO DO
+                    session_path["init_checker_counter"] = 1 # TO DO
+
+                    # references
+                    session_path["ref_node_sender"] = f"{sender}"
+                    session_path["ref_local_session_sender"] = f"{sender}_{path_str}"
+                    session_path["size_buffer_sender"] = self.attributes["nodes_buffer_sizes"][sender]
+                    first_links = [{"#": f"{sender}_{succ}_{path_str}"} for succ in tree.successors(sender)]
+                    session_path["first_links"] = first_links
+
+                    # TO DO one to one return paths
+
+                    # probabilities
+                    if self.attributes.get("sp_prob_run")[0] == self.attributes.get("sp_prob_run")[1]:
+                        prob_run = self.attributes.get("sp_prob_run")[0]
+                    else:
+                        prob_run = round(self.rng.uniform(self.attributes.get("sp_prob_run")[0], self.attributes.get("sp_prob_run")[1]), 2)
+                    session_path["prob_run"] = prob_run
+
+                    session_paths_dict["instances"].append(session_path)
+                
+                # TO DO one to one return paths
+
+        return session_paths_dict
+
+
+    def _add_local_sessions_to_dict(self):
+         with open("config/netgen_files.json", "r") as f:
+            files_config = json.load(f)
+
+        with open(files_config.get("ranges"), "r") as f:
+            ranges = json.load(f)
+
+        local_sessions_dict = {}
+        local_sessions_dict["name"] = "local_session_modules"
+        local_sessions_dict["template"] = files_config.get("local_session_template")
+        local_sessions_dict["instances"] = []
+        range_state = ranges.get("local_session_range_state")
         
