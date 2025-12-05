@@ -172,7 +172,3 @@ The highest is this probability, the lower is the local clustering coefficient
 ### Session Path parameters
 
 - `sp_prob_run`: [min, max] where min, max are floats in [0.0, 1.0]
-
-
-
-
