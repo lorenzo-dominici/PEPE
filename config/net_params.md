@@ -26,10 +26,18 @@ The parameters of the network must be included in a json file with this structur
 - `protocol`: HPKE | DOUBLE-RATCHET | SENDER-KEY | MLS
 - the protocol used in the network
 
+- `mls_sessions_range`: [min, max]
+- the number of mls sessions. If None, will be created only one sessions with all the nodes
+
 
 ### Seed
 - `seed`: integer
 - the seed for the random generator
+
+
+### Output file
+- `output_file`: filename
+- the name of file that will be saved in the output directory
 
 ### Nodes number
 

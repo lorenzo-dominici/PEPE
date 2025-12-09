@@ -1,4 +1,5 @@
 # This module contains the logic to load and structure data from files.
+from fileinput import filename
 import json
 import random
 
@@ -21,11 +22,26 @@ def validate_data(data):
                 raise ValueError("protocol must be one of HPKE, DOUBLE-RATCHET, SENDER-KEY, MLS")
     else:
         raise ValueError("protocol parameter must be setted")
+
+    if protocol == "MLS":
+        mls_sessions_range = data.get("mls_sessions_range")
+        if mls_sessions_range:
+            if (not isinstance(mls_sessions_range, list) or len(mls_sessions_range) != 2 or
+                not all(isinstance(n, int) for n in mls_sessions_range) or
+                mls_sessions_range[0] <= 0 or mls_sessions_range[1] < mls_sessions_range[0]):
+                raise ValueError("mls_sessions_range must be a list of two positive integers [min, max] with min <= max")
+        else:
+            raise ValueError("Missing parameter: mls_sessions_range")
+    mls_sessions_range = 1
+            
     
     seed = data.get("seed")
     if seed:
         if not isinstance(seed, int):
             raise ValueError("seed must be an integer")
+
+    
+    filename = data.get("filename")
    
     node_range = data.get("node_range")
     if node_range:
@@ -465,7 +481,9 @@ def validate_data(data):
 
     network_params = {
         "protocol": protocol,
+        "mls_sessions_range": mls_sessions_range,
         "seed": seed,
+        "filename": filename,
         "node_number": node_number,
         "connected": connected,
         "gen_model": gen_model,
