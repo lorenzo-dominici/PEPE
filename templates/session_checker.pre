@@ -69,6 +69,13 @@ module session_checker_{{#}}
                                                                                                            & (session_path_data_message_{{ref_session_path_to_sender}}' = {{const_message_sender_new_key}})
                                                                                                            & (session_checker_sender_local_session_epoch_{{ref_session_checker_sender}}' = local_session_epoch_{{ref_local_session_receiver}});
 
+    [{{cmd_resolve_sender_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                   (session_checker_state_{{#}} = {{const_resolve}}) &
+                                   (session_checker_sender_local_session_data_message_{{#}} = {{const_message_sender_reset}}) &
+                                   (session_path_state_{{ref_session_path_broadcast}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}})
+                                                                                                         & (local_session_epoch_{{ref_local_session_sender_key_receiver}}' = 0)
+                                                                                                         & (session_path_state_{{ref_session_path_broadcast}}' = {{const_update}});
+
     [{{cmd_hpke_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                          (session_checker_state_{{#}} = {{const_reset}}) &
                          (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}})
