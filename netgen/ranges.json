@@ -5,9 +5,9 @@
     "local_session_range_state": "[15..19]",
     "node_range_state": "[0..1]",
     "session_checker_state_range": "[4..11]",
-    "session_checker_sender_local_session_system_message_range": "[21..26]",
-    "session_checker_sender_local_session_data_message_range": "[20..22]",
+    "session_checker_sender_local_session_system_message_range": "[23..27]",
+    "session_checker_sender_local_session_data_message_range": "[20..23]",
     "session_path_state_range": "[9..14]",
-    "session_path_system_message_range": "[22..24]",
-    "session_path_data_message_range": "[21..22]"
+    "session_path_system_message_range": "[23..27]",
+    "session_path_data_message_range": "[20..23]"
 }

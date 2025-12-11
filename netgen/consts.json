@@ -20,11 +20,12 @@
     "const_local_session_ratchet": 18,
     "const_local_session_valid": 19,
     "const_message_sender_refresh": 20, 
-    "const_message_sender_new_key": 21,
-    "const_message_data": 22,
-    "const_message_reset": 23,
-    "const_message_ratchet": 24,
-    "const_message_tree_refresh": 25,
-    "const_message_current_tree": 26
+    "const_message_sender_reset": 21,
+    "const_message_sender_new_key": 22,
+    "const_message_data": 23,
+    "const_message_reset": 24,
+    "const_message_ratchet": 25,
+    "const_message_tree_refresh": 26,
+    "const_message_current_tree": 27
     
 }
