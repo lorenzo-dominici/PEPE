@@ -6,17 +6,17 @@ module link_{{#}}
     link_receiving_{{#}}: bool init {{init_receiving}};
 
     [{{cmd_working_to_error}}] link_state_{{#}} = {{const_working}} -> (1 - {{prob_working_to_error}}) : link_state_{{#}}' = link_state_{{#}}
-                                                                     + {{prob_to_error}} : link_state_{{#}}' = {{const_error}};
+                                                                     + {{prob_working_to_error}} : link_state_{{#}}' = {{const_error}};
 
     [{{cmd_error_to_working}}] link_state_{{#}} = {{const_error}} -> (1 - {{prob_error_to_working}}) : link_state_{{#}}' = link_state_{{#}}
-                                                                   + {{prob_is_detected}} : link_state_{{#}}' = {{const_failure}};
+                                                                   + {{prob_error_to_working}} : link_state_{{#}}' = {{const_working}};
 
     [{{cmd_failure_to_working}}] link_state_{{#}} = {{const_failure}} -> (1 - {{prob_failure_to_working}}) : link_state_{{#}}' = link_state_{{#}}
-                                                                       + {{prob_is_repaired}} : link_state_{{#}}' = {{const_working}};
+                                                                       + {{prob_failure_to_working}} : link_state_{{#}}' = {{const_working}};
 
     [{{cmd_send_failure}}] (link_prev_{{#}} = true) & (
         (link_state_{{#}} != {{const_working}}) |
-        (channel_state_{{#}} != {{cost_working}}) |
+        (channel_state_{{ref_channel}} != {{cost_working}}) |
         (interface_state_{{ref_interface_sender}} != {{const_working}}) |
         (node_buffer_{{ref_node_buffer_sender}} = 0) |
         (channel_bandwidth_{{ref_channel}} = 0)) -> (1 - {{prob_retry}}) : (link_prev_{{#}}' = false)
@@ -25,22 +25,28 @@ module link_{{#}}
                                                                          & (link_state_{{#}}'= (channel_state_{{ref_channel}} != {{const_working}}
                                                                                          ? {{const_failure}}
                                                                                          : link_state_{{#}}))
-                                                                         & (channel_state_{{ref_channel}}' = (channel_state_{{ref_channel}} = {{const_error}}
+                                                                         & (channel_state_{{ref_channel}}' = (channel_state_{{ref_channel}} != {{const_working}}
                                                                                                              ? {{const_failure}}
                                                                                                              : channel_state_{{ref_channel}}))
+                                                                         & (interface_state_{{ref_interface_sender}}' = (interface_state_{{ref_interface_sender}} != {{const_working}}
+                                                                                                                        ? {{const_failure}}
+                                                                                                                        : interface_state_{{ref_interface_sender}}))
                                                                          {^loop||next_links||& (link_prev_{{next_links[].ref_link_next}}' = false)
                                                                          $}
                                                   + {{prob_retry}} : (link_prev_{{#}}' = link_prev_{{#}})
                                                                    & (link_state_{{#}}'= (channel_state_{{ref_channel}} != {{const_working}}
                                                                                          ? {{const_failure}}
                                                                                          : link_state_{{#}}))
-                                                                   & (channel_state_{{ref_channel}}' = (channel_state_{{ref_channel}} = {{const_error}}
+                                                                   & (channel_state_{{ref_channel}}' = (channel_state_{{ref_channel}} != {{const_working}}
                                                                                                        ? {{const_failure}}
                                                                                                        : channel_state_{{ref_channel}}));
+                                                                   & (interface_state_{{ref_interface_sender}}' = (interface_state_{{ref_interface_sender}} != {{const_working}}
+                                                                                                                  ? {{const_failure}}
+                                                                                                                  : interface_state_{{ref_interface_sender}}))
 
     [{{cmd_send_success}}] (link_prev_{{#}} = true) &
         (link_state_{{#}} = {{const_working}}) &
-        (channel_state_{{#}} = {{const_working}}) &
+        (channel_state_{{ref_channel}} = {{const_working}}) &
         (interface_state_{{ref_interface_sender}} = {{const_working}}) &
         (node_buffer_{{ref_node_buffer_sender}} > 0) &
         (channel_bandwidth_{{ref_channel}} > 0) -> (link_prev_{{#}}' = false)
@@ -54,7 +60,7 @@ module link_{{#}}
     [{{cmd_receive_success}}] (link_receiving_{{#}} = true) &
                               (link_state_{{#}} = {{const_working}}) &
                               (channel_state_{{ref_channel}} = {{const_working}}) &
-                              (interface_state_{{ref_interface_state_receiver}} = {{const_working}}) &
+                              (interface_state_{{ref_interface_receiver}} = {{const_working}}) &
                               (node_buffer_{{ref_node_buffer_receiver}} < {{size_node_buffer_receiver}}) -> (link_receiving_{{#}} = false)
                                                                                                           & (channel_bandwidth_{{ref_channel}}' = channel_bandwidth_{{ref_channel}} + 1)
                                                                                                           & (link_ref_counter_{{ref_link_ref_counter}}' = link_ref_counter_{{ref_link_ref_counter}} - 1)
@@ -66,17 +72,20 @@ module link_{{#}}
     [{{cmd_receive_failure}}] (link_receiving_{{#}} = true) & (
                         (link_state_{{#}} != {{cons_working}}) |
                         (channel_state_{{ref_channel}} != {{const_working}}) |
-                        (interface_state_{{ref_interface_state_receiver}} != {{const_working}}) |
+                        (interface_state_{{ref_interface_receiver}} != {{const_working}}) |
                         (node_buffer_{{ref_node_buffer_receiver}} = {{size_node_buffer_receiver}})) -> (1 - {{prob_retry}}) : (link_receiving_{{#}}' = false)
-                                                                                                                            & (channel_bandwidth_{{ref_channel_bandwidth}}' = channel_bandwidth_{{ref_channel_bandwidth}} - 1)
+                                                                                                                            & (channel_bandwidth_{{ref_channel}}' = channel_bandwidth_{{ref_channel}} - 1)
                                                                                                                             & (link_ref_counter_{{ref_link_ref_counter}}' = link_ref_counter_{{ref_link_ref_counter}} - 1)
                                                                                                                             & (session_path_link_counter_{{#}}' = session_path_link_counter_{{#}} - (1 + {{number_next_links}}))
                                                                                                                             & (link_state_{{#}}'= (channel_state_{{ref_channel}} != {{const_working}}
                                                                                                                                                   ? {{const_failure}}
                                                                                                                                                   : link_state_{{#}}))
-                                                                                                                            & (channel_state_{{ref_channel}}' = (channel_state_{{ref_channel}} = {{const_error}}
+                                                                                                                            & (channel_state_{{ref_channel}}' = (channel_state_{{ref_channel}} != {{const_working}}
                                                                                                                                                                 ? {{const_failure}}
                                                                                                                                                                 : channel_state_{{ref_channel}}))
+                                                                                                                            & (interface_state_{{ref_interface_receiver}}' = (interface_state_{{ref_interface_receiver}} != {{const_working}}
+                                                                                                                                                                           ? {{const_failure}}
+                                                                                                                                                                           : interface_state_{{ref_interface_receiver}}))
                                                                                                                             {^loop||next_links||& (link_prev_{{next_links[].ref_link_next}}' = false)
                                                                                                                             $};
                                                                                                      + {{prob_retry}} : (link_receiving_{{#}}' = false)
@@ -85,8 +94,11 @@ module link_{{#}}
                                                                                                                       & (link_state_{{#}}'= (channel_state_{{ref_channel}} != {{const_working}}
                                                                                                                                            ? {{const_failure}}
                                                                                                                                            : link_state_{{#}}))
-                                                                                                                     & (channel_state_{{ref_channel}}' = (channel_state_{{ref_channel}} = {{const_error}}
+                                                                                                                     & (channel_state_{{ref_channel}}' = (channel_state_{{ref_channel}} != {{const_working}}
                                                                                                                                                          ? {{const_failure}}
                                                                                                                                                          : channel_state_{{ref_channel}}));
+                                                                                                                     & (interface_state_{{ref_interface_receiver}}' = (interface_state_{{ref_interface_receiver}} != {{const_working}}
+                                                                                                                                                                      ? {{const_failure}}
+                                                                                                                                                                      : interface_state_{{ref_interface_receiver}}))
     
 endmodule

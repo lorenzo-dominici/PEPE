@@ -7,14 +7,15 @@ module local_session_{{#}}
 
     [{{cmd_session_update_success}}] (local_session_state_{{#}} = {{const_local_session_update}}) &
                                      (local_session_epoch_{{#}} > 0) -> (1 - ({{prob_session_reset}} + {{prob_ratchet_reset}} + {{prob_none}})) : (local_session_ratchet_{{#}}' = mod(local_session_ratchet_{{#}} + 1, ({{size_ratchet}} + 1)))
-                                                                                                                                & (local_session_state_{{#}}' = {{const_local_session_ratchet}})
+                                                                                                                                                & (local_session_state_{{#}}' = {{const_local_session_ratchet}})
                                                                       + {{prob_session_reset}} : (local_session_epoch_{{#}}' = 0)
                                                                                                & (local_session_ratchet_{{#}}' = 0)
                                                                                                & (local_session_state_{{#}}' = {{const_local_session_reset}})
                                                                       + {{prob_ratchet_reset}} : (local_session_ratchet_{{#}}' = 0)
                                                                                                & (local_session_state_{{#}}' = {{const_local_session_ratchet}})
                                                                       + {{prob_none}} : (local_session_epoch_{{#}}' = local_session_epoch_{{#}})
-                                                                                      & (local_session_ratchet_{{#}}' = local_session_ratchet_{{#}});
+                                                                                      & (local_session_ratchet_{{#}}' = local_session_ratchet_{{#}})
+                                                                                      & (local_session_state_{{#}}' = {{const_valid}});
 
     [{{cmd_session_update_failure}}] (local_session_state_{{#}} = {{const_local_session_update}}) &
                                      (local_session_epoch_{{#}} = 0) -> (local_session_state_{{#}}' = {{const_valid}})
@@ -22,16 +23,16 @@ module local_session_{{#}}
                                                                       & (local_session_ratchet_{{#}}' = 0);
     
     [{{cmd_session_ratchet}}] local_session_state_{{#}} = {{const_local_session_ratchet}} -> (local_session_epoch_{{#}}' = ((local_session_ratchet_{{#}} = 0) & (local_session_epoch_{{#}} != 0)
-                                                                                                            ? mod(local_session_epoch_{{#}} + 1, {{size_epoch}})
-                                                                                                            : local_session_epoch_{{#}}))
-                                                                             & (local_session_state_{{#}}' = {{const_local_session_check}});
+                                                                                                                           ? mod(local_session_epoch_{{#}} + 1, {{size_epoch}})
+                                                                                                                           : local_session_epoch_{{#}}))
+                                                                                           & (local_session_state_{{#}}' = {{const_local_session_check}});
 
     [{{cmd_session_check}}] local_session_state_{{#}} = {{const_local_session_check}} -> (local_session_state_{{#}}' = (local_session_epoch_{{#}} = 0
-                                                                                                        ? {{const_local_session_reset}}
-                                                                                                        : {{const_valid}}));
+                                                                                                                       ? {{const_local_session_reset}}
+                                                                                                                       : {{const_valid}}));
 
     [{{cmd_compromise}}] local_session_compromised_{{#}} = false -> (1 - {{prob_compromised}}) : local_session_compromised_{{#}}' = local_session_compromised_{{#}}
-                                                     + {{prob_compromised}} : local_session_compromised_{{#}}' = true;
+                                                                  + {{prob_compromised}} : local_session_compromised_{{#}}' = true;
 
     [{{cmd_decompromise}}] local_session_compromised_{{#}} = true -> (local_session_state_{{#}}' = {{const_local_session_reset}})
                                                                    & (local_session_compromised_{{#}}' = false);
