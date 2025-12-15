@@ -1,9 +1,10 @@
 {
     "protocol": "SENDER-KEY",
+    "support_protocol": null,
     "mls_sessions_range": [2, 2],
     "seed": 13,
     "filename": "test_network",
-    "node_range": [100, 100],
+    "node_range": [10, 10],
     "connected": true,
     "gen_model": "RANDOM",
     "conn_prob": 0.5,

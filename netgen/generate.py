@@ -6,6 +6,44 @@ import numpy as np
 from scipy.stats import zipf
 import json
 
+
+class Session:
+    def __init__(self):
+        self.id = None
+        self.protocol = None
+        self.nodes = []
+        self.paths = []
+        self.subsessions = []
+
+    def set_id(self, id):
+        self.id = id
+
+    def set_protocol(self, protocol):
+        self.protocol = protocol
+    
+    def set_nodes(self, nodes):
+        self.nodes = nodes
+
+    def add_path(self, path):
+        self.paths.append(path)
+
+    def add_subsession(self, subsession):
+        self.subsessions.append(subsession)
+
+    def get_id(self):
+        return self.id
+
+    def get_nodes(self):
+        return self.nodes
+
+    def get_paths(self):
+        return self.paths
+
+    def get_subsessions(self):
+        return self.subsessions.copy()
+
+
+
 class NetworkGenerator: 
     def __init__(self, params):
         self.params = params
@@ -448,7 +486,7 @@ class NetworkGenerator:
         # Logic to assign attributes like buffer sizes and channel bandwidths and all the probabilities
         
         attributes_to_add = [
-            "mls_sessions_range", "filename",
+            "mls_sessions_range", "filename", "support_protocol",
             "buffer_size_range", "node_prob_off_to_on", "node_prob_on_to_off",
             "channel_bandwidth_range", 
             "channel_prob_working_to_error", "channel_prob_error_to_working", "channel_prob_failure_to_working",
@@ -471,6 +509,8 @@ class NetworkGenerator:
             case "HPKE" | "DOUBLE-RATCHET":
                 paths = []
                 return_paths = []
+                sessions = []
+                int id = 0
                 for i in range(len(nodes)):
                     for j in range(len(nodes)):
                         if i != j:
@@ -515,8 +555,19 @@ class NetworkGenerator:
                                 return_path.nodes[a]['ratchet_size'] = ratchet_size
 
                                 return_paths.append(return_path)
+
+                                session = Session()
+                                session.set_id(id)
+                                session.set_protocol(self.protocol)
+                                session.set_nodes([a, b])
+                                session.add_path(path)
+                                session.add_path(return_path)
+                                sessions.append(session)
+                                id += 1
+
                 self.attributes["paths"] = paths
                 self.attributes["return_paths"] = return_paths
+                self.attributes["sessions"] = sessions
 
             # for sender key, we need one-to-many paths and all the one-to-one paths sender_receiver and receiver_sender
             case "SENDER-KEY":
@@ -527,6 +578,7 @@ class NetworkGenerator:
                         senders.append(node)
                 # now, for each sender, select receivers and generate paths
                 one_to_many_paths = []
+                sessions = []
                 for sender in senders:
                     if self.params.get("ls_size_epoch_range")[0] == self.params.get("ls_size_epoch_range")[1]:
                         epoch_size = self.params.get("ls_size_epoch_range")[0]
@@ -559,11 +611,17 @@ class NetworkGenerator:
                         count = len(list(tree.successors(node)))
                         tree.nodes[node]['counter'] = count
                     one_to_many_paths.append(tree)
+
                 self.attributes["one_to_many_paths"] = one_to_many_paths
 
                 # generate all the one-to-one paths from sender to each receiver
                 one_to_one_paths = []
+                one_to_one_return_paths = []
+                id = 0
+                
                 for tree in one_to_many_paths:
+                    session = Session()
+                    subsessions = []
                     sender = list(tree.nodes())[0]
                     receivers = [n for n, attr in tree.nodes(data=True) if attr.get('is_receiver')]
                     for receiver in receivers:
@@ -586,15 +644,9 @@ class NetworkGenerator:
 
                         one_to_one_paths.append(path)
 
-
-                # now generate all the one-to-one return paths to the sender
-                one_to_one_return_paths = []
-                for tree in one_to_many_paths:
-                    sender = list(tree.nodes())[0]
-                    receivers = [n for n, attr in tree.nodes(data=True) if attr.get('is_receiver')]
-                    for receiver in receivers:
-                        path = nx.DiGraph()
-                        nx.add_path(path, nx.shortest_path(self.G, receiver, sender))
+                        # one-to-one return path
+                        return_path = nx.DiGraph()
+                        nx.add_path(return_path, nx.shortest_path(self.G, receiver, sender))
 
                         if self.params.get("ls_size_epoch_range")[0] == self.params.get("ls_size_epoch_range")[1]:
                             epoch_size = self.params.get("ls_size_epoch_range")[0]
@@ -605,15 +657,34 @@ class NetworkGenerator:
                         else:
                             ratchet_size = self.rng.integers(self.params.get("ls_size_ratchet_range")[0], self.params.get("ls_size_ratchet_range")[1] + 1)
                         
-                        path.nodes[sender]['epoch_size'] = epoch_size
-                        path.nodes[sender]['ratchet_size'] = ratchet_size
-                        path.nodes[receiver]['epoch_size'] = epoch_size
-                        path.nodes[receiver]['ratchet_size'] = ratchet_size
+                        return_path.nodes[sender]['epoch_size'] = epoch_size
+                        return_path.nodes[sender]['ratchet_size'] = ratchet_size
+                        return_path.nodes[receiver]['epoch_size'] = epoch_size
+                        return_path.nodes[receiver]['ratchet_size'] = ratchet_size
 
-                        one_to_one_return_paths.append(path)
+                        one_to_one_return_paths.append(return_path)
+
+                        subsession = Session()
+                        subsession.set_id(id)
+                        subsession.set_protocol(self.attributes["support_protocol"])
+                        subsession.set_nodes([sender, receiver])
+                        subsession.add_path(path)
+                        subsession.add_path(return_path)
+                        subsessions.append(subsession)
+                        id += 1
+                    # now add the subsessions to the main session. Select the session of the sender
+                    session.set_id(id)
+                    session.set_protocol(self.protocol)
+                    session.set_nodes([sender] + receivers)
+                    session.add_path(tree)
+                    for subsession in subsessions:
+                        session.add_subsession(subsession)
+                    sessions.append(session)
+                    id += 1
                 
                 self.attributes["one_to_one_paths"] = one_to_one_paths
                 self.attributes["one_to_one_return_paths"] = one_to_one_return_paths
+                self.attributes["sessions"] = sessions
             
             case "MLS":
                 # for MLS, generate random sessions and one_to-many paths in each session with the one to one return paths
@@ -633,18 +704,20 @@ class NetworkGenerator:
 
                 cut_points = sorted(self.rng.choice(range(1, len(nodes)), sessions_number - 1, replace = False))
                 cut_points = [0] + cut_points + [len(nodes)]
-                sessions = []
+                groups = []
                 for i in range(len(cut_points) - 1):
                     start = cut_points[i]
                     end = cut_points[i + 1]
-                    session_nodes = nodes[start:end]
-                    sessions.append(session_nodes)
+                    group_nodes = nodes[start:end]
+                    groups.append(group_nodes)
 
                 one_to_many_paths = []
                 one_to_one_return_paths = []
-                # for each session, generate all the one-to-many paths
-                for session in sessions:
-                    for sender in session:
+                sessions = []
+                id = 0
+                # for each group, generate all the one-to-many paths
+                for group in groups:
+                    for sender in group:
                         if self.params.get("ls_size_epoch_range")[0] == self.params.get("ls_size_epoch_range")[1]:
                             epoch_size = self.params.get("ls_size_epoch_range")[0]
                         else:
@@ -655,7 +728,7 @@ class NetworkGenerator:
                         else:
                             ratchet_size = self.rng.integers(self.params.get("ls_size_ratchet_range")[0], self.params.get("ls_size_ratchet_range")[1] + 1)
 
-                        destinations = [node for node in session if node != sender]
+                        destinations = [node for node in group if node != sender]
                         tree = nx.DiGraph()
                         tree.add_node(sender)
                         tree.nodes[sender]['epoch_size'] = epoch_size
@@ -674,8 +747,16 @@ class NetworkGenerator:
                             tree.nodes[node]['counter'] = count
                         one_to_many_paths.append(tree)
 
+                        session = Session()
+                        session.set_protocol(self.protocol)
+                        session.set_nodes([sender] + destinations)
+                        session.add_path(tree)
+                        session.set_id(id)
+                        id += 1
+
                         # now generate all the one-to-one return paths to the sender
                         one_to_one_return_paths = []
+                        subsessions = []
                         
                         for dest in destinations:
                             path = nx.DiGraph()
@@ -697,6 +778,20 @@ class NetworkGenerator:
 
                             one_to_one_return_paths.append(path)
 
+                            subsession = Session()
+                            subsession.set_id(id)
+                            subsession.set_protocol(self.attributes["support_protocol"])
+                            subsession.set_nodes([dest, sender])
+                            subsession.add_path(path)
+                            subsessions.append(subsession)
+                            id += 1
+                        
+                        for subsession in subsessions:
+                            session.add_subsession(subsession)
+
+                        sessions.append(session)
+
+                self.attributes["sessions"] = sessions
                 self.attributes["one_to_many_paths"] = one_to_many_paths
                 self.attributes["one_to_one_return_paths"] = one_to_one_return_paths
 
@@ -893,141 +988,70 @@ class NetworkGenerator:
         links_dict["instances"] = []
         range_state = ranges.get("link_range_state")
 
-        match self.protocol:
-            case "HPKE" | "DOUBLE-RATCHET":
-                paths = self.attributes.get("paths")
-                paths.extend(self.attributes.get("return_paths"))
-                for path in paths:
-                    for edge in path.edges():
-                        sender = list(path.nodes())[0]
-                        receiver = list(path.nodes())[-1]
-                        node_a = edge[0]
-                        node_b = edge[1]
+        sessions = self.attributes.get("sessions").copy()
+        for session in self.attributes.get("sessions"):
+            sessions.extend(session.get_subsessions())
 
-                        # links instances
-                        link = {}
-                        link["name"] = f"link_{node_a}_{node_b}_of_path_{sender}_{receiver}"
-                        link["#"] = f"{node_a}_{node_b}_{sender}_{receiver}"
+        for session in sessions:
+            session_id = session.get_id()
+            for path in session.get_paths():
+                for edge in path.edges():
+                    sender = path.nodes()[0]
+                    receivers = path.nodes()[1:]
+                    node_a = edge[0]
+                    node_b = edge[1]
 
-                        # states
-                        link["range_state"] = range_state
-                        init_value = int(range_state.strip('[]').split('..')[0])
-                        link["init_state"] = init_value
-                        link["init_prev"] = False
-                        link["init_sending"] = False
-                        link["init_receiving"] = False
+                    # links instances
+                    link = {}
+                    link["name"] = f"link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
+                    link["#"] = f"{node_a}_{node_b}_{sender}_{session_id}"
 
-                        # references
-                        link["ref_channel"] = f"{node_a}_{node_b}"
-                        link["ref_interface_sender"] = f"{node_a}_{node_b}"
-                        link["ref_node_buffer_sender"] = f"{node_a}"
-                        link["ref_link_ref_counter"] = f"{node_a}_{sender}_{receiver}"
-                        next_links = []
-                        succ = next(path.successors(node_b), None)
-                        if succ != None:
-                            next_links.append({"ref_link_next": f"{node_b}_{succ}_{sender}_{receiver}"})
-                        link["next_links"] = next_links
-                        link["ref_interface_receiver"] = f"{node_b}_{node_a}"
-                        link["ref_node_buffer_receiver"] = f"{node_b}"
-                        link["size_node_buffer_receiver"] = self.attributes["nodes_buffer_sizes"][node_b]
+                    # states
+                    link["range_state"] = range_state
+                    init_value = int(range_state.strip('[]').split('..')[0])
+                    link["init_state"] = init_value
+                    link["init_prev"] = False
+                    link["init_sending"] = False
+                    link["init_receiving"] = False
 
-                        # probabilities
+                    # references
+                    link["ref_channel"] = f"{node_a}_{node_b}"
+                    link["ref_interface_sender"] = f"{node_a}_{node_b}"
+                    link["ref_node_buffer_sender"] = f"{node_a}"
+                    link["ref_link_ref_counter"] = f"{node_a}_{sender}_{session_id}"
+                    next_links = []
+                    successors = list(path.successors(node_b))
+                    for succ in successors:
+                        next_links.append({"ref_link_next": f"{node_b}_{succ}_{sender}_{session_id}"})
+                    link["next_links"] = next_links
+                    link["ref_interface_receiver"] = f"{node_b}_{node_a}"
+                    link["ref_node_buffer_receiver"] = f"{node_b}"
+                    link["size_node_buffer_receiver"] = self.attributes["nodes_buffer_sizes"][node_b]
+
+                    # probabilities
+                    if self.attributes.get("prob_working_to_error")[0] == self.attributes.get("prob_working_to_error")[1]:
+                        link["prob_working_to_error"] = self.attributes.get("link_prob_working_to_error")[0]
+                    else:
                         link["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("link_prob_working_to_error")[0], self.attributes.get("link_prob_working_to_error")[1]), 2)
+                    if self.attributes.get("prob_error_to_working")[0] == self.attributes.get("prob_error_to_working")[1]:
+                        link["prob_error_to_working"] = self.attributes.get("link_prob_error_to_working")[0]
+                    else:
                         link["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_error_to_working")[0], self.attributes.get("link_prob_error_to_working")[1]), 2)
+                    
+                    if self.attributes.get("prob_failure_to_working")[0] == self.attributes.get("prob_failure_to_working")[1]:
+                        link["prob_failure_to_working"] = self.attributes.get("link_prob_failure_to_working")[0]
+                    else:
                         link["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_failure_to_working")[0], self.attributes.get("link_prob_failure_to_working")[1]), 2)
+                    if self.attributes.get("prob_retry")[0] == self.attributes.get("prob_retry")[1]:
+                        link["prob_retry"] = self.attributes.get("link_prob_retry")[0]
+                    else:
                         link["prob_retry"] = round(self.rng.uniform(self.attributes.get("link_prob_retry")[0], self.attributes.get("link_prob_retry")[1]), 2)
+                    if self.attributes.get("prob_sending")[0] == self.attributes.get("prob_sending")[1]:
+                        link["prob_sending"] = self.attributes.get("link_prob_sending")[0]
+                    else:
                         link["prob_sending"] = round(self.rng.uniform(self.attributes.get("link_prob_sending")[0], self.attributes.get("link_prob_sending")[1]), 2)
 
-                        links_dict["instances"].append(link)
-
-            case "SENDER-KEY" | "MLS":
-                one_to_many_paths = self.attributes.get("one_to_many_paths")
-                for tree in one_to_many_paths:
-                    sender = list(tree.nodes())[0]
-                    receivers = [n for n, attr in tree.nodes(data = True) if attr.get("is_receiver")]
-                    path_str = "_".join(str(n) for n in [sender] + receivers)
-                    for edge in tree.edges():          
-                        # link instances
-                        node_a = edge[0]
-                        node_b = edge[1]
-                        link = {}
-                        link["name"] = f"link_{node_a}_{node_b}_of_{path_str}"
-                        link["#"] = f"{node_a}_{node_b}_{path_str}"
-
-                        # states
-                        link["range_state"] = range_state
-                        init_value = int(range_state.strip('[]').split('..')[0])
-                        link["init_state"] = init_value
-                        link["init_prev"] = False
-                        link["init_sending"] = False
-                        link["init_receiving"] = False
-
-                        # references
-                        link["ref_channel"] = f"{node_a}_{node_b}"
-                        link["ref_interface_sender"] = f"{node_a}_{node_b}"
-                        link["ref_node_buffer_sender"] = f"{node_a}"
-                        link["ref_link_ref_counter"] = f"{node_a}_{path_str}"
-                        next_links = []
-                        for succ in tree.successors(node_b):
-                            next_links.append({"ref_link_next": f"{node_b}_{succ}_{path_str}"})
-                        link["next_links"] = next_links
-                        link["ref_interface_receiver"] = f"{node_b}_{node_a}"
-                        link["ref_node_buffer_receiver"] = f"{node_b}"
-                        link["size_node_buffer_receiver"] = self.attributes["nodes_buffer_sizes"][node_b]
-
-                        # probabilities
-                        link["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("link_prob_working_to_error")[0], self.attributes.get("link_prob_working_to_error")[1]), 2)
-                        link["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_error_to_working")[0], self.attributes.get("link_prob_error_to_working")[1]), 2)
-                        link["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_failure_to_working")[0], self.attributes.get("link_prob_failure_to_working")[1]), 2)
-                        link["prob_retry"] = round(self.rng.uniform(self.attributes.get("link_prob_retry")[0], self.attributes.get("link_prob_retry")[1]), 2)
-                        link["prob_sending"] = round(self.rng.uniform(self.attributes.get("link_prob_sending")[0], self.attributes.get("link_prob_sending")[1]), 2)
-
-                        links_dict["instances"].append(link)
-            
-                one_to_one_paths = self.attributes.get("one_to_one_paths").copy() if self.attributes.get("one_to_one_paths") else []
-                one_to_one_paths.extend(self.attributes.get("one_to_one_return_paths")) if self.attributes.get("one_to_one_return_paths") else []
-                for path in one_to_one_paths:
-                    for edge in path.edges():
-                        sender = list(path.nodes())[0]
-                        receiver = list(path.nodes())[-1]
-                        node_a = edge[0]
-                        node_b = edge[1]
-
-                        # links instances
-                        link = {}
-                        link["name"] = f"link_{node_a}_{node_b}_of_return_path_{sender}_{receiver}"
-                        link["#"] = f"{node_a}_{node_b}_{sender}_{receiver}"
-
-                        # states
-                        link["range_state"] = range_state
-                        init_value = int(range_state.strip('[]').split('..')[0])
-                        link["init_state"] = init_value
-                        link["init_prev"] = False
-                        link["init_sending"] = False
-                        link["init_receiving"] = False
-
-                        # references
-                        link["ref_channel"] = f"{node_a}_{node_b}"
-                        link["ref_interface_sender"] = f"{node_a}_{node_b}"
-                        link["ref_node_buffer_sender"] = f"{node_a}"
-                        link["ref_link_ref_counter"] = f"{node_a}_{sender}_{receiver}"
-                        next_links = []
-                        succ = next(path.successors(node_b), None)
-                        if succ != None:
-                            next_links.append({"ref_link_next": f"{node_b}_{succ}_{sender}_{receiver}"}) if succ else None
-                        link["next_links"] = next_links
-                        link["ref_interface_receiver"] = f"{node_b}_{node_a}"
-                        link["ref_node_buffer_receiver"] = f"{node_b}"
-                        link["size_node_buffer_receiver"] = self.attributes["nodes_buffer_sizes"][node_b]
-
-                        # probabilities
-                        link["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("link_prob_working_to_error")[0], self.attributes.get("link_prob_working_to_error")[1]), 2)
-                        link["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_error_to_working")[0], self.attributes.get("link_prob_error_to_working")[1]), 2)
-                        link["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_failure_to_working")[0], self.attributes.get("link_prob_failure_to_working")[1]), 2)
-                        link["prob_retry"] = round(self.rng.uniform(self.attributes.get("link_prob_retry")[0], self.attributes.get("link_prob_retry")[1]), 2)
-                        link["prob_sending"] = round(self.rng.uniform(self.attributes.get("link_prob_sending")[0], self.attributes.get("link_prob_sending")[1]), 2)
-
-                        links_dict["instances"].append(link)
+                    links_dict["instances"].append(link)
 
         return links_dict
 
@@ -1041,69 +1065,31 @@ class NetworkGenerator:
         link_refs_dict["template"] = files_config.get("link_ref_template")
         link_refs_dict["instances"] = []
 
-        match self.protocol:
-            case "HPKE" | "DOUBLE-RATCHET":
-                paths = self.attributes.get("paths")
-                paths.extend(self.attributes.get("return_paths"))
-                link_refs_dict["instances"] = []
-                for path in paths:
-                    for edge in path.edges():
-                        sender = list(path.nodes())[0]
-                        receiver = list(path.nodes())[-1]
-                        node_a = edge[0]
-                        node_b = edge[1]
+        sessions = self.attributes.get("sessions").copy()
+        for session in self.attributes.get("sessions"):
+            sessions.extend(session.get_subsessions())
 
-                        # link_ref_counter instances
-                        link_ref = {}
-                        link_ref["name"] = f"link_ref_{node_a}_of_path_{sender}_{receiver}"
-                        link_ref["#"] = f"{node_a}_{sender}_{receiver}"
-                        
+        for session in sessions:
+            session_id = session.get_id()
+            for path in session.get_paths():
+                sender = path.nodes[0]
+                for node in path.nodes():
+                    # link_ref_counter instances
+                    link_ref = {}
+                    link_ref["name"] = f"link_ref_{node}_of_path_{sender}_{session_id}"
+                    link_ref["#"] = f"{node}_{sender}_{session_id}"
+                    
+                    if session.get_protocol() in {"HPKE", "DOUBLE-RATCHET", "SUPPORT_HPKE", "SUPPORT_DOUBLE-RATCHET"}:
                         link_ref["size_counter"] = 1
                         link_ref["init_counter"] = 1
-                        link_ref["is_receiver"] = False
-                        link_ref["ref_node"] = f"{node_a}"
-
-                        link_refs_dict["instances"].append(link_ref)
-
-            case "SENDER-KEY" | "MLS":
-                one_to_many_paths = self.attributes.get("one_to_many_paths")
-                for tree in one_to_many_paths:
-                    sender = list(tree.nodes())[0]
-                    receivers = [n for n, attr in tree.nodes(data = True) if attr.get("is_receiver")]
-                    path_str = "_".join(str(n) for n in [sender] + receivers)
-                    for node in tree.nodes():
-                        # link_ref_counter instances
-                        link_ref = {}
-                        link_ref["name"] = f"link_ref_{node}_of_{path_str}"
-                        link_ref["#"] = f"{node}_{path_str}"  
-                        counter = tree.nodes[node].get("counter", 1)
+                    else:
+                        counter = path.nodes[node].get("counter", 1)
                         link_ref["size_counter"] = counter
                         link_ref["init_counter"] = counter
-                        link_ref["is_receiver"] = tree.nodes[node].get("is_receiver", False)
-                        link_ref["ref_node"] = f"{node}"
+                    link_ref["is_receiver"] = path.nodes[node].get("is_receiver", False)
+                    link_ref["ref_node"] = f"{node}"
+                    link_refs_dict["instances"].append(link_ref)
 
-                        link_refs_dict["instances"].append(link_ref)
-
-                one_to_one_paths = self.attributes.get("one_to_one_paths").copy() if self.attributes.get("one_to_one_paths") else []
-                one_to_one_paths.extend(self.attributes.get("one_to_one_return_paths")) if self.attributes.get("one_to_one_return_paths") else []
-                for path in one_to_one_paths:
-                    for edge in path.edges():
-                        sender = list(path.nodes())[0]
-                        receiver = list(path.nodes())[-1]
-                        node_a = edge[0]
-                        node_b = edge[1]
-                        # link_ref_counter instances
-                        link_ref = {}
-                        link_ref["name"] = f"link_ref_{node_a}_of_return_path_{sender}_{receiver}"
-                        link_ref["#"] = f"{node_a}_{sender}_{receiver}"
-                        
-                        link_ref["size_counter"] = 1
-                        link_ref["init_counter"] = 1
-                        link_ref["is_receiver"] = False
-                        link_ref["ref_node"] = f"{node_a}"  
-
-                        link_refs_dict["instances"].append(link_ref)
-                
         return link_refs_dict
         
 
@@ -1128,289 +1114,53 @@ class NetworkGenerator:
         consts_idle = consts.get("const_idle")
         const_message_data = consts.get("const_message_data")
 
-        match self.protocol:
-            case "HPKE" | "DOUBLE-RATCHET":
-                paths = self.attributes.get("paths")
-                for path in paths:
-                    sender = list(path.nodes())[0]
-                    receiver = list(path.nodes())[-1]
-                    session_path = {}
-                    session_path["name"] = f"session_path_{sender}_{receiver}"
-                    session_path["#"] = f"{sender}_{receiver}"
-                    session_path["protocol"] = self.protocol
-
-                    # states
-                    session_path["range_depth"] = range_state
-                    session_path["init_state"] = consts_idle
-                    session_path["range_system_message"] = range_system_message
-                    session_path["init_system_message"] = const_message_data 
-                    session_path["range_data_message"] = range_data_message
-                    session_path["init_data_message"] = const_message_data 
-                    session_path["range_prev_local_session_epoch_sender"] = path.nodes[sender]['epoch_size']
-                    session_path["init_prev_local_session_epoch_sender"] = 0
-                    session_path["size_link_counter"] = len(path) - 1
-                    session_path["init_link_counter"] = len(path) - 1
-                    session_path["size_checker_counter"] = 1 # one session checker for each receiver
-                    session_path["init_checker_counter"] = 1 
-
-                    # references
-                    session_path["ref_node_sender"] = f"{sender}"
-                    session_path["ref_local_session_sender"] = f"{sender}_{sender}_{receiver}"
-                    session_path["size_buffer_sender"] = self.attributes["nodes_buffer_sizes"][sender]
-                    succ = next(path.successors(sender))
-                    first_links = [{"#": f"{sender}_{succ}_{sender}_{receiver}"}] if succ else None
-                    session_path["first_links"] = first_links
-
-                    # probabilities
-                    if self.attributes.get("sp_prob_run")[0] == self.attributes.get("sp_prob_run")[1]:
-                        prob_run = self.attributes.get("sp_prob_run")[0]
-                    else:
-                        prob_run = round(self.rng.uniform(self.attributes.get("sp_prob_run")[0], self.attributes.get("sp_prob_run")[1]), 2)
-                    session_path["prob_run"] = prob_run
-
-                    session_paths_dict["instances"].append(session_path)
-
-                # generate also the return paths
-                return_paths = self.attributes.get("return_paths")
-                for path in return_paths:
-                    sender = list(path.nodes())[0]
-                    receiver = list(path.nodes())[-1]
-                    session_path = {}
-                    session_path["name"] = f"session_path_return_{sender}_{receiver}"
-                    session_path["#"] = f"{sender}_{receiver}"
-                    session_path["protocol"] = self.protocol
-
-                    # states
-                    session_path["range_depth"] = range_state
-                    session_path["init_state"] = consts_idle
-                    session_path["range_system_message"] = range_system_message
-                    session_path["init_system_message"] = const_message_data 
-                    session_path["range_data_message"] = range_data_message
-                    session_path["init_data_message"] = const_message_data 
-                    session_path["range_prev_local_session_epoch_sender"] = path.nodes[sender]['epoch_size']
-                    session_path["init_prev_local_session_epoch_sender"] = 0
-                    session_path["size_link_counter"] = len(path) - 1
-                    session_path["init_link_counter"] = len(path) - 1
-                    session_path["size_checker_counter"] = 1 
-                    session_path["init_checker_counter"] = 1 
-
-                    # references
-                    session_path["ref_node_sender"] = f"{sender}"
-                    session_path["ref_local_session_sender"] = f"{sender}_{sender}_{receiver}"
-                    session_path["size_buffer_sender"] = self.attributes["nodes_buffer_sizes"][sender]
-                    succ = next(path.successors(sender))
-                    first_links = [{"#": f"{sender}_{succ}_{sender}_{receiver}"}] if succ else None
-                    session_path["first_links"] = first_links
-
-                    # probabilities
-                    session_path["prob_run"] = 0.0
-
-                    session_paths_dict["instances"].append(session_path)
             
-            case "SENDER-KEY":
-                one_to_many_paths = self.attributes.get("one_to_many_paths")
-                for tree in one_to_many_paths:
-                    session_path = {}
-                    sender = list(tree.nodes())[0]
-                    receivers = [n for n, attr in tree.nodes(data = True) if attr.get("is_receiver")]
-                    path_str = "_".join(str(n) for n in [sender] + receivers)
-                    session_path["name"] = f"session_path_{path_str}"
-                    session_path["#"] = f"{path_str}"
-                    session_path["protocol"] = self.protocol
+        sessions = self.attributes.get("sessions").copy()
+        for session in self.attributes.get("sessions"):
+            sessions.extend(session.get_subsessions())
 
-                    # states
-                    session_path["range_depth"] = range_state
-                    session_path["init_state"] = consts_idle
-                    session_path["range_system_message"] = range_system_message
-                    session_path["init_system_message"] = const_message_data
-                    session_path["range_data_message"] = range_data_message
-                    session_path["init_data_message"] = const_message_data
-                    session_path["range_prev_local_session_epoch_sender"] = tree.nodes[sender]['epoch_size']
-                    session_path["init_prev_local_session_epoch_sender"] = 0
-                    session_path["size_link_counter"] = len(tree.edges())
-                    session_path["init_link_counter"] = len(tree.edges())
-                    session_path["size_checker_counter"] = len(receivers) # one session checker for each receiver
-                    session_path["init_checker_counter"] = len(receivers)
+        for session in sessions:
+            sessions_id = session.get_id()
+            for path in session.paths:
+                sender = path.nodes[0]
+                receivers = path.nodes[1:]
+                session_path = {}
+                session_path["name"] = f"session_path_{sender}_{sessions_id}"
+                session_path["#"] = f"{sender}_{sessions_id}"
+                session_path["protocol"] = sessions.get_protocol()
 
-                    # references
-                    session_path["ref_node_sender"] = f"{sender}"
-                    session_path["ref_local_session_sender"] = f"{sender}_{path_str}"
-                    session_path["size_buffer_sender"] = self.attributes["nodes_buffer_sizes"][sender]
-                    first_links = [{"#": f"{sender}_{succ}_{path_str}"} for succ in tree.successors(sender)]
-                    session_path["first_links"] = first_links
+                # states
+                session_path["range_depth"] = range_state
+                session_path["init_state"] = consts_idle
+                session_path["range_system_message"] = range_system_message
+                session_path["init_system_message"] = const_message_data 
+                session_path["range_data_message"] = range_data_message
+                session_path["init_data_message"] = const_message_data 
+                session_path["range_prev_local_session_epoch_sender"] = path.nodes[0]['epoch_size']
+                session_path["init_prev_local_session_epoch_sender"] = 0
+                session_path["size_link_counter"] = len(path[0]) - 1
+                session_path["init_link_counter"] = len(path[0]) - 1
+                session_path["size_checker_counter"] = len(receivers)  # one session checker for each receiver
+                session_path["init_checker_counter"] = len(receivers)
 
-                    # refs to one to one paths from sender to each receiver
+                # references
+                session_path["ref_node_sender"] = f"{sender}"
+                session_path["ref_local_session_sender"] = f"{sender}_{sessions_id}"
+                session_path["size_buffer_sender"] = self.attributes["nodes_buffer_sizes"][sender]
+                succ = next(path.successors(sender))
+                first_links = [{"#": f"{sender}_{succ}_{sender}_{sessions_id}"}] if succ else None
+                session_path["first_links"] = first_links
 
-                    one_to_one = []
-                    for receiver in receivers:
-                        one_to_one_path = {}
-                        one_to_one_path["ref_session_path"] = f"{sender}_{receiver}"
-                        one_to_one_path["ref_session_checker_receiver"] = f"{receiver}_{sender}_{receiver}"
-                        one_to_one_path["ref_local_session_sender"] = f"{sender}_{sender}_{receiver}"
-                        one_to_one.append(one_to_one_path)
-
-                    session_path["one_to_one"] = one_to_one
-
-                    # probabilities
+                # probabilities
+                if session.get_protocol() in {"SUPPORT_HPKE", "SUPPORT_DOUBLE-RATCHET"}:
+                    session_path["prob_run"] = 0.0
+                else:
                     if self.attributes.get("sp_prob_run")[0] == self.attributes.get("sp_prob_run")[1]:
-                        prob_run = self.attributes.get("sp_prob_run")[0]
+                            prob_run = self.attributes.get("sp_prob_run")[0]
                     else:
                         prob_run = round(self.rng.uniform(self.attributes.get("sp_prob_run")[0], self.attributes.get("sp_prob_run")[1]), 2)
                     session_path["prob_run"] = prob_run
-
-                    session_paths_dict["instances"].append(session_path)
-
-                # generate also the one to one paths from sender to each receiver
-
-                one_to_one_paths = self.attributes.get("one_to_one_paths")
-                for path in one_to_one_paths:
-                    sender = list(path.nodes())[0]
-                    receiver = list(path.nodes())[-1]
-                    session_path = {}
-                    session_path["name"] = f"session_path_{sender}_{receiver}"
-                    session_path["#"] = f"{sender}_{receiver}"
-                    session_path["protocol"] = "HPKE" # one to one paths use HPKE
-
-                    # states
-                    session_path["range_depth"] = range_state
-                    session_path["init_state"] = consts_idle
-                    session_path["range_system_message"] = range_system_message
-                    session_path["init_system_message"] = const_message_data 
-                    session_path["range_data_message"] = range_data_message
-                    session_path["init_data_message"] = const_message_data 
-                    session_path["range_prev_local_session_epoch_sender"] = path.nodes[sender]['epoch_size']
-                    session_path["init_prev_local_session_epoch_sender"] = 0
-                    session_path["size_link_counter"] = len(path) - 1
-                    session_path["init_link_counter"] = len(path) - 1
-                    session_path["size_checker_counter"] = 1 
-                    session_path["init_checker_counter"] = 1 
-
-                    # references
-                    session_path["ref_node_sender"] = f"{sender}"
-                    session_path["ref_local_session_sender"] = f"{sender}_{sender}_{receiver}"
-                    session_path["size_buffer_sender"] = self.attributes["nodes_buffer_sizes"][sender]
-                    succ = next(path.successors(sender))
-                    first_links = [({"#": f"{sender}_{succ}_{sender}_{receiver}"})]
-                    session_path["first_links"] = first_links
-
-                    # probabilities
-                    session_path["prob_run"] = 0.0
-
-                    session_paths_dict["instances"].append(session_path)
-                
-                # generate also the one to one return paths from each receiver to sender
-                one_to_one_return_paths = self.attributes.get("one_to_one_return_paths")
-                for path in one_to_one_return_paths:
-                    sender = list(path.nodes())[0]
-                    receiver = list(path.nodes())[-1]
-                    session_path = {}
-                    session_path["name"] = f"session_path_{sender}_{receiver}"
-                    session_path["#"] = f"{sender}_{receiver}"
-                    session_path["protocol"] = "HPKE" # one to one paths use HPKE
-
-                    # states
-                    session_path["range_depth"] = range_state
-                    session_path["init_state"] = consts_idle
-                    session_path["range_system_message"] = range_system_message
-                    session_path["init_system_message"] = const_message_data 
-                    session_path["range_data_message"] = range_data_message
-                    session_path["init_data_message"] = const_message_data 
-                    session_path["range_prev_local_session_epoch_sender"] = path.nodes[sender]['epoch_size']
-                    session_path["init_prev_local_session_epoch_sender"] = 0
-                    session_path["size_link_counter"] = len(path) - 1
-                    session_path["init_link_counter"] = len(path) - 1
-                    session_path["size_checker_counter"] = 1 
-                    session_path["init_checker_counter"] = 1 
-
-                    # references
-                    session_path["ref_node_sender"] = f"{sender}"
-                    session_path["ref_local_session_sender"] = f"{sender}_{sender}_{receiver}"
-                    session_path["size_buffer_sender"] = self.attributes["nodes_buffer_sizes"][sender]
-                    succ = next(path.successors(sender))
-                    first_links = [{"#": f"{sender}_{succ}_{sender}_{receiver}"}]
-                    session_path["first_links"] = first_links
-
-                    # probabilities
-                    session_path["prob_run"] = 0.0
-
-                    session_paths_dict["instances"].append(session_path)
-            
-            case "MLS":
-                one_to_many_paths = self.attributes.get("one_to_many_paths")
-                for tree in one_to_many_paths:
-                    session_path = {}
-                    sender = list(tree.nodes())[0]
-                    receivers = [n for n, attr in tree.nodes(data = True) if attr.get("is_receiver")]
-                    path_str = "_".join(str(n) for n in [sender] + receivers)
-                    session_path["name"] = f"session_path_{path_str}"
-                    session_path["#"] = f"{path_str}"
-                    session_path["protocol"] = self.protocol
-
-                    # states
-                    session_path["range_depth"] = range_state
-                    session_path["init_state"] = consts_idle
-                    session_path["range_system_message"] = range_system_message
-                    session_path["init_system_message"] = const_message_data
-                    session_path["range_data_message"] = range_data_message
-                    session_path["init_data_message"] = const_message_data
-                    session_path["range_prev_local_session_epoch_sender"] = tree.nodes[sender]['epoch_size']
-                    session_path["init_prev_local_session_epoch_sender"] = 0
-                    session_path["size_link_counter"] = len(tree.edges())
-                    session_path["init_link_counter"] = len(tree.edges())
-                    session_path["size_checker_counter"] = len(receivers) # one session checker for each receiver
-                    session_path["init_checker_counter"] = len(receivers)
-
-                    # references
-                    session_path["ref_node_sender"] = f"{sender}"
-                    session_path["ref_local_session_sender"] = f"{sender}_{path_str}"
-                    session_path["size_buffer_sender"] = self.attributes["nodes_buffer_sizes"][sender]
-                    first_links = [{"#": f"{sender}_{succ}_{path_str}"} for succ in tree.successors(sender)]
-                    session_path["first_links"] = first_links
-
-                    # probabilities
-                    if self.attributes.get("sp_prob_run")[0] == self.attributes.get("sp_prob_run")[1]:
-                        prob_run = self.attributes.get("sp_prob_run")[0]
-                    else:
-                        prob_run = round(self.rng.uniform(self.attributes.get("sp_prob_run")[0], self.attributes.get("sp_prob_run")[1]), 2)
-                    session_path["prob_run"] = prob_run
-
-                    session_paths_dict["instances"].append(session_path)
-
-                one_to_one_return_paths = self.attributes.get("one_to_one_return_paths")
-                for path in one_to_one_return_paths:
-                    sender = list(path.nodes())[0]
-                    receiver = list(path.nodes())[-1]
-                    session_path = {}
-                    session_path["name"] = f"session_path_{sender}_{receiver}"
-                    session_path["#"] = f"{sender}_{receiver}"
-                    session_path["protocol"] = "HPKE" # one to one paths use HPKE
-
-                    # states
-                    session_path["range_depth"] = range_state
-                    session_path["init_state"] = consts_idle
-                    session_path["range_system_message"] = range_system_message
-                    session_path["init_system_message"] = const_message_data 
-                    session_path["range_data_message"] = range_data_message
-                    session_path["init_data_message"] = const_message_data 
-                    session_path["range_prev_local_session_epoch_sender"] = path.nodes[sender]['epoch_size']
-                    session_path["init_prev_local_session_epoch_sender"] = 0
-                    session_path["size_link_counter"] = len(path) - 1
-                    session_path["init_link_counter"] = len(path) - 1
-                    session_path["size_checker_counter"] = 1 
-                    session_path["init_checker_counter"] = 1 
-
-                    # references
-                    session_path["ref_node_sender"] = f"{sender}"
-                    session_path["ref_local_session_sender"] = f"{sender}_{sender}_{receiver}"
-                    session_path["size_buffer_sender"] = self.attributes["nodes_buffer_sizes"][sender]
-                    succ = next(path.successors(sender))
-                    first_links = [{"#": f"{sender}_{succ}_{sender}_{receiver}"}]
-                    session_path["first_links"] = first_links
-
-                    # probabilities
-                    session_path["prob_run"] = 0.0
-
-                    session_paths_dict["instances"].append(session_path)
+                session_paths_dict["instances"].append(session_path)
 
         return session_paths_dict
 
@@ -1432,351 +1182,48 @@ class NetworkGenerator:
         range_state = ranges.get("local_session_range_state")
         const_valid = consts.get("const_local_session_valid")
 
-        match self.protocol:
-            case "HPKE" | "DOUBLE-RATCHET":
-                paths = self.attributes.get("paths")
-                paths.extend(self.attributes.get("return_paths"))
-                for path in paths:
-                    sender = list(path)[0] 
-                    receiver = list(path)[-1]
-    
-                    # local session sender
-                    local_session_sender = {}
-                    local_session_sender["name"] = f"local_session_of_{sender}_of_path_{sender}_{receiver}"
-                    local_session_sender["#"] = f"{sender}_{sender}_{receiver}"
+        sessions = self.attributes.get("sessions")
+        sessions_copy = sessions.copy()
+        for session in sessions:
+            subs = session.get_subsessions()
+            sessions_copy.extend(subs)
+        for session in sessions_copy:
+            nodes = session.get_nodes()
+            id = session.get_id()
+            for node in nodes:
+                local_session = {}
+                local_session["name"] = f"local_session_of_{node}_of_session_{id}"
+                local_session["#"] = f"{node}_{id}"
 
-                    # states
-                    local_session_sender["range_state"] = range_state
-                    local_session_sender["init_state"] = const_valid 
-                    local_session_sender["size_epoch"] = path.nodes[sender]['epoch_size']
-                    local_session_sender["init_epoch"] = 0
-                    local_session_sender["size_ratchet"] = path.nodes[sender]['ratchet_size']
-                    local_session_sender["init_ratchet"] = 0
-                    local_session_sender["init_compromise"] = False
+                # states
+                local_session["range_state"] = range_state
+                local_session["init_state"] = const_valid 
+                local_session["size_epoch"] = session.get_nodes()[node]['epoch_size']
+                local_session["init_epoch"] = 0
+                local_session["size_ratchet"] = session.get_nodes()[node]['ratchet_size']
+                local_session["init_ratchet"] = 0
+                local_session["init_compromise"] = False
 
-                    # probabilities
-                    if self.params["ls_prob_session_reset"][0] == self.params["ls_prob_session_reset"][1]:
-                        local_session_sender["prob_session_reset"] = self.params["ls_prob_session_reset"][0]
-                    else:
-                        local_session_sender["prob_session_reset"] = round(self.rng.uniform(self.params["ls_prob_session_reset"][0], self.params["ls_prob_session_reset"][1]), 2)
-                    if self.params["ls_prob_compromised"][0] == self.params["ls_prob_compromised"][1]:
-                        local_session_sender["prob_compromised"] = self.params["ls_prob_compromised"][0]
-                    else:
-                        local_session_sender["prob_compromised"] = round(self.rng.uniform(self.params["ls_prob_compromised"][0], self.params["ls_prob_compromised"][1]), 2)
-                    if self.params["ls_prob_ratchet_reset"][0] == self.params["ls_prob_ratchet_reset"][1]:
-                        local_session_sender["prob_ratchet_reset"] = self.params["ls_prob_ratchet_reset"][0]
-                    else:   
-                        local_session_sender["prob_ratchet_reset"] = round(self.rng.uniform(self.params["ls_prob_ratchet_reset"][0], self.params["ls_prob_ratchet_reset"][1]), 2)
-                    if self.params["ls_prob_none"][0] == self.params["ls_prob_none"][1]:
-                        local_session_sender["prob_none"] = self.params["ls_prob_none"][0]
-                    else:
-                        local_session_sender["prob_none"] = round(self.rng.uniform(self.params["ls_prob_none"][0], self.params["ls_prob_none"][1]), 2)
+                # probabilities
+                if self.params["ls_prob_session_reset"][0] == self.params["ls_prob_session_reset"][1]:
+                    local_session["prob_session_reset"] = self.params["ls_prob_session_reset"][0]
+                else:
+                    local_session["prob_session_reset"] = round(self.rng.uniform(self.params["ls_prob_session_reset"][0], self.params["ls_prob_session_reset"][1]), 2)
+                if self.params["ls_prob_compromised"][0] == self.params["ls_prob_compromised"][1]:
+                    local_session["prob_compromised"] = self.params["ls_prob_compromised"][0]
+                else:
+                    local_session["prob_compromised"] = round(self.rng.uniform(self.params["ls_prob_compromised"][0], self.params["ls_prob_compromised"][1]), 2)
+                if self.params["ls_prob_ratchet_reset"][0] == self.params["ls_prob_ratchet_reset"][1]:
+                    local_session["prob_ratchet_reset"] = self.params["ls_prob_ratchet_reset"][0]
+                else:   
+                    local_session["prob_ratchet_reset"] = round(self.rng.uniform(self.params["ls_prob_ratchet_reset"][0], self.params["ls_prob_ratchet_reset"][1]), 2)
+                if self.params["ls_prob_none"][0] == self.params["ls_prob_none"][1]:
+                    local_session["prob_none"] = self.params["ls_prob_none"][0]
+                else:
+                    local_session["prob_none"] = round(self.rng.uniform(self.params["ls_prob_none"][0], self.params["ls_prob_none"][1]), 2)
 
-                    local_sessions_dict["instances"].append(local_session_sender)
+                local_sessions_dict["instances"].append(local_session)
 
-
-                    # local session receiver
-
-                    local_session_receiver = {}
-                    local_session_receiver["name"] = f"local_session_of_{receiver}_of_path_{sender}_{receiver}"
-                    local_session_receiver["#"] = f"{receiver}_{sender}_{receiver}"
-
-                    # states
-                    local_session_receiver["range_state"] = range_state
-                    local_session_receiver["init_state"] = const_valid 
-                    local_session_receiver["size_epoch"] = path.nodes[receiver]['epoch_size']
-                    local_session_receiver["init_epoch"] = 0
-                    local_session_receiver["size_ratchet"] = path.nodes[receiver]['ratchet_size']
-                    local_session_receiver["init_ratchet"] = 0
-                    local_session_receiver["init_compromise"] = False
-
-                    # probabilities
-                    if self.params["ls_prob_session_reset"][0] == self.params["ls_prob_session_reset"][1]:
-                        local_session_receiver["prob_session_reset"] = self.params["ls_prob_session_reset"][0]
-                    else:
-                        local_session_receiver["prob_session_reset"] = round(self.rng.uniform(self.params["ls_prob_session_reset"][0], self.params["ls_prob_session_reset"][1]), 2)
-                    if self.params["ls_prob_compromised"][0] == self.params["ls_prob_compromised"][1]:
-                        local_session_receiver["prob_compromised"] = self.params["ls_prob_compromised"][0]
-                    else:
-                        local_session_receiver["prob_compromised"] = round(self.rng.uniform(self.params["ls_prob_compromised"][0], self.params["ls_prob_compromised"][1]), 2)
-                    if self.params["ls_prob_ratchet_reset"][0] == self.params["ls_prob_ratchet_reset"][1]:
-                        local_session_receiver["prob_ratchet_reset"] = self.params["ls_prob_ratchet_reset"][0]
-                    else:   
-                        local_session_receiver["prob_ratchet_reset"] = round(self.rng.uniform(self.params["ls_prob_ratchet_reset"][0], self.params["ls_prob_ratchet_reset"][1]), 2)
-                    if self.params["ls_prob_none"][0] == self.params["ls_prob_none"][1]:
-                        local_session_receiver["prob_none"] = self.params["ls_prob_none"][0]
-                    else:
-                        local_session_receiver["prob_none"] = round(self.rng.uniform(self.params["ls_prob_none"][0], self.params["ls_prob_none"][1]), 2)
-
-                    local_sessions_dict["instances"].append(local_session_receiver)
-                    
-            
-            case "SENDER-KEY":
-                one_to_many_paths = self.attributes.get("one_to_many_paths")
-                for tree in one_to_many_paths:
-                    sender = list(tree.nodes())[0]
-                    receivers = [n for n, attr in tree.nodes(data = True) if attr.get("is_receiver")]
-                    path_str = "_".join(str(n) for n in [sender] + receivers)
-                    
-                    # local session sender
-                    local_session_sender = {}
-                    local_session_sender["name"] = f"local_session_of_{sender}_of_{path_str}"
-                    local_session_sender["#"] = f"{sender}_{path_str}"
-
-                    # states
-                    local_session_sender["range_state"] = range_state
-                    local_session_sender["init_state"] = const_valid 
-                    local_session_sender["size_epoch"] = tree.nodes[sender]['epoch_size']
-                    local_session_sender["init_epoch"] = 0
-                    local_session_sender["size_ratchet"] = tree.nodes[sender]['ratchet_size']
-                    local_session_sender["init_ratchet"] = 0
-                    local_session_sender["init_compromise"] = False
-
-                    # probabilities
-                    if self.params["ls_prob_session_reset"][0] == self.params["ls_prob_session_reset"][1]:
-                        local_session_sender["prob_session_reset"] = self.params["ls_prob_session_reset"][0]
-                    else:
-                        local_session_sender["prob_session_reset"] = round(self.rng.uniform(self.params["ls_prob_session_reset"][0], self.params["ls_prob_session_reset"][1]), 2)
-                    if self.params["ls_prob_compromised"][0] == self.params["ls_prob_compromised"][1]:
-                        local_session_sender["prob_compromised"] = self.params["ls_prob_compromised"][0]
-                    else:
-                        local_session_sender["prob_compromised"] = round(self.rng.uniform(self.params["ls_prob_compromised"][0], self.params["ls_prob_compromised"][1]), 2)
-                    if self.params["ls_prob_ratchet_reset"][0] == self.params["ls_prob_ratchet_reset"][1]:
-                        local_session_sender["prob_ratchet_reset"] = self.params["ls_prob_ratchet_reset"][0]
-                    else:   
-                        local_session_sender["prob_ratchet_reset"] = round(self.rng.uniform(self.params["ls_prob_ratchet_reset"][0], self.params["ls_prob_ratchet_reset"][1]), 2)
-                    if self.params["ls_prob_none"][0] == self.params["ls_prob_none"][1]:
-                        local_session_sender["prob_none"] = self.params["ls_prob_none"][0]
-                    else:
-                        local_session_sender["prob_none"] = round(self.rng.uniform(self.params["ls_prob_none"][0], self.params["ls_prob_none"][1]), 2)
-
-                    local_sessions_dict["instances"].append(local_session_sender)
-
-                    # receivers local sessions
-                    for node in receivers:
-
-                        local_session_receiver = {}
-                        local_session_receiver["name"] = f"local_session_of_{node}_of_{path_str}"
-                        local_session_receiver["#"] = f"{node}_{path_str}"
-
-                        # states
-                        local_session_receiver["range_state"] = range_state
-                        local_session_receiver["init_state"] = const_valid 
-                        local_session_receiver["size_epoch"] = tree.nodes[node]['epoch_size']
-                        local_session_receiver["init_epoch"] = 0
-                        local_session_receiver["size_ratchet"] = tree.nodes[node]['ratchet_size']
-                        local_session_receiver["init_ratchet"] = 0
-                        local_session_receiver["init_compromise"] = False
-
-                        # probabilities
-                        if self.params["ls_prob_session_reset"][0] == self.params["ls_prob_session_reset"][1]:
-                            local_session_receiver["prob_session_reset"] = self.params["ls_prob_session_reset"][0]
-                        else:
-                            local_session_receiver["prob_session_reset"] = round(self.rng.uniform(self.params["ls_prob_session_reset"][0], self.params["ls_prob_session_reset"][1]), 2)
-                        if self.params["ls_prob_compromised"][0] == self.params["ls_prob_compromised"][1]:
-                            local_session_receiver["prob_compromised"] = self.params["ls_prob_compromised"][0]
-                        else:
-                            local_session_receiver["prob_compromised"] = round(self.rng.uniform(self.params["ls_prob_compromised"][0], self.params["ls_prob_compromised"][1]), 2)
-                        if self.params["ls_prob_ratchet_reset"][0] == self.params["ls_prob_ratchet_reset"][1]:
-                            local_session_receiver["prob_ratchet_reset"] = self.params["ls_prob_ratchet_reset"][0]
-                        else:   
-                            local_session_receiver["prob_ratchet_reset"] = round(self.rng.uniform(self.params["ls_prob_ratchet_reset"][0], self.params["ls_prob_ratchet_reset"][1]), 2)
-                        if self.params["ls_prob_none"][0] == self.params["ls_prob_none"][1]:
-                            local_session_receiver["prob_none"] = self.params["ls_prob_none"][0]
-                        else:
-                            local_session_receiver["prob_none"] = round(self.rng.uniform(self.params["ls_prob_none"][0], self.params["ls_prob_none"][1]), 2)
-
-                        local_sessions_dict["instances"].append(local_session_receiver)
-
-                # generate also the local sessions for one to one paths
-                one_to_one_paths = self.attributes.get("one_to_one_paths").copy()
-                one_to_one_paths.extend(self.attributes.get("one_to_one_return_paths"))
-                for path in one_to_one_paths:
-                    sender = list(path)[0]
-                    receiver = list(path)[-1]
-    
-                    # local session sender
-                    local_session_sender = {}
-                    local_session_sender["name"] = f"local_session_of_{sender}_of_path_{sender}_{receiver}"
-                    local_session_sender["#"] = f"{sender}_{sender}_{receiver}"
-
-                    # states
-                    local_session_sender["range_state"] = range_state
-                    local_session_sender["init_state"] = const_valid 
-                    local_session_sender["size_epoch"] = path.nodes[sender]['epoch_size']
-                    local_session_sender["init_epoch"] = 0
-                    local_session_sender["size_ratchet"] = path.nodes[sender]['ratchet_size']
-                    local_session_sender["init_ratchet"] = 0
-                    local_session_sender["init_compromise"] = False
-
-                    # probabilities
-                    if self.params["ls_prob_session_reset"][0] == self.params["ls_prob_session_reset"][1]:
-                        local_session_sender["prob_session_reset"] = self.params["ls_prob_session_reset"][0]
-                    else:
-                        local_session_sender["prob_session_reset"] = round(self.rng.uniform(self.params["ls_prob_session_reset"][0], self.params["ls_prob_session_reset"][1]), 2)
-                    if self.params["ls_prob_compromised"][0] == self.params["ls_prob_compromised"][1]:
-                        local_session_sender["prob_compromised"] = self.params["ls_prob_compromised"][0]
-                    else:
-                        local_session_sender["prob_compromised"] = round(self.rng.uniform(self.params["ls_prob_compromised"][0], self.params["ls_prob_compromised"][1]), 2)
-                    if self.params["ls_prob_ratchet_reset"][0] == self.params["ls_prob_ratchet_reset"][1]:
-                        local_session_sender["prob_ratchet_reset"] = self.params["ls_prob_ratchet_reset"][0]
-                    else:   
-                        local_session_sender["prob_ratchet_reset"] = round(self.rng.uniform(self.params["ls_prob_ratchet_reset"][0], self.params["ls_prob_ratchet_reset"][1]), 2)
-                    if self.params["ls_prob_none"][0] == self.params["ls_prob_none"][1]:
-                        local_session_sender["prob_none"] = self.params["ls_prob_none"][0]
-                    else:
-                        local_session_sender["prob_none"] = round(self.rng.uniform(self.params["ls_prob_none"][0], self.params["ls_prob_none"][1]), 2)
-
-                    local_sessions_dict["instances"].append(local_session_sender)
-
-
-                    # local session receiver
-
-                    local_session_receiver = {}
-                    local_session_receiver["name"] = f"local_session_of_{receiver}_of_path_{sender}_{receiver}"
-                    local_session_receiver["#"] = f"{receiver}_{sender}_{receiver}"
-                    local_session_receiver["range_state"] = range_state
-                    local_session_receiver["init_state"] = const_valid 
-                    local_session_receiver["size_epoch"] = path.nodes[receiver]['epoch_size']
-                    local_session_receiver["init_epoch"] = 0
-                    local_session_receiver["size_ratchet"] = path.nodes[receiver]['ratchet_size']
-                    local_session_receiver["init_ratchet"] = 0
-                    local_session_receiver["init_compromise"] = False
-
-                    # probabilities
-                    if self.params["ls_prob_session_reset"][0] == self.params["ls_prob_session_reset"][1]:
-                        local_session_receiver["prob_session_reset"] = self.params["ls_prob_session_reset"][0]
-                    else:
-                        local_session_receiver["prob_session_reset"] = round(self.rng.uniform(self.params["ls_prob_session_reset"][0], self.params["ls_prob_session_reset"][1]), 2)
-                    if self.params["ls_prob_compromised"][0] == self.params["ls_prob_compromised"][1]:
-                        local_session_receiver["prob_compromised"] = self.params["ls_prob_compromised"][0]
-                    else:
-                        local_session_receiver["prob_compromised"] = round(self.rng.uniform(self.params["ls_prob_compromised"][0], self.params["ls_prob_compromised"][1]), 2)
-                    if self.params["ls_prob_ratchet_reset"][0] == self.params["ls_prob_ratchet_reset"][1]:
-                        local_session_receiver["prob_ratchet_reset"] = self.params["ls_prob_ratchet_reset"][0]
-                    else:   
-                        local_session_receiver["prob_ratchet_reset"] = round(self.rng.uniform(self.params["ls_prob_ratchet_reset"][0], self.params["ls_prob_ratchet_reset"][1]), 2)
-                    if self.params["ls_prob_none"][0] == self.params["ls_prob_none"][1]:
-                        local_session_receiver["prob_none"] = self.params["ls_prob_none"][0]
-                    else:
-                        local_session_receiver["prob_none"] = round(self.rng.uniform(self.params["ls_prob_none"][0], self.params["ls_prob_none"][1]), 2)
-
-                    local_sessions_dict["instances"].append(local_session_receiver)
-
-            case "MLS":
-                one_to_many_paths = self.attributes.get("one_to_many_paths")
-                for tree in one_to_many_paths:
-                    sender = list(tree.nodes())[0]
-                    receivers = [n for n, attr in tree.nodes(data = True) if attr.get("is_receiver")]
-                    path_str = "_".join(str(n) for n in [sender] + receivers)
-                    
-                    # local session sender
-                    local_session_sender = {}
-                    local_session_sender["name"] = f"local_session_of_{sender}_of_{path_str}"
-                    local_session_sender["#"] = f"{sender}_{path_str}"
-
-                    # states
-                    local_session_sender["range_state"] = range_state
-                    local_session_sender["init_state"] = const_valid 
-                    local_session_sender["size_epoch"] = tree.nodes[sender]['epoch_size']
-                    local_session_sender["init_epoch"] = 0
-                    local_session_sender["size_ratchet"] = tree.nodes[sender]['ratchet_size']
-                    local_session_sender["init_ratchet"] = 0
-                    local_session_sender["init_compromise"] = False
-
-                    # probabilities
-                    if self.params["ls_prob_session_reset"][0] == self.params["ls_prob_session_reset"][1]:
-                        local_session_sender["prob_session_reset"] = self.params["ls_prob_session_reset"][0]
-                    else:
-                        local_session_sender["prob_session_reset"] = round(self.rng.uniform(self.params["ls_prob_session_reset"][0], self.params["ls_prob_session_reset"][1]), 2)
-                    if self.params["ls_prob_compromised"][0] == self.params["ls_prob_compromised"][1]:
-                        local_session_sender["prob_compromised"] = self.params["ls_prob_compromised"][0]
-                    else:
-                        local_session_sender["prob_compromised"] = round(self.rng.uniform(self.params["ls_prob_compromised"][0], self.params["ls_prob_compromised"][1]), 2)
-                    if self.params["ls_prob_ratchet_reset"][0] == self.params["ls_prob_ratchet_reset"][1]:
-                        local_session_sender["prob_ratchet_reset"] = self.params["ls_prob_ratchet_reset"][0]
-                    else:   
-                        local_session_sender["prob_ratchet_reset"] = round(self.rng.uniform(self.params["ls_prob_ratchet_reset"][0], self.params["ls_prob_ratchet_reset"][1]), 2)
-                    if self.params["ls_prob_none"][0] == self.params["ls_prob_none"][1]:
-                        local_session_sender["prob_none"] = self.params["ls_prob_none"][0]
-                    else:
-                        local_session_sender["prob_none"] = round(self.rng.uniform(self.params["ls_prob_none"][0], self.params["ls_prob_none"][1]), 2)
-
-                    local_sessions_dict["instances"].append(local_session_sender)
-
-                    # receivers local sessions
-                    for node in receivers:
-
-                        local_session_receiver = {}
-                        local_session_receiver["name"] = f"local_session_of_{node}_of_{path_str}"
-                        local_session_receiver["#"] = f"{node}_{path_str}"
-
-                        # states
-                        local_session_receiver["range_state"] = range_state
-                        local_session_receiver["init_state"] = const_valid 
-                        local_session_receiver["size_epoch"] = tree.nodes[node]['epoch_size']
-                        local_session_receiver["init_epoch"] = 0
-                        local_session_receiver["size_ratchet"] = tree.nodes[node]['ratchet_size']
-                        local_session_receiver["init_ratchet"] = 0
-                        local_session_receiver["init_compromise"] = False
-
-                        # probabilities
-                        if self.params["ls_prob_session_reset"][0] == self.params["ls_prob_session_reset"][1]:
-                            local_session_receiver["prob_session_reset"] = self.params["ls_prob_session_reset"][0]
-                        else:
-                            local_session_receiver["prob_session_reset"] = round(self.rng.uniform(self.params["ls_prob_session_reset"][0], self.params["ls_prob_session_reset"][1]), 2)
-                        if self.params["ls_prob_compromised"][0] == self.params["ls_prob_compromised"][1]:
-                            local_session_receiver["prob_compromised"] = self.params["ls_prob_compromised"][0]
-                        else:
-                            local_session_receiver["prob_compromised"] = round(self.rng.uniform(self.params["ls_prob_compromised"][0], self.params["ls_prob_compromised"][1]), 2)
-                        if self.params["ls_prob_ratchet_reset"][0] == self.params["ls_prob_ratchet_reset"][1]:
-                            local_session_receiver["prob_ratchet_reset"] = self.params["ls_prob_ratchet_reset"][0]
-                        else:   
-                            local_session_receiver["prob_ratchet_reset"] = round(self.rng.uniform(self.params["ls_prob_ratchet_reset"][0], self.params["ls_prob_ratchet_reset"][1]), 2)
-                        if self.params["ls_prob_none"][0] == self.params["ls_prob_none"][1]:
-                            local_session_receiver["prob_none"] = self.params["ls_prob_none"][0]
-                        else:
-                            local_session_receiver["prob_none"] = round(self.rng.uniform(self.params["ls_prob_none"][0], self.params["ls_prob_none"][1]), 2)
-
-                        local_sessions_dict["instances"].append(local_session_receiver)
-
-                one_to_one_return_paths = self.attributes.get("one_to_one_return_paths")
-                for path in one_to_one_return_paths:
-                    sender = list(path)[0]
-                    receiver = list(path)[-1]
-    
-                    # local session sender
-                    local_session_sender = {}
-                    local_session_sender["name"] = f"local_session_of_{sender}_of_path_{sender}_{receiver}"
-                    local_session_sender["#"] = f"{sender}_{sender}_{receiver}"
-
-                    # states
-                    local_session_sender["range_state"] = range_state
-                    local_session_sender["init_state"] = const_valid 
-                    local_session_sender["size_epoch"] = path.nodes[sender]['epoch_size']
-                    local_session_sender["init_epoch"] = 0
-                    local_session_sender["size_ratchet"] = path.nodes[sender]['ratchet_size']
-                    local_session_sender["init_ratchet"] = 0
-                    local_session_sender["init_compromise"] = False
-
-                    # probabilities
-                    if self.params["ls_prob_session_reset"][0] == self.params["ls_prob_session_reset"][1]:
-                        local_session_sender["prob_session_reset"] = self.params["ls_prob_session_reset"][0]
-                    else:
-                        local_session_sender["prob_session_reset"] = round(self.rng.uniform(self.params["ls_prob_session_reset"][0], self.params["ls_prob_session_reset"][1]), 2)
-                    if self.params["ls_prob_compromised"][0] == self.params["ls_prob_compromised"][1]:
-                        local_session_sender["prob_compromised"] = self.params["ls_prob_compromised"][0]
-                    else:
-                        local_session_sender["prob_compromised"] = round(self.rng.uniform(self.params["ls_prob_compromised"][0], self.params["ls_prob_compromised"][1]), 2)
-                    if self.params["ls_prob_ratchet_reset"][0] == self.params["ls_prob_ratchet_reset"][1]:
-                        local_session_sender["prob_ratchet_reset"] = self.params["ls_prob_ratchet_reset"][0]
-                    else:   
-                        local_session_sender["prob_ratchet_reset"] = round(self.rng.uniform(self.params["ls_prob_ratchet_reset"][0], self.params["ls_prob_ratchet_reset"][1]), 2)
-                    if self.params["ls_prob_none"][0] == self.params["ls_prob_none"][1]:
-                        local_session_sender["prob_none"] = self.params["ls_prob_none"][0]
-                    else:
-                        local_session_sender["prob_none"] = round(self.rng.uniform(self.params["ls_prob_none"][0], self.params["ls_prob_none"][1]), 2)
-        
         return local_sessions_dict
 
                     
@@ -1803,173 +1250,50 @@ class NetworkGenerator:
         session_checkers_dict["template"] = files_config.get("session_checker_template")
         session_checkers_dict["instances"] = []
 
-        match self.protocol:
-            case "HPKE" | "DOUBLE-RATCHET":
-                paths = self.attributes.get("paths")
-                paths.extend(self.attributes.get("return_paths"))
-                for path in paths:
-                    sender = list(path)[0]
-                    receiver = list(path)[-1]
+        sessions = self.attributes.get("sessions").copy()
+        for session in self.attributes.get("sessions"):
+            sessions.extend(session.get_subsessions())
 
-                    session_checker = {}
-                    session_checker["name"] = f"session_checker_of_{receiver}_of_path_{sender}_{receiver}"
-                    session_checker["#"] = f"{receiver}_{sender}_{receiver}"
-                    session_checker["protocol"] = self.protocol
+        for session in sessions:
+            sender = session.get_nodes()[0]
+            receivers = session.get_nodes()[1:]
+            session_id = session.get_id()
+            for receiver in receivers:
+                session_checker = {}
+                session_checker["name"] = f"session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["#"] = f"{receiver}_{session_id}"
+                session_checker["protocol"] = session.get_protocol()
 
-                    # states
-                    session_checker["range_state"] = state_range
-                    session_checker["init_state"] = const_idle
-                    session_checker["range_sender_local_session_epoch"] = path.nodes[sender]['epoch_size']
-                    session_checker["init_sender_local_session_epoch"] = 0
-                    session_checker["range_sender_local_session_system_message"] = session_checker_sender_local_session_system_message_range
-                    session_checker["init_sender_local_session_system_message"] = const_message_data
-                    session_checker["range_sender_local_session_data_message"] = session_checker_sender_local_session_data_message_range
-                    session_checker["init_sender_local_session_data_message"] = const_message_data
+                # states
+                session_checker["range_state"] = state_range
+                session_checker["init_state"] = const_idle
+                session_checker["range_sender_local_session_epoch"] = session.get_nodes()[sender]['epoch_size']
+                session_checker["init_sender_local_session_epoch"] = 0
+                session_checker["range_sender_local_session_system_message"] = session_checker_sender_local_session_system_message_range
+                session_checker["init_sender_local_session_system_message"] = const_message_data
+                session_checker["range_sender_local_session_data_message"] = session_checker_sender_local_session_data_message_range
+                session_checker["init_sender_local_session_data_message"] = const_message_data
 
-                    # references
-                    session_checker["ref_local_session_sender"] = f"{sender}_{sender}_{receiver}"
-                    session_checker["ref_session_path"] = f"{sender}_{receiver}"
-                    session_checker["ref_local_session_receiver"] = f"{receiver}_{sender}_{receiver}"
-                    session_checker["ref_node_receiver"] = f"{receiver}"
-                    session_checker["ref_session_path_to_sender"] = f"{receiver}_{sender}"
-                    session_checker["ref_session_checker_sender"] = f"{sender}_{sender}_{receiver}" # the sender is the receiver in the return path
-                    session_checker["size_ratchet_sender"] = path.nodes[sender]['ratchet_size']
+                # references
+                session_checker["ref_local_session_sender"] = f"{sender}_{session_id}"
+                session_checker["ref_session_path"] = f"{sender}_{session_id}"
+                session_checker["ref_local_session_receiver"] = f"{receiver}_{session_id}"
+                session_checker["ref_node_receiver"] = f"{receiver}"
+                if session.get_protocol() in {"HPKE", "DOUBLE-RATCHET", "SUPPORT_HPKE", "SUPPORT_DOUBLE-RATCHET"}:
+                    session_checker["ref_session_path_to_sender"] = f"{receiver}_{session_id}"
+                    session_checker["ref_session_checker_sender"] = f"{sender}_{session_id}"
+                else:
+                    subsessions = session.get_subsessions()
+                    for subsession in subsessions:
+                        if subsession.get_nodes()[0] == receiver or subsession.get_nodes()[1] == receiver:
+                            session_checker["ref_session_path_to_sender"] = f"{receiver}_{subsession.get_id()}"
+                            session_checker["ref_session_checker_sender"] = f"{sender}_{subsession.get_id()}"
+                            break
+            
+                session_checker["size_ratchet_sender"] = session.get_nodes()[sender]['ratchet_size']
 
-                    session_checkers_dict["instances"].append(session_checker)
+                session_checker["ref_local_session_sender_key_receiver"] = 0 # TO DO
 
-            case "SENDER-KEY":
-                one_to_many_paths = self.attributes.get("one_to_many_paths")
-                for tree in one_to_many_paths:
-                    sender = list(tree.nodes())[0]
-                    receivers = [n for n, attr in tree.nodes(data = True) if attr.get("is_receiver")]
-                    for receiver in receivers:
-                        session_checker = {}
-                        session_checker["name"] = f"session_checker_of_{receiver}_of_path_{sender}_{'_'.join(str(n) for n in receivers)}"
-                        session_checker["#"] = f"{receiver}_{sender}_{'_'.join(str(n) for n in receivers)}"
-                        session_checker["protocol"] = self.protocol
+                session_checkers_dict["instances"].append(session_checker)
 
-                        # states
-                        session_checker["range_state"] = state_range
-                        session_checker["init_state"] = const_idle
-                        session_checker["range_sender_local_session_epoch"] = tree.nodes[sender]['epoch_size']
-                        session_checker["init_sender_local_session_epoch"] = 0
-                        session_checker["range_sender_local_session_system_message"] = session_checker_sender_local_session_system_message_range
-                        session_checker["init_sender_local_session_system_message"] = const_message_data
-                        session_checker["range_sender_local_session_data_message"] = session_checker_sender_local_session_data_message_range
-                        session_checker["init_sender_local_session_data_message"] = const_message_data
-
-                        # references
-                        session_checker["ref_local_session_sender"] = f"{sender}_{'_'.join(str(n) for n in [sender] + receivers)}"
-                        session_checker["ref_session_path"] = f"{sender}_{receiver}"
-                        session_checker["ref_local_session_receiver"] = f"{receiver}_{'_'.join(str(n) for n in [sender] + receivers)}"
-                        session_checker["ref_node_receiver"] = f"{receiver}"
-                        session_checker["ref_session_path_to_sender"] = f"{receiver}_{sender}"
-                        session_checker["ref_session_checker_sender"] = f"{sender}_{'_'.join(str(n) for n in [sender] + receivers)}"
-                        session_checker["size_ratchet_sender"] = tree.nodes[sender]['ratchet_size']
-
-                        session_checker["ref_session_checker"] = f"{receiver}_{sender}_{receiver}" # the receiver's session checker for the one to one path
-                        session_checker["ref_local_session_sender_key_receiver"] = 0 # TO DO
-
-                        session_checkers_dict["instances"].append(session_checker)
-
-                # Usa una copia locale per non modificare l'attributo originale
-                one_to_one_paths = self.attributes.get("one_to_one_paths").copy()
-                one_to_one_paths.extend(self.attributes.get("one_to_one_return_paths"))
-                for path in one_to_one_paths:
-                    sender = list(path)[0]
-                    receiver = list(path)[-1]
-
-                    session_checker = {}
-                    session_checker["name"] = f"session_checker_of_{receiver}_of_path_{sender}_{receiver}"
-                    session_checker["#"] = f"{receiver}_{sender}_{receiver}"
-                    session_checker["protocol"] = "HPKE" # one to one paths use HPKE
-
-                    # states
-                    session_checker["range_state"] = state_range
-                    session_checker["init_state"] = const_idle
-                    session_checker["range_sender_local_session_epoch"] = path.nodes[sender]['epoch_size']
-                    session_checker["init_sender_local_session_epoch"] = 0
-                    session_checker["range_sender_local_session_system_message"] = session_checker_sender_local_session_system_message_range
-                    session_checker["init_sender_local_session_system_message"] = const_message_data
-                    session_checker["range_sender_local_session_data_message"] = session_checker_sender_local_session_data_message_range
-                    session_checker["init_sender_local_session_data_message"] = const_message_data
-
-                    # references
-                    session_checker["ref_local_session_sender"] = f"{sender}_{sender}_{receiver}"
-                    session_checker["ref_session_path"] = f"{sender}_{receiver}"
-                    session_checker["ref_local_session_receiver"] = f"{receiver}_{sender}_{receiver}"
-                    session_checker["ref_node_receiver"] = f"{receiver}"
-                    session_checker["ref_session_path_to_sender"] = f"{receiver}_{sender}"
-                    session_checker["ref_session_checker_sender"] = f"{sender}_{sender}_{receiver}" # the sender is the receiver in the return path
-                    session_checker["size_ratchet_sender"] = path.nodes[sender]['ratchet_size']
-
-                    session_checkers_dict["instances"].append(session_checker)
-
-            case "MLS":
-                one_to_many_paths = self.attributes.get("one_to_many_paths")
-                for tree in one_to_many_paths:
-                    sender = list(tree.nodes())[0]
-                    receivers = [n for n, attr in tree.nodes(data = True) if attr.get("is_receiver")]
-                    for receiver in receivers:
-                        session_checker = {}
-                        session_checker["name"] = f"session_checker_of_{receiver}_of_path_{sender}_{'_'.join(str(n) for n in receivers)}"
-                        session_checker["#"] = f"{receiver}_{sender}_{'_'.join(str(n) for n in receivers)}"
-                        session_checker["protocol"] = self.protocol
-
-                        # states
-                        session_checker["range_state"] = state_range
-                        session_checker["init_state"] = const_idle
-                        session_checker["range_sender_local_session_epoch"] = tree.nodes[sender]['epoch_size']
-                        session_checker["init_sender_local_session_epoch"] = 0
-                        session_checker["range_sender_local_session_system_message"] = session_checker_sender_local_session_system_message_range
-                        session_checker["init_sender_local_session_system_message"] = const_message_data
-                        session_checker["range_sender_local_session_data_message"] = session_checker_sender_local_session_data_message_range
-                        session_checker["init_sender_local_session_data_message"] = const_message_data
-
-                        # references
-                        session_checker["ref_local_session_sender"] = f"{sender}_{'_'.join(str(n) for n in [sender] + receivers)}"
-                        session_checker["ref_session_path"] = f"{sender}_{receiver}"
-                        session_checker["ref_local_session_receiver"] = f"{receiver}_{'_'.join(str(n) for n in [sender] + receivers)}"
-                        session_checker["ref_node_receiver"] = f"{receiver}"
-                        session_checker["ref_session_path_to_sender"] = f"{receiver}_{sender}"
-                        session_checker["ref_session_checker_sender"] = f"{sender}_{'_'.join(str(n) for n in [sender] + receivers)}"
-                        session_checker["size_ratchet_sender"] = tree.nodes[sender]['ratchet_size']
-                        session_checker["ref_session_path_to_sender"] = f"{receiver}_{sender}"
-                        session_checker["ref_session_path_broadcast"] = f"{sender}_{'_'.join(str(n) for n in receivers)}"
-
-                        session_checkers_dict["instances"].append(session_checker)
-
-                one_to_one_return_paths = self.attributes.get("one_to_one_return_paths")
-                for path in one_to_one_return_paths:
-                    sender = list(path)[0]
-                    receiver = list(path)[-1]
-
-                    session_checker = {}
-                    session_checker["name"] = f"session_checker_of_{receiver}_of_path_{sender}_{receiver}"
-                    session_checker["#"] = f"{receiver}_{sender}_{receiver}"
-                    session_checker["protocol"] = "HPKE" # one to one paths use HPKE
-
-                    # states
-                    session_checker["range_state"] = state_range
-                    session_checker["init_state"] = const_idle
-                    session_checker["range_sender_local_session_epoch"] = path.nodes[sender]['epoch_size']
-                    session_checker["init_sender_local_session_epoch"] = 0
-                    session_checker["range_sender_local_session_system_message"] = session_checker_sender_local_session_system_message_range
-                    session_checker["init_sender_local_session_system_message"] = const_message_data
-                    session_checker["range_sender_local_session_data_message"] = session_checker_sender_local_session_data_message_range
-                    session_checker["init_sender_local_session_data_message"] = const_message_data
-
-                    # references
-                    session_checker["ref_local_session_sender"] = f"{sender}_{sender}_{receiver}"
-                    session_checker["ref_session_path"] = f"{sender}_{receiver}"
-                    session_checker["ref_local_session_receiver"] = f"{receiver}_{sender}_{receiver}"
-                    session_checker["ref_node_receiver"] = f"{receiver}"
-                    session_checker["ref_session_path_to_sender"] = f"{receiver}_{sender}"
-                    session_checker["ref_session_checker_sender"] = f"{sender}_{sender}_{receiver}" # the sender is the receiver in the return path
-                    session_checker["size_ratchet_sender"] = path.nodes[sender]['ratchet_size']
-
-                    session_checkers_dict["instances"].append(session_checker)
-
-        return session_checkers_dict
-
-        
+        return session_checkers_dict      

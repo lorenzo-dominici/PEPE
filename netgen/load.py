@@ -33,6 +33,13 @@ def validate_data(data):
         else:
             raise ValueError("Missing parameter: mls_sessions_range")
     mls_sessions_range = 1
+
+    support_protocol = data.get("support_protocol")
+    if support_protocol:
+        if support_protocol not in {"HPKE", "DOUBLE-RATCHET"}:
+            raise ValueError("support_protocol must be one of HPKE, DOUBLE-RATCHET")
+    else:
+        support_protocol = "SUPPORT_HPKE"  # default to HPKE if not provided
             
     
     seed = data.get("seed")
@@ -481,6 +488,7 @@ def validate_data(data):
 
     network_params = {
         "protocol": protocol,
+        "support_protocol": support_protocol,
         "mls_sessions_range": mls_sessions_range,
         "seed": seed,
         "filename": filename,

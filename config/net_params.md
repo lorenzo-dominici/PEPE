@@ -26,6 +26,9 @@ The parameters of the network must be included in a json file with this structur
 - `protocol`: HPKE | DOUBLE-RATCHET | SENDER-KEY | MLS
 - the protocol used in the network
 
+- `support_protocol`: SUPPORT_HPKE | SUPPORT_DOUBLE-RATCHET 
+- the protocol used in the one-to-one sessions for system message of SENDER-KEY
+
 - `mls_sessions_range`: [min, max]
 - the number of mls sessions. If None, will be created only one sessions with all the nodes
 
