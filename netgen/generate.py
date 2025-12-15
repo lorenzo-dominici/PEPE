@@ -99,10 +99,10 @@ class NetworkGenerator:
     def generate_network(self):
         self._generate_topology()
 
-        self._generate_paths()
-
         self._assign_attributes()
-
+        
+        self._generate_paths()
+        
         return self._generate_json()
 
     
@@ -492,8 +492,7 @@ class NetworkGenerator:
             "channel_prob_working_to_error", "channel_prob_error_to_working", "channel_prob_failure_to_working",
             "if_prob_off_to_working", "if_prob_off_to_error", "if_prob_off_to_failure",
             "if_prob_working_to_error", "if_prob_error_to_working", "if_prob_failure_to_working",
-            "link_prob_working_to_error", "link_prob_error_to_working", "link_prob_failure_to_working",
-            "link_prob_retry", "link_prob_sending",
+            "link_prob_working_to_error", "link_prob_error_to_working", "link_prob_failure_to_working", "link_prob_retry", "link_prob_sending",
             "ls_prob_session_reset", "ls_prob_ratchet_reset", "ls_prob_none", "ls_prob_compromised",
             "sp_prob_run"
         ]
@@ -510,7 +509,7 @@ class NetworkGenerator:
                 paths = []
                 return_paths = []
                 sessions = []
-                int id = 0
+                id = 0
                 for i in range(len(nodes)):
                     for j in range(len(nodes)):
                         if i != j:
@@ -564,6 +563,13 @@ class NetworkGenerator:
                                 session.add_path(return_path)
                                 sessions.append(session)
                                 id += 1
+
+                                # correspondence between paths and sessions
+                                print(f"Session ID: {session.get_id()}, Nodes: {session.get_nodes()}")
+                                print("Paths:")
+                                for p in session.get_paths():
+                                    print(list(p.edges()))
+                                print("\n")
 
                 self.attributes["paths"] = paths
                 self.attributes["return_paths"] = return_paths
@@ -666,7 +672,7 @@ class NetworkGenerator:
 
                         subsession = Session()
                         subsession.set_id(id)
-                        subsession.set_protocol(self.attributes["support_protocol"])
+                        subsession.set_protocol(self.attributes.get("support_protocol"))
                         subsession.set_nodes([sender, receiver])
                         subsession.add_path(path)
                         subsession.add_path(return_path)
@@ -685,6 +691,19 @@ class NetworkGenerator:
                 self.attributes["one_to_one_paths"] = one_to_one_paths
                 self.attributes["one_to_one_return_paths"] = one_to_one_return_paths
                 self.attributes["sessions"] = sessions
+
+                # correspondence between paths and sessions
+                for session in sessions:
+                    print(f"Session ID: {session.get_id()}, Nodes: {session.get_nodes()}")
+                    print("Paths:")
+                    for p in session.get_paths():
+                        print(list(p.edges()))
+                    print("Subsessions:")
+                    for ss in session.get_subsessions():
+                        print(f"  Subsession ID: {ss.get_id()}, Nodes: {ss.get_nodes()}")
+                        for p in ss.get_paths():
+                            print(f"    {list(p.edges())}")
+                    print("\n")
             
             case "MLS":
                 # for MLS, generate random sessions and one_to-many paths in each session with the one to one return paths
@@ -795,6 +814,19 @@ class NetworkGenerator:
                 self.attributes["one_to_many_paths"] = one_to_many_paths
                 self.attributes["one_to_one_return_paths"] = one_to_one_return_paths
 
+                # correspondence between paths and sessions
+                for session in sessions:
+                    print(f"Session ID: {session.get_id()}, Nodes: {session.get_nodes()}")
+                    print("Paths:")
+                    for p in session.get_paths():
+                        print(list(p.edges()))
+                    print("Subsessions:")
+                    for ss in session.get_subsessions():
+                        print(f"  Subsession ID: {ss.get_id()}, Nodes: {ss.get_nodes()}")
+                        for p in ss.get_paths():
+                            print(f"    {list(p.edges())}")
+                    print("\n")
+
 
     def _generate_json(self):
         # Logic to convert the network structure into JSON format
@@ -896,6 +928,11 @@ class NetworkGenerator:
             for neighbor in neighbors:
                 interface = {"#": f"{node}_{neighbor}"}
                 node_to_add["interfaces"].append(interface)
+
+            # commands
+            node_to_add["cmd_off_to_on"] = f"cmd_off_to_on_node_{node}"
+            node_to_add["cmd_on_to_off"] = f"cmd_on_to_off_node_{node}"
+
             nodes_dict["instances"].append(node_to_add)
         self.attributes["nodes_buffer_sizes"] = sizes
         return nodes_dict
@@ -924,7 +961,7 @@ class NetworkGenerator:
             interface_ab["range_state"] = range_state
             interface_ab["init_state"] = 0
            
-            # add probabilities
+            # probabilities
             interface_ab["prob_off_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_working")[0], self.attributes.get("if_prob_off_to_working")[1]), 2)
             interface_ab["prob_off_to_error"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_error")[0], self.attributes.get("if_prob_off_to_error")[1]), 2)
             interface_ab["prob_off_to_failure"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_failure")[0], self.attributes.get("if_prob_off_to_failure")[1]), 2)
@@ -933,6 +970,12 @@ class NetworkGenerator:
             interface_ab["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_failure_to_working")[0], self.attributes.get("if_prob_failure_to_working")[1]), 2)
             interface_ab["ref_node_state"] = f"{node_a}"
             interfaces_dict["instances"].append(interface_ab)
+
+            # commands
+            interface_ab["cmd_off_to_on"] = f"cmd_off_to_on_interface_{node_a}_{node_b}"
+            interface_ab["cmd_working_to_error"] = f"cmd_working_to_error_interface_{node_a}_{node_b}"
+            interface_ab["cmd_error_to_working"] = f"cmd_error_to_working_interface_{node_a}_{node_b}"
+            interface_ab["cmd_failure_to_working"] = f"cmd_failure_to_working_interface_{node_a}_{node_b}"
 
         return interfaces_dict
 
@@ -953,6 +996,7 @@ class NetworkGenerator:
         for edge in self.G.edges():
             node_a = edge[0]
             node_b = edge[1]
+
             channel = {}
             channel["name"] = f"channel_{node_a}_{node_b}"
             channel["#"] = f"{node_a}_{node_b}"
@@ -965,9 +1009,26 @@ class NetworkGenerator:
                 size_bandwidth = int(self.rng.integers(self.attributes.get("channel_bandwidth_range")[0], self.attributes.get("channel_bandwidth_range")[1] + 1))
             channel["size_bandwidth"] = size_bandwidth
             channel["init_bandwidth"] = size_bandwidth
-            channel["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("channel_prob_working_to_error")[0], self.attributes.get("channel_prob_working_to_error")[1]), 2)
-            channel["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("channel_prob_error_to_working")[0], self.attributes.get("channel_prob_error_to_working")[1]), 2)
-            channel["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("channel_prob_failure_to_working")[0], self.attributes.get("channel_prob_failure_to_working")[1]), 2)
+
+            # probabilities
+            if self.attributes.get("channel_prob_working_to_error")[0] == self.attributes.get("channel_prob_working_to_error")[1]:
+                channel["prob_working_to_error"] = self.attributes.get("channel_prob_working_to_error")[0]
+            else:
+                channel["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("channel_prob_working_to_error")[0], self.attributes.get("channel_prob_working_to_error")[1]), 2)
+            if self.attributes.get("channel_prob_error_to_working")[0] == self.attributes.get("channel_prob_error_to_working")[1]:
+                channel["prob_error_to_working"] = self.attributes.get("channel_prob_error_to_working")[0]
+            else:
+                channel["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("channel_prob_error_to_working")[0], self.attributes.get("channel_prob_error_to_working")[1]), 2)
+            if self.attributes.get("channel_prob_failure_to_working")[0] == self.attributes.get("channel_prob_failure_to_working")[1]:
+                channel["prob_failure_to_working"] = self.attributes.get("channel_prob_failure_to_working")[0]
+            else:
+                channel["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("channel_prob_failure_to_working")[0], self.attributes.get("channel_prob_failure_to_working")[1]), 2)
+            
+            # commands
+            channel["cmd_working_to_error"] = f"cmd_working_to_error_channel_{node_a}_{node_b}"
+            channel["cmd_error_to_working"] = f"cmd_error_to_working_channel_{node_a}_{node_b}"
+            channel["cmd_failure_to_working"] = f"cmd_failure_to_working_channel_{node_a}_{node_b}"
+
             channels_dict["instances"].append(channel)
 
         return channels_dict
@@ -996,8 +1057,8 @@ class NetworkGenerator:
             session_id = session.get_id()
             for path in session.get_paths():
                 for edge in path.edges():
-                    sender = path.nodes()[0]
-                    receivers = path.nodes()[1:]
+                    sender = list(path.nodes)[0]
+                    receivers = list(path.nodes)[1:]
                     node_a = edge[0]
                     node_b = edge[1]
 
@@ -1029,28 +1090,38 @@ class NetworkGenerator:
                     link["size_node_buffer_receiver"] = self.attributes["nodes_buffer_sizes"][node_b]
 
                     # probabilities
-                    if self.attributes.get("prob_working_to_error")[0] == self.attributes.get("prob_working_to_error")[1]:
+                    if self.attributes.get("link_prob_working_to_error")[0] == self.attributes.get("link_prob_working_to_error")[1]:
                         link["prob_working_to_error"] = self.attributes.get("link_prob_working_to_error")[0]
                     else:
                         link["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("link_prob_working_to_error")[0], self.attributes.get("link_prob_working_to_error")[1]), 2)
-                    if self.attributes.get("prob_error_to_working")[0] == self.attributes.get("prob_error_to_working")[1]:
+                    if self.attributes.get("link_prob_error_to_working")[0] == self.attributes.get("link_prob_error_to_working")[1]:
                         link["prob_error_to_working"] = self.attributes.get("link_prob_error_to_working")[0]
                     else:
                         link["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_error_to_working")[0], self.attributes.get("link_prob_error_to_working")[1]), 2)
                     
-                    if self.attributes.get("prob_failure_to_working")[0] == self.attributes.get("prob_failure_to_working")[1]:
+                    if self.attributes.get("link_prob_failure_to_working")[0] == self.attributes.get("link_prob_failure_to_working")[1]:
                         link["prob_failure_to_working"] = self.attributes.get("link_prob_failure_to_working")[0]
                     else:
                         link["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_failure_to_working")[0], self.attributes.get("link_prob_failure_to_working")[1]), 2)
-                    if self.attributes.get("prob_retry")[0] == self.attributes.get("prob_retry")[1]:
+                    if self.attributes.get("link_prob_retry")[0] == self.attributes.get("link_prob_retry")[1]:
                         link["prob_retry"] = self.attributes.get("link_prob_retry")[0]
                     else:
                         link["prob_retry"] = round(self.rng.uniform(self.attributes.get("link_prob_retry")[0], self.attributes.get("link_prob_retry")[1]), 2)
-                    if self.attributes.get("prob_sending")[0] == self.attributes.get("prob_sending")[1]:
+                    if self.attributes.get("link_prob_sending")[0] == self.attributes.get("link_prob_sending")[1]:
                         link["prob_sending"] = self.attributes.get("link_prob_sending")[0]
                     else:
                         link["prob_sending"] = round(self.rng.uniform(self.attributes.get("link_prob_sending")[0], self.attributes.get("link_prob_sending")[1]), 2)
 
+                    # commands
+                    link["cmd_working_to_error"] = f"cmd_working_to_error_link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
+                    link["cmd_error_to_working"] = f"cmd_error_to_working_link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
+                    link["cmd_failure_to_working"] = f"cmd_failure_to_working_link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
+                    link["cmd_send_failure"] = f"cmd_send_failure_link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
+                    link["cmd_send_success"] = f"cmd_send_success_link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
+                    link["cmd_sending"] = f"cmd_sending_link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
+                    link["cmd_receive_success"] = f"cmd_receive_success_link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
+                    link["cmd_receive_failure"] = f"cmd_receive_failure_link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
+                    
                     links_dict["instances"].append(link)
 
         return links_dict
@@ -1072,14 +1143,14 @@ class NetworkGenerator:
         for session in sessions:
             session_id = session.get_id()
             for path in session.get_paths():
-                sender = path.nodes[0]
-                for node in path.nodes():
+                sender = list(path.nodes)[0]
+                for node in path.nodes:
                     # link_ref_counter instances
                     link_ref = {}
                     link_ref["name"] = f"link_ref_{node}_of_path_{sender}_{session_id}"
                     link_ref["#"] = f"{node}_{sender}_{session_id}"
                     
-                    if session.get_protocol() in {"HPKE", "DOUBLE-RATCHET", "SUPPORT_HPKE", "SUPPORT_DOUBLE-RATCHET"}:
+                    if session.protocol in {"HPKE", "DOUBLE-RATCHET", "SUPPORT_HPKE", "SUPPORT_DOUBLE-RATCHET"}:
                         link_ref["size_counter"] = 1
                         link_ref["init_counter"] = 1
                     else:
@@ -1088,7 +1159,10 @@ class NetworkGenerator:
                         link_ref["init_counter"] = counter
                     link_ref["is_receiver"] = path.nodes[node].get("is_receiver", False)
                     link_ref["ref_node"] = f"{node}"
+                    link_ref["cmd_reset"] = f"cmd_reset_link_ref_{node}_of_path_{sender}_{session_id}"
+
                     link_refs_dict["instances"].append(link_ref)
+                    
 
         return link_refs_dict
         
@@ -1120,14 +1194,14 @@ class NetworkGenerator:
             sessions.extend(session.get_subsessions())
 
         for session in sessions:
-            sessions_id = session.get_id()
+            session_id = session.get_id()
             for path in session.paths:
-                sender = path.nodes[0]
-                receivers = path.nodes[1:]
+                sender = list(path.nodes)[0]
+                receivers = list(path.nodes)[1:]
                 session_path = {}
-                session_path["name"] = f"session_path_{sender}_{sessions_id}"
-                session_path["#"] = f"{sender}_{sessions_id}"
-                session_path["protocol"] = sessions.get_protocol()
+                session_path["name"] = f"session_path_{sender}_{session_id}"
+                session_path["#"] = f"{sender}_{session_id}"
+                session_path["protocol"] = session.protocol
 
                 # states
                 session_path["range_depth"] = range_state
@@ -1136,23 +1210,25 @@ class NetworkGenerator:
                 session_path["init_system_message"] = const_message_data 
                 session_path["range_data_message"] = range_data_message
                 session_path["init_data_message"] = const_message_data 
-                session_path["range_prev_local_session_epoch_sender"] = path.nodes[0]['epoch_size']
+                session_path["range_prev_local_session_epoch_sender"] = path.nodes[sender]['epoch_size']
                 session_path["init_prev_local_session_epoch_sender"] = 0
-                session_path["size_link_counter"] = len(path[0]) - 1
-                session_path["init_link_counter"] = len(path[0]) - 1
+                session_path["size_link_counter"] = len(path) - 1
+                session_path["init_link_counter"] = len(path) - 1
                 session_path["size_checker_counter"] = len(receivers)  # one session checker for each receiver
                 session_path["init_checker_counter"] = len(receivers)
 
                 # references
                 session_path["ref_node_sender"] = f"{sender}"
-                session_path["ref_local_session_sender"] = f"{sender}_{sessions_id}"
+                session_path["ref_local_session_sender"] = f"{sender}_{session_id}"
                 session_path["size_buffer_sender"] = self.attributes["nodes_buffer_sizes"][sender]
-                succ = next(path.successors(sender))
-                first_links = [{"#": f"{sender}_{succ}_{sender}_{sessions_id}"}] if succ else None
+                first_links = []
+                successors = list(path.successors(sender))
+                for succ in successors:
+                    first_links.append({"#": f"{sender}_{succ}_{sender}_{session_id}"})
                 session_path["first_links"] = first_links
 
                 # probabilities
-                if session.get_protocol() in {"SUPPORT_HPKE", "SUPPORT_DOUBLE-RATCHET"}:
+                if session.protocol in {"SUPPORT_HPKE", "SUPPORT_DOUBLE-RATCHET"}:
                     session_path["prob_run"] = 0.0
                 else:
                     if self.attributes.get("sp_prob_run")[0] == self.attributes.get("sp_prob_run")[1]:
@@ -1161,6 +1237,17 @@ class NetworkGenerator:
                         prob_run = round(self.rng.uniform(self.attributes.get("sp_prob_run")[0], self.attributes.get("sp_prob_run")[1]), 2)
                     session_path["prob_run"] = prob_run
                 session_paths_dict["instances"].append(session_path)
+
+                # commands
+                session_path["cmd_run"] = f"cmd_run_session_path_{sender}_{session_id}"
+                session_path["cmd_update_data"] = f"cmd_update_data_session_path_{sender}_{session_id}"
+                session_path["cmd_update_not_data"] = f"cmd_update_not_data_session_path_{sender}_{session_id}"
+                session_path["cmd_update"] = f"cmd_update_session_path_{sender}_{session_id}"
+                session_path["cmd_update_failure"] = f"cmd_update_failure_session_path_{sender}_{session_id}"
+                session_path["cmd_update_success"] = f"cmd_update_success_session_path_{sender}_{session_id}"
+                session_path["cmd_alt_run"] = f"cmd_alt_run_session_path_{sender}_{session_id}"
+                session_path["cmd_send"] = f"cmd_send_session_path_{sender}_{session_id}"
+                session_path["cmd_counter_reset"] = f"cmd_counter_reset_session_path_{sender}_{session_id}"
 
         return session_paths_dict
 
@@ -1198,9 +1285,9 @@ class NetworkGenerator:
                 # states
                 local_session["range_state"] = range_state
                 local_session["init_state"] = const_valid 
-                local_session["size_epoch"] = session.get_nodes()[node]['epoch_size']
+                local_session["size_epoch"] = list(session.paths)[0].nodes[node]['epoch_size']
                 local_session["init_epoch"] = 0
-                local_session["size_ratchet"] = session.get_nodes()[node]['ratchet_size']
+                local_session["size_ratchet"] = list(session.paths)[0].nodes[node]['ratchet_size']
                 local_session["init_ratchet"] = 0
                 local_session["init_compromise"] = False
 
@@ -1221,6 +1308,14 @@ class NetworkGenerator:
                     local_session["prob_none"] = self.params["ls_prob_none"][0]
                 else:
                     local_session["prob_none"] = round(self.rng.uniform(self.params["ls_prob_none"][0], self.params["ls_prob_none"][1]), 2)
+
+                # commands
+                local_session["cmd_session_update_success"] = f"cmd_session_update_success_local_session_of_{node}_of_session_{id}"
+                local_session["cmd_session_update_failure"] = f"cmd_session_update_failure_local_session_of_{node}_of_session_{id}"
+                local_session["cmd_session_ratchet"] = f"cmd_session_ratchet_local_session_of_{node}_of_session_{id}"
+                local_session["cmd_session_check"] = f"cmd_session_check_local_session_of_{node}_of_session_{id}"
+                local_session["cmd_compromise"] = f"cmd_compromise_local_session_of_{node}_of_session_{id}"
+                local_session["cmd_decompromise"] = f"cmd_decompromise_local_session_of_{node}_of_session_{id}"
 
                 local_sessions_dict["instances"].append(local_session)
 
@@ -1262,12 +1357,12 @@ class NetworkGenerator:
                 session_checker = {}
                 session_checker["name"] = f"session_checker_of_{receiver}_of_session_{session_id}"
                 session_checker["#"] = f"{receiver}_{session_id}"
-                session_checker["protocol"] = session.get_protocol()
+                session_checker["protocol"] = session.protocol
 
                 # states
                 session_checker["range_state"] = state_range
                 session_checker["init_state"] = const_idle
-                session_checker["range_sender_local_session_epoch"] = session.get_nodes()[sender]['epoch_size']
+                session_checker["range_sender_local_session_epoch"] = list(session.paths)[0].nodes[sender]['epoch_size']
                 session_checker["init_sender_local_session_epoch"] = 0
                 session_checker["range_sender_local_session_system_message"] = session_checker_sender_local_session_system_message_range
                 session_checker["init_sender_local_session_system_message"] = const_message_data
@@ -1279,7 +1374,7 @@ class NetworkGenerator:
                 session_checker["ref_session_path"] = f"{sender}_{session_id}"
                 session_checker["ref_local_session_receiver"] = f"{receiver}_{session_id}"
                 session_checker["ref_node_receiver"] = f"{receiver}"
-                if session.get_protocol() in {"HPKE", "DOUBLE-RATCHET", "SUPPORT_HPKE", "SUPPORT_DOUBLE-RATCHET"}:
+                if session.protocol in {"HPKE", "DOUBLE-RATCHET", "SUPPORT_HPKE", "SUPPORT_DOUBLE-RATCHET"}:
                     session_checker["ref_session_path_to_sender"] = f"{receiver}_{session_id}"
                     session_checker["ref_session_checker_sender"] = f"{sender}_{session_id}"
                 else:
@@ -1290,9 +1385,34 @@ class NetworkGenerator:
                             session_checker["ref_session_checker_sender"] = f"{sender}_{subsession.get_id()}"
                             break
             
-                session_checker["size_ratchet_sender"] = session.get_nodes()[sender]['ratchet_size']
+                session_checker["size_ratchet_sender"] = list(session.paths)[0].nodes[sender]['ratchet_size']
 
                 session_checker["ref_local_session_sender_key_receiver"] = 0 # TO DO
+
+                # commands
+                session_checker["cmd_freeze"] = f"cmd_freeze_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_trigger"] = f"cmd_trigger_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_read_data"] = f"cmd_read_data_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_update_success"] = f"cmd_update_success_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_update_failure"] = f"cmd_update_failure_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_check_success"] = f"cmd_check_success_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_resolve_data"] = f"cmd_resolve_data_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_cleanup"] = f"cmd_cleanup_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_check_failure"] = f"cmd_check_failure_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_read_reset"] = f"cmd_read_reset_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_read_ratchet"] = f"cmd_read_ratchet_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_resolve_sender_new_key"] = f"cmd_resolve_sender_new_key_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_resolve_sender_refresh"] = f"cmd_resolve_sender_refresh_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_resolve_sender_reset"] = f"cmd_resolve_sender_reset_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_hpke_reset"] = f"cmd_hpke_reset_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_hpke_failure"] = f"cmd_hpke_failure_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_double_ratchet_reset"] = f"cmd_double_ratchet_reset_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_double_ratchet_failure"] = f"cmd_double_ratchet_failure_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_sender_key_failure"] = f"cmd_sender_key_failure_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_read_refresh"] = f"cmd_read_refresh_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_read_current"] = f"cmd_read_current_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_mls_reset"] = f"cmd_mls_reset_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_mls_failure"] = f"cmd_mls_failure_session_checker_of_{receiver}_of_session_{session_id}"
 
                 session_checkers_dict["instances"].append(session_checker)
 
