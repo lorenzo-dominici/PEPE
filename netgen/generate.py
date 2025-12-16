@@ -505,7 +505,7 @@ class NetworkGenerator:
         nodes = list(self.G.nodes())
         #if the protocol is hpke or double ratchet, we need only one-to-one paths and return paths
         match self.protocol:
-            case "HPKE" | "DOUBLE-RATCHET":
+            case "HPKE" | "DOUBLE_RATCHET":
                 paths = []
                 return_paths = []
                 sessions = []
@@ -576,7 +576,7 @@ class NetworkGenerator:
                 self.attributes["sessions"] = sessions
 
             # for sender key, we need one-to-many paths and all the one-to-one paths sender_receiver and receiver_sender
-            case "SENDER-KEY":
+            case "SENDER_KEY":
                 # first, select senders
                 senders = []
                 for node in nodes:
@@ -1353,6 +1353,8 @@ class NetworkGenerator:
             sender = session.get_nodes()[0]
             receivers = session.get_nodes()[1:]
             session_id = session.get_id()
+            path = list(session.paths)[0] # need the path to get the last link.
+            
             for receiver in receivers:
                 session_checker = {}
                 session_checker["name"] = f"session_checker_of_{receiver}_of_session_{session_id}"
@@ -1390,8 +1392,12 @@ class NetworkGenerator:
                 session_checker["ref_local_session_sender_key_receiver"] = 0 # TO DO
 
                 # commands
-                session_checker["cmd_freeze"] = f"cmd_freeze_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_trigger"] = f"cmd_trigger_session_checker_of_{receiver}_of_session_{session_id}"
+                session_checker["cmd_freeze"] = f"cmd_send_session_path_{sender}_{session_id}" # synchronized with the send command of the session path
+
+                # here i need the link to the receiver in the path. The path is a tree, so I can use predecessors to find the previous node.
+                prec = next(path.predecessors(receiver))
+                session_checker["cmd_trigger"] = f"cmd_receive_success_link_{prec}_{receiver}_of_path_{sender}_{session_id}"
+
                 session_checker["cmd_read_data"] = f"cmd_read_data_session_checker_of_{receiver}_of_session_{session_id}"
                 session_checker["cmd_update_success"] = f"cmd_update_success_session_checker_of_{receiver}_of_session_{session_id}"
                 session_checker["cmd_update_failure"] = f"cmd_update_failure_session_checker_of_{receiver}_of_session_{session_id}"
@@ -1401,7 +1407,22 @@ class NetworkGenerator:
                 session_checker["cmd_check_failure"] = f"cmd_check_failure_session_checker_of_{receiver}_of_session_{session_id}"
                 session_checker["cmd_read_reset"] = f"cmd_read_reset_session_checker_of_{receiver}_of_session_{session_id}"
                 session_checker["cmd_read_ratchet"] = f"cmd_read_ratchet_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_resolve_sender_new_key"] = f"cmd_resolve_sender_new_key_session_checker_of_{receiver}_of_session_{session_id}"
+
+                if session.protocol == "SENDER_KEY":
+                    # if the protocol is sender key, i need also the cmd_resolve_sender_new_key. this command must be 
+                    # synchronized with the cmd_resolve_sender_new_key of the session checker relative to one to one path.
+                    # to do this, i need the subsession relative to the one to one path to get the session_id.
+                    subsessions = session.get_subsessions()
+                    for subsession in subsessions:
+                        if subsession.nodes[0] == receiver or subsession.nodes[1] == receiver:
+                            one_to_one_session_id = subsession.get_id()
+                            break
+                    session_checker["cmd_resolve_sender_new_key"] = f"cmd_resolve_sender_new_key_session_checker_of_{receiver}_of_session_{one_to_one_session_id}"
+                elif session.protocol in {"HPKE_SENDER_KEY", "DOUBLE_RATCHET_SENDER_KEY"}:
+                    # in the protocol is hpke or double ratchet support for sender key, the command must be synchronized with the 
+                    # cmd_resolve_sender_new_key of the session checker relative to the sender key session.
+                    session_checker["cmd_resolve_sender_new_key"] = f"cmd_resolve_sender_new_key_session_checker_of_{receiver}_of_session_{session_id}"
+
                 session_checker["cmd_resolve_sender_refresh"] = f"cmd_resolve_sender_refresh_session_checker_of_{receiver}_of_session_{session_id}"
                 session_checker["cmd_resolve_sender_reset"] = f"cmd_resolve_sender_reset_session_checker_of_{receiver}_of_session_{session_id}"
                 session_checker["cmd_hpke_reset"] = f"cmd_hpke_reset_session_checker_of_{receiver}_of_session_{session_id}"

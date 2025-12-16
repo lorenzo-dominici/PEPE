@@ -23,10 +23,10 @@ The parameters of the network must be included in a json file with this structur
 
 ### Protocol
 
-- `protocol`: HPKE | DOUBLE-RATCHET | SENDER-KEY | MLS
+- `protocol`: HPKE | DOUBLE_RATCHET | SENDER_KEY | MLS
 - the protocol used in the network
 
-- `support_protocol`: SUPPORT_HPKE | SUPPORT_DOUBLE-RATCHET 
+- `support_protocol`: HPKE_SENDER_KEY | DOUBLE_RATCHET_SENDER_KEY 
 - the protocol used in the one-to-one sessions for system message of SENDER-KEY
 
 - `mls_sessions_range`: [min, max]

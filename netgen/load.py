@@ -18,8 +18,8 @@ def validate_data(data):
 
     protocol = data.get("protocol")
     if protocol:
-        if protocol not in {"HPKE", "DOUBLE-RATCHET", "SENDER-KEY", "MLS"}:
-                raise ValueError("protocol must be one of HPKE, DOUBLE-RATCHET, SENDER-KEY, MLS")
+        if protocol not in {"HPKE", "DOUBLE_RATCHET", "SENDER_KEY", "MLS"}:
+                raise ValueError("protocol must be one of HPKE, DOUBLE_RATCHET, SENDER_KEY, MLS")
     else:
         raise ValueError("protocol parameter must be setted")
 
@@ -34,13 +34,12 @@ def validate_data(data):
             raise ValueError("Missing parameter: mls_sessions_range")
     mls_sessions_range = 1
 
-    if protocol in {"SENDER-KEY", "MLS"}:
-        support_protocol = data.get("support_protocol")
-        if support_protocol:
-            if support_protocol not in {"SUPPORT_HPKE", "SUPPORT_DOUBLE-RATCHET"}:
-                raise ValueError("support_protocol must be one of SUPPORT_HPKE, SUPPORT_DOUBLE-RATCHET")
-        else:
-            support_protocol = "SUPPORT_HPKE"  # default to HPKE if not provided
+    support_protocol = data.get("support_protocol")
+    if support_protocol:
+        if support_protocol not in {"HPKE_SENDER_KEY", "DOUBLE_RATCHET_SENDER_KEY"}:
+            raise ValueError("support_protocol must be one of HPKE_SENDER_KEY, DOUBLE_RATCHET_SENDER_KEY")
+    else:
+        support_protocol = "HPKE_SENDER_KEY"  # default to HPKE if not provided
             
     
     seed = data.get("seed")

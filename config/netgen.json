@@ -1,6 +1,6 @@
 {
-    "protocol": "SENDER-KEY",
-    "support_protocol": "SUPPORT_DOUBLE-RATCHET",
+    "protocol": "SENDER_KEY",
+    "support_protocol": "DOUBLE_RATCHET_SENDER_KEY",
     "mls_sessions_range": [2, 2],
     "seed": 1357,
     "filename": "test_network",
