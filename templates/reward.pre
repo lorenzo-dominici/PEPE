@@ -1,0 +1,5 @@
+reward "{{#}}"
+
+    {^loop|contributions|[{{contributions[].command}}] {{contributions[].condition}} : {{contributions[].value}};$}
+
+endreward
