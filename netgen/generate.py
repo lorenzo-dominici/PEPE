@@ -43,6 +43,22 @@ class Session:
         return self.subsessions.copy()
 
 
+class Contribution:
+    def __init__(self, command, condition, value):
+        self.command = command
+        self.condition = condition
+        self.value = value
+
+
+class Reward:
+    def __init__(self, name):
+        self.name = name
+        self.constributions = []
+
+
+    def add_contribution(self, contribution):
+        self.constributions.append(contribution)
+
 
 class NetworkGenerator: 
     def __init__(self, params):
@@ -102,6 +118,8 @@ class NetworkGenerator:
         self._assign_attributes()
         
         self._generate_paths()
+
+        self._generate_rewards()
         
         return self._generate_json()
 
@@ -828,6 +846,16 @@ class NetworkGenerator:
                     print("\n")
 
 
+    def _generate_rewards(self):
+        reward_message_type_hpke = Reward("reward_message_type_hpke")
+        commands = []
+
+        
+
+    def _generate_policies(self):
+        pass
+
+
     def _generate_json(self):
         # Logic to convert the network structure into JSON format
         # first add the constants from the consts.json file
@@ -875,11 +903,9 @@ class NetworkGenerator:
         session_checkers_dict = self._add_session_checkers_to_dict()
         network_dict["items"].append(session_checkers_dict)
 
-
-        # # Print del network_dict in modo leggibile
-        # print("=== NETWORK DICTIONARY ===")
-        # print(json.dumps(network_dict, indent=2, ensure_ascii=False))
-        # print("=" * 27)
+        # add rewards
+        rewards_dict = self._add_rewards_to_dict()
+        network_dict["items"].append(rewards_dict)
 
         return network_dict
 
@@ -1291,6 +1317,10 @@ class NetworkGenerator:
                 local_session["init_ratchet"] = 0
                 local_session["init_compromise"] = False
 
+                # references
+                local_session["ref_node"] = f"{node}"
+                local_session["ref_broadest_session_path"] = f"{node}_{id}"
+
                 # probabilities
                 if self.params["ls_prob_session_reset"][0] == self.params["ls_prob_session_reset"][1]:
                     local_session["prob_session_reset"] = self.params["ls_prob_session_reset"][0]
@@ -1438,3 +1468,7 @@ class NetworkGenerator:
                 session_checkers_dict["instances"].append(session_checker)
 
         return session_checkers_dict      
+
+
+    def _add_rewards_to_dict(self):
+        rewards_dict = {}
