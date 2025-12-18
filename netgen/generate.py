@@ -523,13 +523,13 @@ class NetworkGenerator:
         nodes = list(self.G.nodes())
         #if the protocol is hpke or double ratchet, we need only one-to-one paths and return paths
         match self.protocol:
-            case "HPKE" | "DOUBLE_RATCHET":
+            case "hpke" | "double_ratchet":
                 paths = []
                 return_paths = []
                 sessions = []
                 id = 0
                 for i in range(len(nodes)):
-                    for j in range(len(nodes)):
+                    for j in range(i, len(nodes)):
                         if i != j:
                             a = nodes[i]
                             b = nodes[j]
@@ -550,6 +550,7 @@ class NetworkGenerator:
                                 path.nodes[a]['ratchet_size'] = ratchet_size
                                 path.nodes[b]['epoch_size'] = epoch_size
                                 path.nodes[b]['ratchet_size'] = ratchet_size
+                                path.nodes[b]['is_receiver'] = True
 
                                 paths.append(path)
 
@@ -557,19 +558,11 @@ class NetworkGenerator:
                                 return_path = nx.DiGraph()
                                 nx.add_path(return_path, nx.shortest_path(self.G, b, a))
 
-                                if self.params.get("ls_size_epoch_range")[0] == self.params.get("ls_size_epoch_range")[1]:
-                                    epoch_size = self.params.get("ls_size_epoch_range")[0]
-                                else:
-                                    epoch_size = self.rng.integers(self.params.get("ls_size_epoch_range")[0], self.params.get("ls_size_epoch_range")[1] + 1)
-                                if self.params.get("ls_size_ratchet_range")[0] == self.params.get("ls_size_ratchet_range")[1]:
-                                    ratchet_size = self.params.get("ls_size_ratchet_range")[0]
-                                else:
-                                    ratchet_size = self.rng.integers(self.params.get("ls_size_ratchet_range")[0], self.params.get("ls_size_ratchet_range")[1] + 1)
-
                                 return_path.nodes[b]['epoch_size'] = epoch_size
                                 return_path.nodes[b]['ratchet_size'] = ratchet_size
                                 return_path.nodes[a]['epoch_size'] = epoch_size
                                 return_path.nodes[a]['ratchet_size'] = ratchet_size
+                                return_path.nodes[a]['is_receiver'] = True
 
                                 return_paths.append(return_path)
 
@@ -594,7 +587,7 @@ class NetworkGenerator:
                 self.attributes["sessions"] = sessions
 
             # for sender key, we need one-to-many paths and all the one-to-one paths sender_receiver and receiver_sender
-            case "SENDER_KEY":
+            case "sender_key":
                 # first, select senders
                 senders = []
                 for node in nodes:
@@ -665,26 +658,19 @@ class NetworkGenerator:
                         path.nodes[sender]['ratchet_size'] = ratchet_size
                         path.nodes[receiver]['epoch_size'] = epoch_size
                         path.nodes[receiver]['ratchet_size'] = ratchet_size
+                        path.nodes[receiver]['is_receiver'] = True
 
                         one_to_one_paths.append(path)
 
                         # one-to-one return path
                         return_path = nx.DiGraph()
                         nx.add_path(return_path, nx.shortest_path(self.G, receiver, sender))
-
-                        if self.params.get("ls_size_epoch_range")[0] == self.params.get("ls_size_epoch_range")[1]:
-                            epoch_size = self.params.get("ls_size_epoch_range")[0]
-                        else:
-                            epoch_size = self.rng.integers(self.params.get("ls_size_epoch_range")[0], self.params.get("ls_size_epoch_range")[1] + 1)
-                        if self.params.get("ls_size_ratchet_range")[0] == self.params.get("ls_size_ratchet_range")[1]:
-                            ratchet_size = self.params.get("ls_size_ratchet_range")[0]
-                        else:
-                            ratchet_size = self.rng.integers(self.params.get("ls_size_ratchet_range")[0], self.params.get("ls_size_ratchet_range")[1] + 1)
                         
                         return_path.nodes[sender]['epoch_size'] = epoch_size
                         return_path.nodes[sender]['ratchet_size'] = ratchet_size
                         return_path.nodes[receiver]['epoch_size'] = epoch_size
                         return_path.nodes[receiver]['ratchet_size'] = ratchet_size
+                        return_path.nodes[receiver]['is_receiver'] = True
 
                         one_to_one_return_paths.append(return_path)
 
@@ -723,8 +709,8 @@ class NetworkGenerator:
                             print(f"    {list(p.edges())}")
                     print("\n")
             
-            case "MLS":
-                # for MLS, generate random sessions and one_to-many paths in each session with the one to one return paths
+            case "mls":
+                # for mls, generate random sessions and one-to-many paths in each session with the one to one return paths
                 # partition the nodes into sessions
                 nodes = nodes.copy()
                 self.rng.shuffle(nodes)
@@ -799,32 +785,15 @@ class NetworkGenerator:
                             path = nx.DiGraph()
                             nx.add_path(path, nx.shortest_path(self.G, dest, sender))
 
-                            if self.params.get("ls_size_epoch_range")[0] == self.params.get("ls_size_epoch_range")[1]:
-                                epoch_size = self.params.get("ls_size_epoch_range")[0]
-                            else:
-                                epoch_size = self.rng.integers(self.params.get("ls_size_epoch_range")[0], self.params.get("ls_size_epoch_range")[1] + 1)
-                            if self.params.get("ls_size_ratchet_range")[0] == self.params.get("ls_size_ratchet_range")[1]:
-                                ratchet_size = self.params.get("ls_size_ratchet_range")[0]
-                            else:
-                                ratchet_size = self.rng.integers(self.params.get("ls_size_ratchet_range")[0], self.params.get("ls_size_ratchet_range")[1] + 1)
-                            
                             path.nodes[sender]['epoch_size'] = epoch_size
                             path.nodes[sender]['ratchet_size'] = ratchet_size
                             path.nodes[dest]['epoch_size'] = epoch_size
                             path.nodes[dest]['ratchet_size'] = ratchet_size
+                            path.nodes[dest]['is_receiver'] = True
 
                             one_to_one_return_paths.append(path)
 
-                            subsession = Session()
-                            subsession.set_id(id)
-                            subsession.set_protocol(self.attributes["support_protocol"])
-                            subsession.set_nodes([dest, sender])
-                            subsession.add_path(path)
-                            subsessions.append(subsession)
-                            id += 1
-                        
-                        for subsession in subsessions:
-                            session.add_subsession(subsession)
+                            session.add_path(path)
 
                         sessions.append(session)
 
@@ -847,10 +816,92 @@ class NetworkGenerator:
 
 
     def _generate_rewards(self):
-        reward_message_type_hpke = Reward("reward_message_type_hpke")
-        commands = []
+        def generate_message_reward():
+            with open("config/netgen_files.json", "r") as f:
+                files_config = json.load(f)
+            
+            with open(files_config.get("consts"), "r") as f:
+                consts = json.load(f)
+            
+            rewards_data = {
+                "hpke": Reward("reward_data_message_hpke"),
+                "double_rathet": Reward("reward_data_message_double_rathet"),
+                "sender_key": Reward("reward_data_message_sender_key"), 
+                "mls": Reward("reward_data_message_mls")
+            }
 
-        
+            rewards_system = {
+                "hpke": Reward("reward_system_message_hpke"),
+                "double_rathet": Reward("reward_system_message_double_rathet"),
+                "sender_key": Reward("reward_system_message_sender_key"), 
+                "mls": Reward("reward_system_message_mls")
+            }
+
+            reward_message = Reward("reward_total_messages")
+
+
+            for session in self.attributes["sessions"]:
+                match session.protocol:
+                    case "hpke":
+                        for i, path in session.paths.enumerate():
+                            sender = list(path)[0]
+                            id = session.id
+                            session_path = f"{i}_{id}" 
+                            command = f"cmd_send_{session_path}"
+                            condition = f"(sender_path_system_message_{session_path} = {consts['const_message_data']}) | (sender_path_system_message_{session_path} = {consts['const_message_ratchet']})"
+                            value = "1" 
+                            rewards_data["hpke"].add_contribution(Contribution(command, condition, value))
+                            condition = f"(sender_path_system_message_{session_path} = {consts['const_message_reset']})"
+                            rewards_system["hpke"].add_contribution(Contribution(command, condition, value))
+                    case "double_ratchet":
+                        for path in session.paths:
+                            sender = list(path)[0]
+                            id = session.id
+                            session_path = f"{i}_{id}" 
+                            command = f"cmd_send_{session_path}"
+                            condition = f"(sender_path_system_message_{session_path} = {consts['const_message_ratchet']})"
+                            value = "1" 
+                            rewards_data["double_ratchet"].add_contribution(Contribution(command, condition, value))
+                            condition = f"(sender_path_system_message_{session_path} = {consts['const_message_reset']})"
+                            rewards_system["double_ratchet"].add_contribution(Contribution(command, condition, value))
+                    case "sender_key":
+                        sender = session.nodes[0]
+                        id = session.id
+                        session_path = f"{i}_{id}"
+                        command = f"cmd_send_{session_path}"
+                        condition = "true" # all messages should be data
+                        value = "1"
+                        rewards_data["sender_key"].add_contribution(Contribution(command, condition, value))
+                        for subsession in session.subsessions:
+                            id = subsession.id
+                            condition = "true" # all messages should be system
+                            value = "1"
+                            for path in subsession.paths:
+                                sender = list(path)[0]
+                                session_path = f"{i}_{id}"
+                                command = f"cmd_send_{session_path}"
+                                rewards_system["sender_key"].add_contribution(Contribution(command, condition, value))
+                    case "mls":
+                        for path in session.paths:
+                            sender = list(path)[0]
+                            id = session.id
+                            session_path = f"{i}_{id}" 
+                            command = f"cmd_send_{session_path}"
+                            condition = f"(sender_path_system_message_{session_path} = {consts['const_message_data']}) | (sender_path_system_message_{session_path} = {consts['const_message_ratchet']})"
+                            value = "1" 
+                            rewards_data["mls"].add_contribution(Contribution(command, condition, value))
+                            condition = f"(sender_path_system_message_{session_path} = {consts['const_message_reset']})"
+                            rewards_system["mls"].add_contribution(Contribution(command, condition, value))
+                        for subsession in session.subsessions:
+                            id = subsession.id
+                            condition = "true" # all messages should be system
+                            value = "1"
+                            for path in subsession.paths:
+                                sender = list(path)[0]
+                                session_path = f"{i}_{id}"
+                                command = f"cmd_send_{session_path}"
+                                rewards_system["mls"].add_contribution(Contribution(command, condition, value))
+
 
     def _generate_policies(self):
         pass
@@ -1081,7 +1132,7 @@ class NetworkGenerator:
 
         for session in sessions:
             session_id = session.get_id()
-            for path in session.get_paths():
+            for i, path in session.get_paths().enumerate():
                 for edge in path.edges():
                     sender = list(path.nodes)[0]
                     receivers = list(path.nodes)[1:]
@@ -1090,8 +1141,8 @@ class NetworkGenerator:
 
                     # links instances
                     link = {}
-                    link["name"] = f"link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
-                    link["#"] = f"{node_a}_{node_b}_{sender}_{session_id}"
+                    link["name"] = f"link_{node_a}_{node_b}_of_path_{i}_{session_id}"
+                    link["#"] = f"{node_a}_{node_b}_{i}_{session_id}"
 
                     # states
                     link["range_state"] = range_state
@@ -1105,11 +1156,11 @@ class NetworkGenerator:
                     link["ref_channel"] = f"{node_a}_{node_b}"
                     link["ref_interface_sender"] = f"{node_a}_{node_b}"
                     link["ref_node_buffer_sender"] = f"{node_a}"
-                    link["ref_link_ref_counter"] = f"{node_a}_{sender}_{session_id}"
+                    link["ref_link_ref_counter"] = f"{node_a}_{i}_{session_id}"
                     next_links = []
                     successors = list(path.successors(node_b))
                     for succ in successors:
-                        next_links.append({"ref_link_next": f"{node_b}_{succ}_{sender}_{session_id}"})
+                        next_links.append({"ref_link_next": f"{node_b}_{succ}_{i}_{session_id}"})
                     link["next_links"] = next_links
                     link["ref_interface_receiver"] = f"{node_b}_{node_a}"
                     link["ref_node_buffer_receiver"] = f"{node_b}"
@@ -1139,14 +1190,14 @@ class NetworkGenerator:
                         link["prob_sending"] = round(self.rng.uniform(self.attributes.get("link_prob_sending")[0], self.attributes.get("link_prob_sending")[1]), 2)
 
                     # commands
-                    link["cmd_working_to_error"] = f"cmd_working_to_error_link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
-                    link["cmd_error_to_working"] = f"cmd_error_to_working_link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
-                    link["cmd_failure_to_working"] = f"cmd_failure_to_working_link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
-                    link["cmd_send_failure"] = f"cmd_send_failure_link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
-                    link["cmd_send_success"] = f"cmd_send_success_link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
-                    link["cmd_sending"] = f"cmd_sending_link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
-                    link["cmd_receive_success"] = f"cmd_receive_success_link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
-                    link["cmd_receive_failure"] = f"cmd_receive_failure_link_{node_a}_{node_b}_of_path_{sender}_{session_id}"
+                    link["cmd_working_to_error"] = f"cmd_working_to_error_link_{node_a}_{node_b}_of_path_{i}_{session_id}"
+                    link["cmd_error_to_working"] = f"cmd_error_to_working_link_{node_a}_{node_b}_of_path_{i}_{session_id}"
+                    link["cmd_failure_to_working"] = f"cmd_failure_to_working_link_{node_a}_{node_b}_of_path_{i}_{session_id}"
+                    link["cmd_send_failure"] = f"cmd_send_failure_link_{node_a}_{node_b}_of_path_{i}_{session_id}"
+                    link["cmd_send_success"] = f"cmd_send_success_link_{node_a}_{node_b}_of_path_{i}_{session_id}"
+                    link["cmd_sending"] = f"cmd_sending_link_{node_a}_{node_b}_of_path_{i}_{session_id}"
+                    link["cmd_receive_success"] = f"cmd_receive_success_link_{node_a}_{node_b}_of_path_{i}_{session_id}"
+                    link["cmd_receive_failure"] = f"cmd_receive_failure_link_{node_a}_{node_b}_of_path_{i}_{session_id}"
                     
                     links_dict["instances"].append(link)
 
@@ -1168,15 +1219,15 @@ class NetworkGenerator:
 
         for session in sessions:
             session_id = session.get_id()
-            for path in session.get_paths():
+            for i, path in session.get_paths().enumerate():
                 sender = list(path.nodes)[0]
                 for node in path.nodes:
                     # link_ref_counter instances
                     link_ref = {}
-                    link_ref["name"] = f"link_ref_{node}_of_path_{sender}_{session_id}"
-                    link_ref["#"] = f"{node}_{sender}_{session_id}"
+                    link_ref["name"] = f"link_ref_{node}_of_path_{i}_{session_id}"
+                    link_ref["#"] = f"{node}_{i}_{session_id}"
                     
-                    if session.protocol in {"HPKE", "DOUBLE-RATCHET", "SUPPORT_HPKE", "SUPPORT_DOUBLE-RATCHET"}:
+                    if session.protocol in {"hpke", "double_ratchet", "hpke_sender_key", "double_ratchet_sender_key"}:
                         link_ref["size_counter"] = 1
                         link_ref["init_counter"] = 1
                     else:
@@ -1185,7 +1236,7 @@ class NetworkGenerator:
                         link_ref["init_counter"] = counter
                     link_ref["is_receiver"] = path.nodes[node].get("is_receiver", False)
                     link_ref["ref_node"] = f"{node}"
-                    link_ref["cmd_reset"] = f"cmd_reset_link_ref_{node}_of_path_{sender}_{session_id}"
+                    link_ref["cmd_reset"] = f"cmd_reset_link_ref_{node}_of_path_{i}_{session_id}"
 
                     link_refs_dict["instances"].append(link_ref)
                     
@@ -1221,12 +1272,12 @@ class NetworkGenerator:
 
         for session in sessions:
             session_id = session.get_id()
-            for path in session.paths:
+            for i, path in session.paths:
                 sender = list(path.nodes)[0]
                 receivers = list(path.nodes)[1:]
                 session_path = {}
-                session_path["name"] = f"session_path_{sender}_{session_id}"
-                session_path["#"] = f"{sender}_{session_id}"
+                session_path["name"] = f"session_path_{i}_{session_id}"
+                session_path["#"] = f"{i}_{session_id}"
                 session_path["protocol"] = session.protocol
 
                 # states
@@ -1250,11 +1301,11 @@ class NetworkGenerator:
                 first_links = []
                 successors = list(path.successors(sender))
                 for succ in successors:
-                    first_links.append({"#": f"{sender}_{succ}_{sender}_{session_id}"})
+                    first_links.append({"#": f"{sender}_{succ}_{i}_{session_id}"})
                 session_path["first_links"] = first_links
 
                 # probabilities
-                if session.protocol in {"SUPPORT_HPKE", "SUPPORT_DOUBLE-RATCHET"}:
+                if session.protocol in {"hpke_sender_key", "double_ratchet_sender_key"}:
                     session_path["prob_run"] = 0.0
                 else:
                     if self.attributes.get("sp_prob_run")[0] == self.attributes.get("sp_prob_run")[1]:
@@ -1265,15 +1316,17 @@ class NetworkGenerator:
                 session_paths_dict["instances"].append(session_path)
 
                 # commands
-                session_path["cmd_run"] = f"cmd_run_session_path_{sender}_{session_id}"
-                session_path["cmd_update_data"] = f"cmd_update_data_session_path_{sender}_{session_id}"
-                session_path["cmd_update_not_data"] = f"cmd_update_not_data_session_path_{sender}_{session_id}"
-                session_path["cmd_update"] = f"cmd_update_session_path_{sender}_{session_id}"
-                session_path["cmd_update_failure"] = f"cmd_update_failure_session_path_{sender}_{session_id}"
-                session_path["cmd_update_success"] = f"cmd_update_success_session_path_{sender}_{session_id}"
-                session_path["cmd_alt_run"] = f"cmd_alt_run_session_path_{sender}_{session_id}"
-                session_path["cmd_send"] = f"cmd_send_session_path_{sender}_{session_id}"
-                session_path["cmd_counter_reset"] = f"cmd_counter_reset_session_path_{sender}_{session_id}"
+                session_path["cmd_run"] = f"cmd_run_session_path_{i}_{session_id}"
+                if session.protocol == "mls":
+                    session_path["cmd_update_data"] = f"cmd_update_data_session_path_{i}_{session_id}"
+                    session_path["cmd_update_not_data"] = f"cmd_update_not_data_session_path_{i}_{session_id}"
+                session_path["cmd_update"] = f"cmd_update_session_path_{i}_{session_id}"
+                session_path["cmd_update_failure"] = f"cmd_update_failure_session_path_{i}_{session_id}"
+                session_path["cmd_update_success"] = f"cmd_update_success_session_path_{i}_{session_id}"
+                if session.protocol == "sender_key":
+                    session_path["cmd_alt_run"] = f"cmd_alt_run_session_path_{i}_{session_id}"
+                session_path["cmd_send"] = f"cmd_send_session_path_{i}_{session_id}"
+                session_path["cmd_counter_reset"] = f"cmd_counter_reset_session_path_{i}_{session_id}"
 
         return session_paths_dict
 
@@ -1318,8 +1371,10 @@ class NetworkGenerator:
                 local_session["init_compromise"] = False
 
                 # references
+                i, _ = list(filter(lambda _, p: list(p)[0] == node, session.paths.enumerate()))[0]
+
                 local_session["ref_node"] = f"{node}"
-                local_session["ref_broadest_session_path"] = f"{node}_{id}"
+                local_session["ref_broadest_session_path"] = f"{i}_{id}"
 
                 # probabilities
                 if self.params["ls_prob_session_reset"][0] == self.params["ls_prob_session_reset"][1]:
@@ -1351,6 +1406,10 @@ class NetworkGenerator:
 
         return local_sessions_dict
 
+
+    def _get_receivers_from_path(self, path):
+        return list(filter(lambda n: n['is_receiver'], list(path)))
+
                     
     def _add_session_checkers_to_dict(self):
         # one session checker for each receiver in each path
@@ -1380,92 +1439,100 @@ class NetworkGenerator:
             sessions.extend(session.get_subsessions())
 
         for session in sessions:
-            sender = session.get_nodes()[0]
-            receivers = session.get_nodes()[1:]
             session_id = session.get_id()
-            path = list(session.paths)[0] # need the path to get the last link.
-            
-            for receiver in receivers:
-                session_checker = {}
-                session_checker["name"] = f"session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["#"] = f"{receiver}_{session_id}"
-                session_checker["protocol"] = session.protocol
+            for i, path in session.paths.enumerate():
+                sender = list(path)[0]
+                receivers = self._get_receivers_from_path(path)
+                
+                for node in receivers:
+                    session_checker = {}
+                    session_checker["name"] = f"session_checker_of_{node}_of_path_{i}_{session_id}"
+                    session_checker["#"] = f"{node}_{i}_{session_id}"
+                    session_checker["protocol"] = session.protocol
 
-                # states
-                session_checker["range_state"] = state_range
-                session_checker["init_state"] = const_idle
-                session_checker["range_sender_local_session_epoch"] = list(session.paths)[0].nodes[sender]['epoch_size']
-                session_checker["init_sender_local_session_epoch"] = 0
-                session_checker["range_sender_local_session_system_message"] = session_checker_sender_local_session_system_message_range
-                session_checker["init_sender_local_session_system_message"] = const_message_data
-                session_checker["range_sender_local_session_data_message"] = session_checker_sender_local_session_data_message_range
-                session_checker["init_sender_local_session_data_message"] = const_message_data
+                    # states
+                    session_checker["range_state"] = state_range
+                    session_checker["init_state"] = const_idle
+                    session_checker["range_sender_local_session_epoch"] = sender['epoch_size']
+                    session_checker["init_sender_local_session_epoch"] = 0
+                    session_checker["range_sender_local_session_system_message"] = session_checker_sender_local_session_system_message_range
+                    session_checker["init_sender_local_session_system_message"] = const_message_data
+                    session_checker["range_sender_local_session_data_message"] = session_checker_sender_local_session_data_message_range
+                    session_checker["init_sender_local_session_data_message"] = const_message_data
 
-                # references
-                session_checker["ref_local_session_sender"] = f"{sender}_{session_id}"
-                session_checker["ref_session_path"] = f"{sender}_{session_id}"
-                session_checker["ref_local_session_receiver"] = f"{receiver}_{session_id}"
-                session_checker["ref_node_receiver"] = f"{receiver}"
-                if session.protocol in {"HPKE", "DOUBLE-RATCHET", "SUPPORT_HPKE", "SUPPORT_DOUBLE-RATCHET"}:
-                    session_checker["ref_session_path_to_sender"] = f"{receiver}_{session_id}"
-                    session_checker["ref_session_checker_sender"] = f"{sender}_{session_id}"
-                else:
-                    subsessions = session.get_subsessions()
-                    for subsession in subsessions:
-                        if subsession.get_nodes()[0] == receiver or subsession.get_nodes()[1] == receiver:
-                            session_checker["ref_session_path_to_sender"] = f"{receiver}_{subsession.get_id()}"
-                            session_checker["ref_session_checker_sender"] = f"{sender}_{subsession.get_id()}"
-                            break
-            
-                session_checker["size_ratchet_sender"] = list(session.paths)[0].nodes[sender]['ratchet_size']
+                    # references
+                    session_checker["ref_local_session_sender"] = f"{sender}_{session_id}"
+                    session_checker["ref_session_path"] = f"{i}_{session_id}"
+                    session_checker["ref_local_session_receiver"] = f"{node}_{session_id}"
+                    session_checker["ref_node_receiver"] = f"{node}"
 
-                session_checker["ref_local_session_sender_key_receiver"] = 0 # TO DO
+                    match session.protocol:
+                        case protocol if protocol == "hpke" or protocol == "double_ratchet":
+                            session_checker["ref_session_path_to_sender"] = f"{i}_{session_id}"
+                            session_checker["size_ratchet_sender"] = sender['ratchet_size']
 
-                # commands
-                session_checker["cmd_freeze"] = f"cmd_send_session_path_{sender}_{session_id}" # synchronized with the send command of the session path
+                            session_checker["cmd_read_reset"] = f"cmd_read_reset_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
+                            session_checker["cmd_read_ratchet"] = f"cmd_read_ratchet_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
 
-                # here i need the link to the receiver in the path. The path is a tree, so I can use predecessors to find the previous node.
-                prec = next(path.predecessors(receiver))
-                session_checker["cmd_trigger"] = f"cmd_receive_success_link_{prec}_{receiver}_of_path_{sender}_{session_id}"
 
-                session_checker["cmd_read_data"] = f"cmd_read_data_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_update_success"] = f"cmd_update_success_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_update_failure"] = f"cmd_update_failure_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_check_success"] = f"cmd_check_success_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_resolve_data"] = f"cmd_resolve_data_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_cleanup"] = f"cmd_cleanup_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_check_failure"] = f"cmd_check_failure_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_read_reset"] = f"cmd_read_reset_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_read_ratchet"] = f"cmd_read_ratchet_session_checker_of_{receiver}_of_session_{session_id}"
+                            session_checker[f"cmd_{protocol}_reset"] = f"cmd_{protocol}_reset_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
+                            session_checker[f"cmd_{protocol}_failure"] = f"cmd_{protocol}_failure_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
 
-                if session.protocol == "SENDER_KEY":
-                    # if the protocol is sender key, i need also the cmd_resolve_sender_new_key. this command must be 
-                    # synchronized with the cmd_resolve_sender_new_key of the session checker relative to one to one path.
-                    # to do this, i need the subsession relative to the one to one path to get the session_id.
-                    subsessions = session.get_subsessions()
-                    for subsession in subsessions:
-                        if subsession.nodes[0] == receiver or subsession.nodes[1] == receiver:
-                            one_to_one_session_id = subsession.get_id()
-                            break
-                    session_checker["cmd_resolve_sender_new_key"] = f"cmd_resolve_sender_new_key_session_checker_of_{receiver}_of_session_{one_to_one_session_id}"
-                elif session.protocol in {"HPKE_SENDER_KEY", "DOUBLE_RATCHET_SENDER_KEY"}:
-                    # in the protocol is hpke or double ratchet support for sender key, the command must be synchronized with the 
-                    # cmd_resolve_sender_new_key of the session checker relative to the sender key session.
-                    session_checker["cmd_resolve_sender_new_key"] = f"cmd_resolve_sender_new_key_session_checker_of_{receiver}_of_session_{session_id}"
+                        case protocol if protocol == "hpke_sender_key" or protocol == "double_ratchet_sender_key":
+                            supersession_id = list(filter(lambda ss: session_id in ss.subsessions, sessions))[0].id
+                            session_checker["ref_session_path_to_sender"] = f"{i}_{session_id}"
+                            session_checker["ref_session_checker_sender"] = f"{sender}_{i}_{supersession_id}"
+                            session_checker["ref_session_path_broadcast"] = f"{i}_{supersession_id}"
+                            session_checker["size_ratchet_sender"] = sender['ratchet_size']
+                            session_checker["ref_local_session_sender_key_receiver"] = f"{node}_{supersession_id}"
 
-                session_checker["cmd_resolve_sender_refresh"] = f"cmd_resolve_sender_refresh_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_resolve_sender_reset"] = f"cmd_resolve_sender_reset_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_hpke_reset"] = f"cmd_hpke_reset_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_hpke_failure"] = f"cmd_hpke_failure_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_double_ratchet_reset"] = f"cmd_double_ratchet_reset_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_double_ratchet_failure"] = f"cmd_double_ratchet_failure_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_sender_key_failure"] = f"cmd_sender_key_failure_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_read_refresh"] = f"cmd_read_refresh_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_read_current"] = f"cmd_read_current_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_mls_reset"] = f"cmd_mls_reset_session_checker_of_{receiver}_of_session_{session_id}"
-                session_checker["cmd_mls_failure"] = f"cmd_mls_failure_session_checker_of_{receiver}_of_session_{session_id}"
+                            session_checker["cmd_read_reset"] = f"cmd_read_reset_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
+                            session_checker["cmd_read_ratchet"] = f"cmd_read_ratchet_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
+                            session_checker["cmd_resolve_sender_new_key"] = f"cmd_resolve_sender_new_key_session_checker_of_{node}_of_path_0_of_session_{supersession_id}"
+                            session_checker["cmd_resolve_sender_refresh"] = f"cmd_resolve_sender_refresh_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
+                            session_checker["cmd_resolve_sender_reset"] = f"cmd_resolve_sender_reset_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
 
-                session_checkers_dict["instances"].append(session_checker)
+                            session_checker[f"cmd_{protocol[:-11]}_reset"] = f"cmd_{protocol[:-11]}_reset_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
+                            session_checker[f"cmd_{protocol[:-11]}_failure"] = f"cmd_{protocol[:-11]}_failure_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
+
+
+                        case "sender_key":
+                            subsession = list(filter(lambda ss: node in ss.nodes, session.get_subsessions()))[0]
+                            session_checker["ref_session_path_to_sender"] = f"{node}_{subsession.get_id()}"
+                            session_checker["ref_local_session_sender_key_receiver"] = f"{node}_{session_id}"
+
+                            session_checker["cmd_resolve_sender_new_key"] = f"cmd_resolve_sender_new_key_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
+                            session_checker["cmd_sender_key_failure"] = f"cmd_sender_key_failure_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
+                            session_checker["cmd_sender_key_reset"] = f"cmd_sender_key_reset_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
+
+                        case "mls":
+                            session_checker["ref_session_path_broadcast"] = f"{i}_{session_id}"
+                            session_checker["size_ratchet_sender"] = sender['ratchet_size']
+
+                            session_checker["cmd_read_reset"] = f"cmd_read_reset_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
+                            session_checker["cmd_read_ratchet"] = f"cmd_read_ratchet_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
+                            session_checker["cmd_read_refresh"] = f"cmd_read_refresh_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
+                            session_checker["cmd_read_current"] = f"cmd_read_current_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
+                            session_checker["cmd_mls_reset"] = f"cmd_mls_reset_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
+                            session_checker["cmd_mls_failure"] = f"cmd_mls_failure_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
+
+
+                    # commands
+                    session_checker["cmd_freeze"] = f"cmd_send_session_path_{i}_{session_id}" # synchronized with the send command of the session path
+
+                    # here i need the link to the receiver in the path. The path is a tree, so I can use predecessors to find the previous node.
+                    prec = next(path.predecessors(node))
+                    session_checker["cmd_trigger"] = f"cmd_receive_success_link_{prec}_{node}_of_path_{i}_{session_id}"
+
+                    session_checker["cmd_read_data"] = f"cmd_read_data_session_checker_of_{node}_of_session_{session_id}"
+                    session_checker["cmd_update_success"] = f"cmd_update_success_session_checker_of_{node}_of_session_{session_id}"
+                    session_checker["cmd_update_failure"] = f"cmd_update_failure_session_checker_of_{node}_of_session_{session_id}"
+                    session_checker["cmd_check_success"] = f"cmd_check_success_session_checker_of_{node}_of_session_{session_id}"
+                    session_checker["cmd_resolve_data"] = f"cmd_resolve_data_session_checker_of_{node}_of_session_{session_id}"
+                    session_checker["cmd_cleanup"] = f"cmd_cleanup_session_checker_of_{node}_of_session_{session_id}"
+                    session_checker["cmd_check_failure"] = f"cmd_check_failure_session_checker_of_{node}_of_session_{session_id}"
+                    
+                    session_checkers_dict["instances"].append(session_checker)
 
         return session_checkers_dict      
 

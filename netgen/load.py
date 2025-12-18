@@ -4,7 +4,7 @@ import json
 import random
 
 NET_TYPES = {"STAR", "RING", "CHAIN", "TREE", "MESH", "FULLY_CONNECTED", "REGULAR_GRAPH", "CUSTOM"}
-PROTOCOLS = {"HPKE", "DOUBLE_RATCHET", "SENDER_KEY", "MLS"}
+PROTOCOLS = {"hpke", "double_ratchet", "sender_key", "mls"}
 
 def load_json(file_path):
     with open(file_path, "r") as f:
@@ -18,12 +18,12 @@ def validate_data(data):
 
     protocol = data.get("protocol")
     if protocol:
-        if protocol not in {"HPKE", "DOUBLE_RATCHET", "SENDER_KEY", "MLS"}:
-                raise ValueError("protocol must be one of HPKE, DOUBLE_RATCHET, SENDER_KEY, MLS")
+        if protocol not in {"hpke", "double_ratchet", "sender_key", "mls"}:
+                raise ValueError("protocol must be one of hpke, double_ratchet, sender_key, mls")
     else:
         raise ValueError("protocol parameter must be setted")
 
-    if protocol == "MLS":
+    if protocol == "mls":
         mls_sessions_range = data.get("mls_sessions_range")
         if mls_sessions_range:
             if (not isinstance(mls_sessions_range, list) or len(mls_sessions_range) != 2 or
@@ -36,10 +36,10 @@ def validate_data(data):
 
     support_protocol = data.get("support_protocol")
     if support_protocol:
-        if support_protocol not in {"HPKE_SENDER_KEY", "DOUBLE_RATCHET_SENDER_KEY"}:
-            raise ValueError("support_protocol must be one of HPKE_SENDER_KEY, DOUBLE_RATCHET_SENDER_KEY")
+        if support_protocol not in {"hpke_sender_key", "double_ratchet_sender_key"}:
+            raise ValueError("support_protocol must be one of hpke_sender_key, double_ratchet_sender_key")
     else:
-        support_protocol = "HPKE_SENDER_KEY"  # default to HPKE if not provided
+        support_protocol = "hpke_sender_key"  # default to hpke if not provided
             
     
     seed = data.get("seed")
