@@ -53,11 +53,11 @@ class Contribution:
 class Reward:
     def __init__(self, name):
         self.name = name
-        self.constributions = []
+        self.contributions = []
 
 
     def add_contribution(self, contribution):
-        self.constributions.append(contribution)
+        self.contributions.append(contribution)
 
 
 class NetworkGenerator: 
@@ -120,6 +120,13 @@ class NetworkGenerator:
         self._generate_paths()
 
         self._generate_rewards()
+
+        # print rewards
+        for reward in self.attributes["rewards"]:
+            print(f"Reward: {reward.name}")
+            for contrib in reward.contributions:
+                print(f"  Command: {contrib.command}, Condition: {contrib.condition}, Value: {contrib.value}")
+            print("\n")
         
         return self._generate_json()
 
@@ -550,6 +557,7 @@ class NetworkGenerator:
                                 path.nodes[a]['ratchet_size'] = ratchet_size
                                 path.nodes[b]['epoch_size'] = epoch_size
                                 path.nodes[b]['ratchet_size'] = ratchet_size
+                                
                                 path.nodes[b]['is_receiver'] = True
 
                                 paths.append(path)
@@ -562,6 +570,7 @@ class NetworkGenerator:
                                 return_path.nodes[b]['ratchet_size'] = ratchet_size
                                 return_path.nodes[a]['epoch_size'] = epoch_size
                                 return_path.nodes[a]['ratchet_size'] = ratchet_size
+                                return_path.nodes['is_receiver'] = False
                                 return_path.nodes[a]['is_receiver'] = True
 
                                 return_paths.append(return_path)
@@ -611,13 +620,16 @@ class NetworkGenerator:
                     for node in nodes:
                         if node != sender and self.rng.random() < self.path_perc:
                             destinations.append(node)
+                    if len(destinations) == 0:
+                        destinations.append(self.rng.choice([n for n in nodes if n != sender]))
                     tree = nx.DiGraph()
                     tree.add_node(sender)
                     tree.nodes[sender]['epoch_size'] = epoch_size
                     tree.nodes[sender]['ratchet_size'] = ratchet_size
                     # for each destination, generate the shortest path from sender to destination and add it to the tree
                     for dest in destinations:
-                        path = nx.shortest_path(self.G, sender, dest)
+                        path = nx.DiGraph()
+                        nx.add_path(path, nx.shortest_path(self.G, sender, dest))
                         nx.add_path(tree, path)
                         # mark the destination node as receiver
                         tree.nodes[dest]['is_receiver'] = True
@@ -670,7 +682,7 @@ class NetworkGenerator:
                         return_path.nodes[sender]['ratchet_size'] = ratchet_size
                         return_path.nodes[receiver]['epoch_size'] = epoch_size
                         return_path.nodes[receiver]['ratchet_size'] = ratchet_size
-                        return_path.nodes[receiver]['is_receiver'] = True
+                        return_path.nodes[sender]['is_receiver'] = True
 
                         one_to_one_return_paths.append(return_path)
 
@@ -758,7 +770,8 @@ class NetworkGenerator:
                         tree.nodes[sender]['ratchet_size'] = ratchet_size
                         # for each destination, generate the shortest path from sender to destination and add it to the tree
                         for dest in destinations:
-                            path = nx.shortest_path(self.G, sender, dest)
+                            path = nx.DiGraph()
+                            nx.add_path(path, nx.shortest_path(self.G, sender, dest))
                             nx.add_path(tree, path)
                             # mark the destination node as receiver
                             tree.nodes[dest]['is_receiver'] = True
@@ -778,9 +791,6 @@ class NetworkGenerator:
                         id += 1
 
                         # now generate all the one-to-one return paths to the sender
-                        one_to_one_return_paths = []
-                        subsessions = []
-                        
                         for dest in destinations:
                             path = nx.DiGraph()
                             nx.add_path(path, nx.shortest_path(self.G, dest, sender))
@@ -790,6 +800,7 @@ class NetworkGenerator:
                             path.nodes[dest]['epoch_size'] = epoch_size
                             path.nodes[dest]['ratchet_size'] = ratchet_size
                             path.nodes[dest]['is_receiver'] = True
+                            path['return_path'] = True
 
                             one_to_one_return_paths.append(path)
 
@@ -816,6 +827,8 @@ class NetworkGenerator:
 
 
     def _generate_rewards(self):
+        self.attributes["rewards"] = []
+
         def generate_message_reward():
             with open("config/netgen_files.json", "r") as f:
                 files_config = json.load(f)
@@ -839,68 +852,59 @@ class NetworkGenerator:
 
             reward_message = Reward("reward_total_messages")
 
-
+            sessions = self.attributes["sessions"].copy()
             for session in self.attributes["sessions"]:
-                match session.protocol:
-                    case "hpke":
-                        for i, path in session.paths.enumerate():
-                            sender = list(path)[0]
-                            id = session.id
-                            session_path = f"{i}_{id}" 
-                            command = f"cmd_send_{session_path}"
+                ss = session.get_subsessions()
+                sessions.extend(ss)
+
+            for session in sessions:
+                for i, path in enumerate(session.paths):
+                    id = session.id
+                    session_path = f"{i}_{id}" 
+                    command = f"cmd_send_{session_path}"
+
+                    reward_message.add_contribution(Contribution(command, "true", "1"))
+
+                    match session.protocol:
+                        case "hpke":
                             condition = f"(sender_path_system_message_{session_path} = {consts['const_message_data']}) | (sender_path_system_message_{session_path} = {consts['const_message_ratchet']})"
                             value = "1" 
                             rewards_data["hpke"].add_contribution(Contribution(command, condition, value))
                             condition = f"(sender_path_system_message_{session_path} = {consts['const_message_reset']})"
                             rewards_system["hpke"].add_contribution(Contribution(command, condition, value))
-                    case "double_ratchet":
-                        for path in session.paths:
-                            sender = list(path)[0]
-                            id = session.id
-                            session_path = f"{i}_{id}" 
-                            command = f"cmd_send_{session_path}"
+
+                        case "double_ratchet":
                             condition = f"(sender_path_system_message_{session_path} = {consts['const_message_ratchet']})"
                             value = "1" 
                             rewards_data["double_ratchet"].add_contribution(Contribution(command, condition, value))
                             condition = f"(sender_path_system_message_{session_path} = {consts['const_message_reset']})"
                             rewards_system["double_ratchet"].add_contribution(Contribution(command, condition, value))
-                    case "sender_key":
-                        sender = session.nodes[0]
-                        id = session.id
-                        session_path = f"{i}_{id}"
-                        command = f"cmd_send_{session_path}"
-                        condition = "true" # all messages should be data
-                        value = "1"
-                        rewards_data["sender_key"].add_contribution(Contribution(command, condition, value))
-                        for subsession in session.subsessions:
-                            id = subsession.id
+
+                        case "hpke_sender_key" | "double_ratchet_sender_key":
                             condition = "true" # all messages should be system
                             value = "1"
-                            for path in subsession.paths:
-                                sender = list(path)[0]
-                                session_path = f"{i}_{id}"
-                                command = f"cmd_send_{session_path}"
-                                rewards_system["sender_key"].add_contribution(Contribution(command, condition, value))
-                    case "mls":
-                        for path in session.paths:
-                            sender = list(path)[0]
-                            id = session.id
-                            session_path = f"{i}_{id}" 
-                            command = f"cmd_send_{session_path}"
-                            condition = f"(sender_path_system_message_{session_path} = {consts['const_message_data']}) | (sender_path_system_message_{session_path} = {consts['const_message_ratchet']})"
-                            value = "1" 
-                            rewards_data["mls"].add_contribution(Contribution(command, condition, value))
-                            condition = f"(sender_path_system_message_{session_path} = {consts['const_message_reset']})"
-                            rewards_system["mls"].add_contribution(Contribution(command, condition, value))
-                        for subsession in session.subsessions:
-                            id = subsession.id
-                            condition = "true" # all messages should be system
+                            rewards_system["sender_key"].add_contribution(Contribution(command, condition, value))
+
+                        case "sender_key":
+                            condition = "true" # all messages should be data
                             value = "1"
-                            for path in subsession.paths:
-                                sender = list(path)[0]
-                                session_path = f"{i}_{id}"
-                                command = f"cmd_send_{session_path}"
+                            rewards_data["sender_key"].add_contribution(Contribution(command, condition, value))
+
+                        case "mls":                    
+                            if path['return_path'] == True:
+                                condition = "true" # all messages should be system
+                                value = "1"
                                 rewards_system["mls"].add_contribution(Contribution(command, condition, value))
+                            else:
+                                condition = f"(sender_path_system_message_{session_path} = {consts['const_message_data']}) | (sender_path_system_message_{session_path} = {consts['const_message_ratchet']})"
+                                value = "1" 
+                                rewards_data["mls"].add_contribution(Contribution(command, condition, value))
+                                condition = f"(sender_path_system_message_{session_path} = {consts['const_message_reset']})"
+                                rewards_system["mls"].add_contribution(Contribution(command, condition, value))
+
+            self.attributes["rewards"].extend(list(rewards_data.values()) + list(rewards_system.values()) + [reward_message])
+        
+        generate_message_reward()
 
 
     def _generate_policies(self):
@@ -1132,7 +1136,7 @@ class NetworkGenerator:
 
         for session in sessions:
             session_id = session.get_id()
-            for i, path in session.get_paths().enumerate():
+            for i, path in enumerate(session.paths):
                 for edge in path.edges():
                     sender = list(path.nodes)[0]
                     receivers = list(path.nodes)[1:]
@@ -1219,7 +1223,7 @@ class NetworkGenerator:
 
         for session in sessions:
             session_id = session.get_id()
-            for i, path in session.get_paths().enumerate():
+            for i, path in enumerate(session.paths):
                 sender = list(path.nodes)[0]
                 for node in path.nodes:
                     # link_ref_counter instances
@@ -1272,7 +1276,7 @@ class NetworkGenerator:
 
         for session in sessions:
             session_id = session.get_id()
-            for i, path in session.paths:
+            for i, path in enumerate(session.paths):
                 sender = list(path.nodes)[0]
                 receivers = list(path.nodes)[1:]
                 session_path = {}
@@ -1360,6 +1364,7 @@ class NetworkGenerator:
                 local_session = {}
                 local_session["name"] = f"local_session_of_{node}_of_session_{id}"
                 local_session["#"] = f"{node}_{id}"
+                local_session["protocol"] = session.protocol
 
                 # states
                 local_session["range_state"] = range_state
@@ -1371,10 +1376,17 @@ class NetworkGenerator:
                 local_session["init_compromise"] = False
 
                 # references
-                i, _ = list(filter(lambda _, p: list(p)[0] == node, session.paths.enumerate()))[0]
-
                 local_session["ref_node"] = f"{node}"
-                local_session["ref_broadest_session_path"] = f"{i}_{id}"
+                
+                if session.protocol == "sender_key" and node != session.paths[0].nodes[0]:
+                    for ss in session.get_subsessions():
+                        if node in ss.nodes:
+                            i = [e[0] for e in enumerate(ss.paths) if node == list(e[1])[0]][0]
+                            local_session["ref_broadest_session_path"] = f"{i}_{ss.get_id()}"
+                            break
+                else:
+                    i = [e[0] for e in enumerate(session.paths) if node == list(e[1])[0]][0]
+                    local_session["ref_broadest_session_path"] = f"{i}_{id}"
 
                 # probabilities
                 if self.params["ls_prob_session_reset"][0] == self.params["ls_prob_session_reset"][1]:
@@ -1408,7 +1420,7 @@ class NetworkGenerator:
 
 
     def _get_receivers_from_path(self, path):
-        return list(filter(lambda n: n['is_receiver'], list(path)))
+        return [node_id for node_id in path.nodes if path.nodes[node_id].get("is_receiver", False)]
 
                     
     def _add_session_checkers_to_dict(self):
@@ -1440,7 +1452,7 @@ class NetworkGenerator:
 
         for session in sessions:
             session_id = session.get_id()
-            for i, path in session.paths.enumerate():
+            for i, path in enumerate(session.paths):
                 sender = list(path)[0]
                 receivers = self._get_receivers_from_path(path)
                 
@@ -1453,7 +1465,7 @@ class NetworkGenerator:
                     # states
                     session_checker["range_state"] = state_range
                     session_checker["init_state"] = const_idle
-                    session_checker["range_sender_local_session_epoch"] = sender['epoch_size']
+                    session_checker["range_sender_local_session_epoch"] = path.nodes[sender]['epoch_size']
                     session_checker["init_sender_local_session_epoch"] = 0
                     session_checker["range_sender_local_session_system_message"] = session_checker_sender_local_session_system_message_range
                     session_checker["init_sender_local_session_system_message"] = const_message_data
@@ -1479,11 +1491,11 @@ class NetworkGenerator:
                             session_checker[f"cmd_{protocol}_failure"] = f"cmd_{protocol}_failure_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
 
                         case protocol if protocol == "hpke_sender_key" or protocol == "double_ratchet_sender_key":
-                            supersession_id = list(filter(lambda ss: session_id in ss.subsessions, sessions))[0].id
+                            supersession_id = [s.id for s in sessions if session_id in [ss.id for ss in s.subsessions]][0]
                             session_checker["ref_session_path_to_sender"] = f"{i}_{session_id}"
                             session_checker["ref_session_checker_sender"] = f"{sender}_{i}_{supersession_id}"
                             session_checker["ref_session_path_broadcast"] = f"{i}_{supersession_id}"
-                            session_checker["size_ratchet_sender"] = sender['ratchet_size']
+                            session_checker["size_ratchet_sender"] = path.nodes[sender]['ratchet_size']
                             session_checker["ref_local_session_sender_key_receiver"] = f"{node}_{supersession_id}"
 
                             session_checker["cmd_read_reset"] = f"cmd_read_reset_session_checker_of_{node}_of_path_{i}_of_session_{session_id}"
@@ -1497,7 +1509,7 @@ class NetworkGenerator:
 
 
                         case "sender_key":
-                            subsession = list(filter(lambda ss: node in ss.nodes, session.get_subsessions()))[0]
+                            subsession = [ss for ss in session.subsessions if node in ss.nodes][0]
                             session_checker["ref_session_path_to_sender"] = f"{node}_{subsession.get_id()}"
                             session_checker["ref_local_session_sender_key_receiver"] = f"{node}_{session_id}"
 
@@ -1538,4 +1550,25 @@ class NetworkGenerator:
 
 
     def _add_rewards_to_dict(self):
+        with open("config/netgen_files.json", "r") as f:
+            files_config = json.load(f)
+            
         rewards_dict = {}
+        rewards_dict["name"] = "reward_modules"
+        rewards_dict["template"] = files_config.get("reward_template")
+        rewards_dict["instances"] = []
+        for reward in self.attributes.get("rewards", []):
+            instance = {}
+            instance["#"] = reward.name
+            instance["contributions"] = []
+            for contribution in reward.contributions:
+                contrib_dict = {}
+                contrib_dict["command"] = contribution.command
+                contrib_dict["condition"] = contribution.condition
+                contrib_dict["value"] = contribution.value
+                instance["contributions"].append(contrib_dict)
+            rewards_dict["instances"].append(instance)
+        
+        return rewards_dict
+
+
