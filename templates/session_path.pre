@@ -33,14 +33,24 @@ module session_path_{{#}}
 
     [{{cmd_update_success}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
                              (session_path_state_{{#}} = {{const_wait}}) &
-                             (local_session_state_{{ref_local_session_sender}} = {{const_valid}}) -> {^match||protocol
+                             (local_session_state_{{ref_local_session_sender}} = {{const_local_session_valid}}) -> {^match||protocol
                                                                                                      ||hpke||(session_path_state_{{#}}' = {{const_run}})
                                                                                                    & (session_path_system_message_{{#}}' = (session_path_prev_local_session_epoch_sender_{{#}} = 0
                                                                                                                                     ? {{const_message_reset}}
                                                                                                                                     : (local_session_epoch_{{ref_local_session_sender}} > session_checker_sender_local_session_epoch_{{#}}
                                                                                                                                       ? {{const_message_ratchet}}
                                                                                                                                       : {{const_message_data}})));
+                                                                                                     ||hpke_sender_key||(session_path_state_{{#}}' = {{const_run}})
+                                                                                                   & (session_path_system_message_{{#}}' = (session_path_prev_local_session_epoch_sender_{{#}} = 0
+                                                                                                                                    ? {{const_message_reset}}
+                                                                                                                                    : (local_session_epoch_{{ref_local_session_sender}} > session_checker_sender_local_session_epoch_{{#}}
+                                                                                                                                      ? {{const_message_ratchet}}
+                                                                                                                                      : {{const_message_data}})));
                                                                                                      ||double_ratchet||(session_path_state_{{#}}' = {{const_run}})
+                                                                                                   & (session_path_system_message_{{#}}' = (session_path_prev_local_session_epoch_sender_{{#}} = 0
+                                                                                                                                           ? {{const_message_reset}}
+                                                                                                                                           : {{const_message_ratchet}}));
+                                                                                                     ||double_ratchet_sender_key||(session_path_state_{{#}}' = {{const_run}})
                                                                                                    & (session_path_system_message_{{#}}' = (session_path_prev_local_session_epoch_sender_{{#}} = 0
                                                                                                                                            ? {{const_message_reset}}
                                                                                                                                            : {{const_message_ratchet}}));

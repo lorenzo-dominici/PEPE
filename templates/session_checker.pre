@@ -19,7 +19,7 @@ module session_checker_{{#}}
 
     [{{cmd_update_success}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                              (session_checker_state_{{#}} = {{const_update}}) &
-                             (local_session_state_{{ref_local_session_receiver}} = {{const_valid}}) -> session_checker_state_{{#}}' = {{const_check}};
+                             (local_session_state_{{ref_local_session_receiver}} = {{const_local_session_valid}}) -> session_checker_state_{{#}}' = {{const_check}};
 
     [{{cmd_update_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                              (session_checker_state_{{#}} = {{const_update}}) &
@@ -43,11 +43,11 @@ module session_checker_{{#}}
                             (session_checker_state_{{#}} = {{const_check}}) &
                             (local_session_epoch_{{ref_local_session_receiver}} != session_checker_sender_local_session_epoch_{{#}}) -> session_checker_state_{{#}}' = {{const_failure}};
     {^match||protocol
-          ||hpke||
+           ||hpke||
     [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                          (session_checker_state_{{#}} = {{const_triggered}}) &
                          (session_checker_sender_local_session_system_message_{{#}} = {{const_message_reset}}) -> (session_checker_state_{{#}}' = {{const_check}})
-                                                                                                                & (local_session_state_{{ref_local_session_receiver}}' = {{const_valid}})
+                                                                                                                & (local_session_state_{{ref_local_session_receiver}}' = {{const_local_session_valid}})
                                                                                                                 & (local_session_epoch_{{ref_local_session_receiver}}' = 1)
                                                                                                                 & (local_session_ratchet_{{ref_local_session_receiver}}' = 0);
 
@@ -56,25 +56,6 @@ module session_checker_{{#}}
                            (session_checker_sender_local_session_system_message_{{#}} = {{const_message_ratchet}}) -> (session_checker_state_{{#}}' = {{const_update}})
                                                                                                                     & (local_session_state_{{ref_local_session_receiver}}' = {{const_local_session_ratchet}})
                                                                                                                     & (local_session_ratchet_{{ref_local_session_receiver}}' = mod(local_session_ratchet_{{ref_local_session_receiver}} + 1, {{size_ratchet_sender}}));
-
-    [{{cmd_resolve_sender_new_key}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                                     (session_checker_state_{{#}} = {{const_resolve}}) &
-                                     (session_checker_sender_local_session_data_message_{{#}} = {{const_message_sender_new_key}}) -> session_checker_state_{{#}}' = {{const_cleanup}};
-
-    [{{cmd_resolve_sender_refresh}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                                     (session_checker_state_{{#}} = {{const_resolve}}) &
-                                     (session_checker_sender_local_session_data_message_{{#}} = {{const_message_sender_refresh}}) &
-                                     (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}})
-                                                                                                           & (session_path_state_{{ref_session_path_to_sender}}' = {{const_update}})
-                                                                                                           & (session_path_data_message_{{ref_session_path_to_sender}}' = {{const_message_sender_new_key}})
-                                                                                                           & (session_checker_sender_local_session_epoch_{{ref_session_checker_sender}}' = local_session_epoch_{{ref_local_session_receiver}});
-
-    [{{cmd_resolve_sender_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                                   (session_checker_state_{{#}} = {{const_resolve}}) &
-                                   (session_checker_sender_local_session_data_message_{{#}} = {{const_message_sender_reset}}) &
-                                   (session_path_state_{{ref_session_path_broadcast}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}})
-                                                                                                         & (local_session_epoch_{{ref_local_session_sender_key_receiver}}' = 0)
-                                                                                                         & (session_path_state_{{ref_session_path_broadcast}}' = {{const_update}});
 
     [{{cmd_hpke_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                          (session_checker_state_{{#}} = {{const_reset}}) &
@@ -86,20 +67,31 @@ module session_checker_{{#}}
                            (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}})
                                                                                                  & (local_session_epoch_{{ref_local_session_receiver}}' = 0)
                                                                                                  & (session_path_state_{{ref_session_path_to_sender}}' = {{const_update}});
-          ||double_ratchet||
+           ||hpke_sender_key||
     [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                          (session_checker_state_{{#}} = {{const_triggered}}) &
                          (session_checker_sender_local_session_system_message_{{#}} = {{const_message_reset}}) -> (session_checker_state_{{#}}' = {{const_check}})
-                                                                                                          & (local_session_state_{{ref_local_session_receiver}}' = {{const_valid}})
-                                                                                                          & (local_session_epoch_{{ref_local_session_receiver}}' = 1)
-                                                                                                          & (local_session_ratchet_{{ref_local_session_receiver}}' = 0);
-    
+                                                                                                                & (local_session_state_{{ref_local_session_receiver}}' = {{const_local_session_valid}})
+                                                                                                                & (local_session_epoch_{{ref_local_session_receiver}}' = 1)
+                                                                                                                & (local_session_ratchet_{{ref_local_session_receiver}}' = 0);
+
     [{{cmd_read_ratchet}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                            (session_checker_state_{{#}} = {{const_triggered}}) &
                            (session_checker_sender_local_session_system_message_{{#}} = {{const_message_ratchet}}) -> (session_checker_state_{{#}}' = {{const_update}})
                                                                                                                     & (local_session_state_{{ref_local_session_receiver}}' = {{const_local_session_ratchet}})
                                                                                                                     & (local_session_ratchet_{{ref_local_session_receiver}}' = mod(local_session_ratchet_{{ref_local_session_receiver}} + 1, {{size_ratchet_sender}}));
-    
+
+    [{{cmd_hpke_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                         (session_checker_state_{{#}} = {{const_reset}}) &
+                         (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}})
+                                                                                               & (session_path_state_{{ref_session_path_to_sender}}' = {{const_update}});
+
+    [{{cmd_hpke_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                           (session_checker_state_{{#}} = {{const_failure}}) &
+                           (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}})
+                                                                                                 & (local_session_epoch_{{ref_local_session_receiver}}' = 0)
+                                                                                                 & (session_path_state_{{ref_session_path_to_sender}}' = {{const_update}});
+                                                                                                 
     [{{cmd_resolve_sender_new_key}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                                      (session_checker_state_{{#}} = {{const_resolve}}) &
                                      (session_checker_sender_local_session_data_message_{{#}} = {{const_message_sender_new_key}}) -> session_checker_state_{{#}}' = {{const_cleanup}};
@@ -118,6 +110,19 @@ module session_checker_{{#}}
                                    (session_path_state_{{ref_session_path_broadcast}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}})
                                                                                                          & (local_session_epoch_{{ref_local_session_sender_key_receiver}}' = 0)
                                                                                                          & (session_path_state_{{ref_session_path_broadcast}}' = {{const_update}});
+           ||double_ratchet||
+    [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                         (session_checker_state_{{#}} = {{const_triggered}}) &
+                         (session_checker_sender_local_session_system_message_{{#}} = {{const_message_reset}}) -> (session_checker_state_{{#}}' = {{const_check}})
+                                                                                                          & (local_session_state_{{ref_local_session_receiver}}' = {{const_local_session_valid}})
+                                                                                                          & (local_session_epoch_{{ref_local_session_receiver}}' = 1)
+                                                                                                          & (local_session_ratchet_{{ref_local_session_receiver}}' = 0);
+    
+    [{{cmd_read_ratchet}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                           (session_checker_state_{{#}} = {{const_triggered}}) &
+                           (session_checker_sender_local_session_system_message_{{#}} = {{const_message_ratchet}}) -> (session_checker_state_{{#}}' = {{const_update}})
+                                                                                                                    & (local_session_state_{{ref_local_session_receiver}}' = {{const_local_session_ratchet}})
+                                                                                                                    & (local_session_ratchet_{{ref_local_session_receiver}}' = mod(local_session_ratchet_{{ref_local_session_receiver}} + 1, {{size_ratchet_sender}}));
 
     [{{cmd_double_ratchet_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                                    (session_checker_state_{{#}} = {{const_reset}}) &
@@ -129,7 +134,50 @@ module session_checker_{{#}}
                                      (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}})
                                                                                                            & (local_session_epoch_{{ref_local_session_receiver}}' = 0)
                                                                                                            & (session_path_state_{{ref_session_path_to_sender}}' = {{const_update}});
-          ||sender_key||
+           ||double_ratchet_sender_key||
+    [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                         (session_checker_state_{{#}} = {{const_triggered}}) &
+                         (session_checker_sender_local_session_system_message_{{#}} = {{const_message_reset}}) -> (session_checker_state_{{#}}' = {{const_check}})
+                                                                                                          & (local_session_state_{{ref_local_session_receiver}}' = {{const_local_session_valid}})
+                                                                                                          & (local_session_epoch_{{ref_local_session_receiver}}' = 1)
+                                                                                                          & (local_session_ratchet_{{ref_local_session_receiver}}' = 0);
+    
+    [{{cmd_read_ratchet}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                           (session_checker_state_{{#}} = {{const_triggered}}) &
+                           (session_checker_sender_local_session_system_message_{{#}} = {{const_message_ratchet}}) -> (session_checker_state_{{#}}' = {{const_update}})
+                                                                                                                    & (local_session_state_{{ref_local_session_receiver}}' = {{const_local_session_ratchet}})
+                                                                                                                    & (local_session_ratchet_{{ref_local_session_receiver}}' = mod(local_session_ratchet_{{ref_local_session_receiver}} + 1, {{size_ratchet_sender}}));
+
+    [{{cmd_double_ratchet_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                   (session_checker_state_{{#}} = {{const_reset}}) &
+                                   (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}})
+                                                                                                         & (session_path_state_{{ref_session_path_to_sender}}' = {{const_update}});
+
+    [{{cmd_double_ratchet_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                     (session_checker_state_{{#}} = {{const_failure}}) &
+                                     (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}})
+                                                                                                           & (local_session_epoch_{{ref_local_session_receiver}}' = 0)
+                                                                                                           & (session_path_state_{{ref_session_path_to_sender}}' = {{const_update}});
+
+    [{{cmd_resolve_sender_new_key}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                     (session_checker_state_{{#}} = {{const_resolve}}) &
+                                     (session_checker_sender_local_session_data_message_{{#}} = {{const_message_sender_new_key}}) -> session_checker_state_{{#}}' = {{const_cleanup}};
+
+    [{{cmd_resolve_sender_refresh}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                     (session_checker_state_{{#}} = {{const_resolve}}) &
+                                     (session_checker_sender_local_session_data_message_{{#}} = {{const_message_sender_refresh}}) &
+                                     (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}})
+                                                                                                           & (session_path_state_{{ref_session_path_to_sender}}' = {{const_update}})
+                                                                                                           & (session_path_data_message_{{ref_session_path_to_sender}}' = {{const_message_sender_new_key}})
+                                                                                                           & (session_checker_sender_local_session_epoch_{{ref_session_checker_sender}}' = local_session_epoch_{{ref_local_session_receiver}});
+
+    [{{cmd_resolve_sender_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                   (session_checker_state_{{#}} = {{const_resolve}}) &
+                                   (session_checker_sender_local_session_data_message_{{#}} = {{const_message_sender_reset}}) &
+                                   (session_path_state_{{ref_session_path_broadcast}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}})
+                                                                                                         & (local_session_epoch_{{ref_local_session_sender_key_receiver}}' = 0)
+                                                                                                         & (session_path_state_{{ref_session_path_broadcast}}' = {{const_update}});
+           ||sender_key||
     [{{cmd_resolve_sender_new_key}}] true -> local_session_epoch_{{ref_local_session_sender_key_receiver}}' = session_checker_sender_local_session_epoch_{{#}};
 
     [{{cmd_sender_key_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
@@ -143,11 +191,11 @@ module session_checker_{{#}}
                                  (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}})
                                                                                                        & (session_path_state_{{ref_session_path_to_sender}}' = {{const_update}})
                                                                                                        & (session_path_data_message_{{ref_session_path_to_sender}}' = {{const_message_sender_refresh}});
-          ||mls||
+           ||mls||
     [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                          (session_checker_state_{{#}} = {{const_triggered}}) &
                          (session_checker_sender_local_session_system_message_{{#}} = {{const_message_reset}}) -> (session_checker_state_{{#}}' = {{const_check}})
-                                                                                                                & (local_session_state_{{ref_local_session_receiver}}' = {{const_valid}})
+                                                                                                                & (local_session_state_{{ref_local_session_receiver}}' = {{const_local_session_valid}})
                                                                                                                 & (local_session_epoch_{{ref_local_session_receiver}}' = 1)
                                                                                                                 & (local_session_ratchet_{{ref_local_session_receiver}}' = 0);
 
