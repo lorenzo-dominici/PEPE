@@ -16,7 +16,7 @@ module link_{{#}}
 
     [{{cmd_send_failure}}] (link_prev_{{#}} = true) & (
         (link_state_{{#}} != {{const_working}}) |
-        (channel_state_{{ref_channel}} != {{cost_working}}) |
+        (channel_state_{{ref_channel}} != {{const_working}}) |
         (interface_state_{{ref_interface_sender}} != {{const_working}}) |
         (node_buffer_{{ref_node_buffer_sender}} = 0) |
         (channel_bandwidth_{{ref_channel}} = 0)) -> (1 - {{prob_retry}}) : (link_prev_{{#}}' = false)
