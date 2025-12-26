@@ -70,7 +70,7 @@ module link_{{#}}
                                                                                                           $};
     
     [{{cmd_receive_failure}}] (link_receiving_{{#}} = true) & (
-                        (link_state_{{#}} != {{cons_working}}) |
+                        (link_state_{{#}} != {{const_working}}) |
                         (channel_state_{{ref_channel}} != {{const_working}}) |
                         (interface_state_{{ref_interface_receiver}} != {{const_working}}) |
                         (node_buffer_{{ref_node_buffer_receiver}} = {{size_node_buffer_receiver}})) -> (1 - {{prob_retry}}) : (link_receiving_{{#}}' = false)
