@@ -1,5 +1,5 @@
 module policy
 
-    {^loop|policies|[{{policies[].command}}] {{policies[].condition}} -> {{policies[].side_effects}};$}
+    {^loop||policies||[{{policies[].command}}] {{policies[].condition}} -> {{policies[].side_effects}};$}
 
 endmodule
