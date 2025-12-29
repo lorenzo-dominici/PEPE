@@ -1,8 +1,21 @@
 from __future__ import annotations
+from enum import Enum
 from pathlib import Path
 
 from pydantic import BaseModel
 from typing import Any, Dict, List
+
+
+class JoinMode(str, Enum):
+    """Controls how generated files are joined.
+    
+    - none: Generate all files but don't join them.
+    - join: Generate all files and join them into a single .prism file.
+    - clean_join: Generate all files, join them, then remove individual files.
+    """
+    none = "none"
+    join = "join"
+    clean_join = "clean_join"
 
 class Item(BaseModel):
     name: str
@@ -25,6 +38,8 @@ class Config(BaseModel):
     output_dir: Path
     jobs: int
     separators: Separators
+    join_mode: JoinMode = JoinMode.none
+    joined_file: Path = Path("joined.prism")
 
 
-__all__ = ["Item", "PreprocessorData", "Config"]
+__all__ = ["Item", "PreprocessorData", "Config", "JoinMode"]
