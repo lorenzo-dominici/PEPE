@@ -1166,9 +1166,11 @@ class NetworkGenerator:
                     for succ in successors:
                         next_links.append({"ref_link_next": f"{node_b}_{succ}_{i}_{session_id}"})
                     link["next_links"] = next_links
+                    link["number_next_links"] = len(successors)
                     link["ref_interface_receiver"] = f"{node_b}_{node_a}"
                     link["ref_node_buffer_receiver"] = f"{node_b}"
                     link["size_node_buffer_receiver"] = self.attributes["nodes_buffer_sizes"][node_b]
+                    link["ref_channel_bandwidth"] = f"{node_a}_{node_b}"
 
                     # probabilities
                     if self.attributes.get("link_prob_working_to_error")[0] == self.attributes.get("link_prob_working_to_error")[1]:
@@ -1271,8 +1273,9 @@ class NetworkGenerator:
 
             
         sessions = self.attributes.get("sessions").copy()
+        subpath_id = 0
         for session in self.attributes.get("sessions"):
-            sessions.extend(session.get_subsessions())
+            subpath_id += len(session.paths)
 
         for session in sessions:
             session_id = session.get_id()
@@ -1297,6 +1300,19 @@ class NetworkGenerator:
                 session_path["init_link_counter"] = len(path) - 1
                 session_path["size_checker_counter"] = len(receivers)  # one session checker for each receiver
                 session_path["init_checker_counter"] = len(receivers)
+                if session.protocol == "sender_key":
+                    one_to_one = []
+                    subsessions = session.get_subsessions()
+                    for ss in subsessions:
+                        for subpath in ss.paths:
+                            if list(subpath.nodes)[0] == sender:
+                                one_to_one.append({"ref_session_path": f"{subpath_id}_{ss.get_id()}"})
+                                one_to_one.append({"ref_session_checker_receiver": f"{list(subpath.nodes)[-1]}_{subpath_id}_{ss.get_id()}"})
+                                subpath_id += 1
+                            else:
+                                subpath_id += 1
+                    session_path["one_to_one"] = one_to_one
+
 
                 # references
                 session_path["ref_node_sender"] = f"{sender}"
@@ -1317,7 +1333,6 @@ class NetworkGenerator:
                     else:
                         prob_run = round(self.rng.uniform(self.attributes.get("sp_prob_run")[0], self.attributes.get("sp_prob_run")[1]), 2)
                     session_path["prob_run"] = prob_run
-                session_paths_dict["instances"].append(session_path)
 
                 # commands
                 session_path["cmd_run"] = f"cmd_run_session_path_{i}_{session_id}"
@@ -1331,6 +1346,8 @@ class NetworkGenerator:
                     session_path["cmd_alt_run"] = f"cmd_alt_run_session_path_{i}_{session_id}"
                 session_path["cmd_send"] = f"cmd_send_session_path_{i}_{session_id}"
                 session_path["cmd_counter_reset"] = f"cmd_counter_reset_session_path_{i}_{session_id}"
+
+                session_paths_dict["instances"].append(session_path)
 
         return session_paths_dict
 
@@ -1373,7 +1390,7 @@ class NetworkGenerator:
                 local_session["init_epoch"] = 0
                 local_session["size_ratchet"] = list(session.paths)[0].nodes[node]['ratchet_size']
                 local_session["init_ratchet"] = 0
-                local_session["init_compromise"] = False
+                local_session["init_compromised"] = False
 
                 # references
                 local_session["ref_node"] = f"{node}"

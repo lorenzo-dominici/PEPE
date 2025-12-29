@@ -8,5 +8,6 @@
     "local_session_template" : "templates/local_session.pre",
     "node_template" : "templates/node.pre",
     "session_checker_template" : "templates/session_checker.pre",
-    "session_path_template" : "templates/session_path.pre"
+    "session_path_template" : "templates/session_path.pre",
+    "reward_template" : "templates/reward.pre"
 }
