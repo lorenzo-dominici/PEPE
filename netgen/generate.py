@@ -838,14 +838,14 @@ class NetworkGenerator:
             
             rewards_data = {
                 "hpke": Reward("reward_data_message_hpke"),
-                "double_rathet": Reward("reward_data_message_double_rathet"),
+                "double_ratchet": Reward("reward_data_message_double_ratchet"),
                 "sender_key": Reward("reward_data_message_sender_key"), 
                 "mls": Reward("reward_data_message_mls")
             }
 
             rewards_system = {
                 "hpke": Reward("reward_system_message_hpke"),
-                "double_rathet": Reward("reward_system_message_double_rathet"),
+                "double_ratchet": Reward("reward_system_message_double_ratchet"),
                 "sender_key": Reward("reward_system_message_sender_key"), 
                 "mls": Reward("reward_system_message_mls")
             }
@@ -1273,6 +1273,11 @@ class NetworkGenerator:
 
             
         sessions = self.attributes.get("sessions").copy()
+        for s in self.attributes.get("sessions"):
+            subs = s.get_subsessions()
+            sessions.extend(subs)
+
+        path_id = len(self.attributes.get("sessions"))
         subpath_id = 0
         for session in self.attributes.get("sessions"):
             subpath_id += len(session.paths)
@@ -1283,8 +1288,15 @@ class NetworkGenerator:
                 sender = list(path.nodes)[0]
                 receivers = list(path.nodes)[1:]
                 session_path = {}
-                session_path["name"] = f"session_path_{i}_{session_id}"
-                session_path["#"] = f"{i}_{session_id}"
+
+                if session.protocol == "hpke_sender_key" or session.protocol == "double_ratchet_sender_key":
+                    session_path["name"] = f"session_path_{path_id}_{session_id}"
+                    session_path["#"] = f"{path_id}_{session_id}"
+                    path_id += 1
+                else:
+                    session_path["name"] = f"session_path_{i}_{session_id}"
+                    session_path["#"] = f"{i}_{session_id}"
+
                 session_path["protocol"] = session.protocol
 
                 # states
@@ -1306,8 +1318,8 @@ class NetworkGenerator:
                     for ss in subsessions:
                         for subpath in ss.paths:
                             if list(subpath.nodes)[0] == sender:
-                                one_to_one.append({"ref_session_path": f"{subpath_id}_{ss.get_id()}"})
-                                one_to_one.append({"ref_session_checker_receiver": f"{list(subpath.nodes)[-1]}_{subpath_id}_{ss.get_id()}"})
+                                one_to_one.append({"ref_session_path": f"{subpath_id}_{ss.get_id()}", 
+                                                   "ref_session_checker_receiver": f"{list(subpath.nodes)[-1]}_{subpath_id}_{ss.get_id()}"})
                                 subpath_id += 1
                             else:
                                 subpath_id += 1
@@ -1321,7 +1333,10 @@ class NetworkGenerator:
                 first_links = []
                 successors = list(path.successors(sender))
                 for succ in successors:
-                    first_links.append({"#": f"{sender}_{succ}_{i}_{session_id}"})
+                    if session.protocol == "hpke_sender_key" or session.protocol == "double_ratchet_sender_key":
+                        first_links.append({"#": f"{sender}_{succ}_{path_id - 1}_{session_id}"})
+                    else:
+                        first_links.append({"#": f"{sender}_{succ}_{i}_{session_id}"})
                 session_path["first_links"] = first_links
 
                 # probabilities
@@ -1335,17 +1350,26 @@ class NetworkGenerator:
                     session_path["prob_run"] = prob_run
 
                 # commands
-                session_path["cmd_run"] = f"cmd_run_session_path_{i}_{session_id}"
+                if session.protocol in {"hpke_sender_key", "double_ratchet_sender_key"}:
+                    session_path["cmd_run"] = f"cmd_run_session_path_{path_id - 1}_{session_id}"
+                    session_path["cmd_update"] = f"cmd_update_session_path_{path_id - 1}_{session_id}"
+                    session_path["cmd_update_failure"] = f"cmd_update_failure_session_path_{path_id - 1}_{session_id}"
+                    session_path["cmd_update_success"] = f"cmd_update_success_session_path_{path_id - 1}_{session_id}"
+                    session_path["cmd_send"] = f"cmd_send_session_path_{path_id - 1}_{session_id}"
+                    session_path["cmd_counter_reset"] = f"cmd_counter_reset_session_path_{path_id - 1}_{session_id}"
+                else:
+                    session_path["cmd_run"] = f"cmd_run_session_path_{i}_{session_id}"
+                    session_path["cmd_update"] = f"cmd_update_session_path_{i}_{session_id}"
+                    session_path["cmd_update_failure"] = f"cmd_update_failure_session_path_{i}_{session_id}"
+                    session_path["cmd_update_success"] = f"cmd_update_success_session_path_{i}_{session_id}"
+                    session_path["cmd_send"] = f"cmd_send_session_path_{i}_{session_id}"
+                    session_path["cmd_counter_reset"] = f"cmd_counter_reset_session_path_{i}_{session_id}"
                 if session.protocol == "mls":
                     session_path["cmd_update_data"] = f"cmd_update_data_session_path_{i}_{session_id}"
                     session_path["cmd_update_not_data"] = f"cmd_update_not_data_session_path_{i}_{session_id}"
-                session_path["cmd_update"] = f"cmd_update_session_path_{i}_{session_id}"
-                session_path["cmd_update_failure"] = f"cmd_update_failure_session_path_{i}_{session_id}"
-                session_path["cmd_update_success"] = f"cmd_update_success_session_path_{i}_{session_id}"
+                    
                 if session.protocol == "sender_key":
                     session_path["cmd_alt_run"] = f"cmd_alt_run_session_path_{i}_{session_id}"
-                session_path["cmd_send"] = f"cmd_send_session_path_{i}_{session_id}"
-                session_path["cmd_counter_reset"] = f"cmd_counter_reset_session_path_{i}_{session_id}"
 
                 session_paths_dict["instances"].append(session_path)
 
@@ -1576,6 +1600,7 @@ class NetworkGenerator:
         rewards_dict["instances"] = []
         for reward in self.attributes.get("rewards", []):
             instance = {}
+            instance["name"] = reward.name
             instance["#"] = reward.name
             instance["contributions"] = []
             for contribution in reward.contributions:
