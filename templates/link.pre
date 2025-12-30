@@ -54,8 +54,8 @@ module link_{{#}}
                                                  & (channel_bandwidth_{{ref_channel}}' = channel_bandwidth_{{ref_channel}} - 1);
 
     [{{cmd_sending}}] link_sending_{{#}} = true -> (1 - {{prob_sending}}) : (link_sending_{{#}}' = link_sending_{{#}})
-                                                 + {{prob_sending}} : (link_sending_{{#}} = false)
-                                                                    & (link_receiving_{{#}} = true);
+                                                 + {{prob_sending}} : (link_sending_{{#}}' = false)
+                                                                    & (link_receiving_{{#}}' = true);
 
     [{{cmd_receive_success}}] (link_receiving_{{#}} = true) &
                               (link_state_{{#}} = {{const_working}}) &
