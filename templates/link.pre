@@ -61,7 +61,7 @@ module link_{{#}}
                               (link_state_{{#}} = {{const_working}}) &
                               (channel_state_{{ref_channel}} = {{const_working}}) &
                               (interface_state_{{ref_interface_receiver}} = {{const_working}}) &
-                              (node_buffer_{{ref_node_buffer_receiver}} < {{size_node_buffer_receiver}}) -> (link_receiving_{{#}} = false)
+                              (node_buffer_{{ref_node_buffer_receiver}} < {{size_node_buffer_receiver}}) -> (link_receiving_{{#}}' = false)
                                                                                                           & (channel_bandwidth_{{ref_channel}}' = channel_bandwidth_{{ref_channel}} + 1)
                                                                                                           & (link_ref_counter_{{ref_link_ref_counter}}' = link_ref_counter_{{ref_link_ref_counter}} - 1)
                                                                                                           & (session_path_link_counter_{{#}}' = session_path_link_counter_{{#}} - 1)
