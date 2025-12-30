@@ -96,7 +96,7 @@ module link_{{#}}
                                                                                                                                            : link_state_{{#}}))
                                                                                                                      & (channel_state_{{ref_channel}}' = (channel_state_{{ref_channel}} != {{const_working}}
                                                                                                                                                          ? {{const_failure}}
-                                                                                                                                                         : channel_state_{{ref_channel}}));
+                                                                                                                                                         : channel_state_{{ref_channel}}))
                                                                                                                      & (interface_state_{{ref_interface_receiver}}' = (interface_state_{{ref_interface_receiver}} != {{const_working}}
                                                                                                                                                                       ? {{const_failure}}
                                                                                                                                                                       : interface_state_{{ref_interface_receiver}}));
