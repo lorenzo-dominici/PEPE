@@ -46,7 +46,7 @@ module local_session_{{#}}
                                                                                  & (local_session_ratchet_{{#}}' = 0)
                                                                                  & (session_path_state_{{ref_broadest_session_path}}' = {{const_update}})
                                                                                  {%match||protocol
-                                                                                        ||sender_key||& (session_path_data_message_{{ref_broadest_session_path}})' = {{const_message_sender_reset}}||_||%}
+                                                                                        ||sender_key||& (session_path_data_message_{{ref_broadest_session_path}}' = {{const_message_sender_reset}})||_||%}
                                                                                  & (local_session_compromised_{{#}}' = false);
 
 endmodule
