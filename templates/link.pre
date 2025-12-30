@@ -90,7 +90,7 @@ module link_{{#}}
                                                                                                                             %}
                                                                                                      + {{prob_retry}} : (link_receiving_{{#}}' = false)
                                                                                                                       & (channel_bandwidth_{{ref_channel_bandwidth}}' = channel_bandwidth_{{ref_channel_bandwidth}} - 1)
-                                                                                                                      & (link_prev_{{#}} = true)
+                                                                                                                      & (link_prev_{{#}}' = true)
                                                                                                                       & (link_state_{{#}}'= (channel_state_{{ref_channel}} != {{const_working}}
                                                                                                                                            ? {{const_failure}}
                                                                                                                                            : link_state_{{#}}))
