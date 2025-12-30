@@ -60,9 +60,9 @@ module session_path_{{#}}
                                                                                                    & (session_path_system_message_{{#}}' = {{const_message_data}});
                                                                             
     [{{cmd_alt_run}}] session_path_state_{{#}} = {{const_alt_run}} -> (session_path_state_{{#}}' = {{const_idle}})
-                                                                    {^loop||one_to_one||& (session_path_state_{{ref_session_path}}' = {{const_update}})
-                                                                    & (session_path_data_message_{{ref_session_path}}' = {{const_message_sender_new_key}})
-                                                                    & (session_checker_sender_local_session_epoch_{{ref_session_checker_receiver}}' = local_session_epoch_{{ref_local_session_sender}})
+                                                                    {^loop||one_to_one||& (session_path_state_{{one_to_one[].ref_session_path}}' = {{const_update}})
+                                                                    & (session_path_data_message_{{one_to_one[].ref_session_path}}' = {{const_message_sender_new_key}})
+                                                                    & (session_checker_sender_local_session_epoch_{{one_to_one[].ref_session_checker_receiver}}' = local_session_epoch_{{ref_local_session_sender}})
                                                                     $};
                                                                                                      ||mls||(session_path_state_{{#}}' = {{const_run}})
                                                                                                    & (session_path_system_message_{{#}}' = (session_path_prev_local_session_epoch_sender_{{#}} = 0
