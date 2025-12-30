@@ -29,7 +29,7 @@ module session_path_{{#}}
     %}
     [{{cmd_update_failure}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
                              (session_path_state_{{#}} = {{const_wait}}) &
-                             (local_session_state_{{ref_local_session_sender}} = {{const_local_session_reset}}) -> session_path_state_{{#}}' = {{const_update}};
+                             (local_session_state_{{ref_local_session_sender}} = {{const_local_session_reset}}) -> (session_path_state_{{#}}' = {{const_update}});
 
     [{{cmd_update_success}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
                              (session_path_state_{{#}} = {{const_wait}}) &

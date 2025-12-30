@@ -3,13 +3,13 @@ module channel_{{#}}
     channel_state_{{#}}: [{{range_state}}] init {{init_state}};
     channel_bandwidth_{{#}}: [0..{{size_bandwidth}}] init {{init_bandwidth}};
 
-    [{{cmd_working_to_error}}] channel_state_{{#}} = {{const_working}} -> (1 - {{prob_working_to_error}}) : channel_state_{{#}}' = channel_state_{{#}}
-                                                                     + {{prob_working_to_error}} : channel_state_{{#}}' = {{const_error}};
+    [{{cmd_working_to_error}}] channel_state_{{#}} = {{const_working}} -> (1 - {{prob_working_to_error}}) : (channel_state_{{#}}' = channel_state_{{#}})
+                                                                     + {{prob_working_to_error}} : (channel_state_{{#}}' = {{const_error}});
 
-    [{{cmd_error_to_working}}] channel_state_{{#}} = {{const_error}} -> (1 - {{prob_error_to_working}}) : channel_state_{{#}}' = channel_state_{{#}}
-                                                                   + {{prob_error_to_working}} : channel_state_{{#}}' = {{const_working}};
+    [{{cmd_error_to_working}}] channel_state_{{#}} = {{const_error}} -> (1 - {{prob_error_to_working}}) : (channel_state_{{#}}' = channel_state_{{#}})
+                                                                   + {{prob_error_to_working}} : (channel_state_{{#}}' = {{const_working}});
 
-    [{{cmd_failure_to_working}}] channel_state_{{#}} = {{const_failure}} -> (1 - {{prob_failure_to_working}}) : channel_state_{{#}}' = channel_state_{{#}}
-                                                                       + {{prob_failure_to_working}} : channel_state_{{#}}' = {{const_working}};
+    [{{cmd_failure_to_working}}] channel_state_{{#}} = {{const_failure}} -> (1 - {{prob_failure_to_working}}) : (channel_state_{{#}}' = channel_state_{{#}})
+                                                                       + {{prob_failure_to_working}} : (channel_state_{{#}}' = {{const_working}});
 
 endmodule

@@ -36,8 +36,8 @@ module local_session_{{#}}
                                                                                                                        : {{const_local_session_valid}}));
 
     [{{cmd_compromise}}] (node_state_{{ref_node}} = {{const_on}}) &
-                         (local_session_compromised_{{#}} = false) -> (1 - {{prob_compromised}}) : local_session_compromised_{{#}}' = local_session_compromised_{{#}}
-                                                                  + {{prob_compromised}} : local_session_compromised_{{#}}' = true;
+                         (local_session_compromised_{{#}} = false) -> (1 - {{prob_compromised}}) : (local_session_compromised_{{#}}' = local_session_compromised_{{#}})
+                                                                  + {{prob_compromised}} : (local_session_compromised_{{#}}' = true);
 
     [{{cmd_decompromise}}] (node_state_{{ref_node}} = {{const_on}}) &
                            (local_session_compromised_{{#}} = true) &

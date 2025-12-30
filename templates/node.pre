@@ -3,10 +3,10 @@ module node_{{#}}
     node_state_{{#}}: [{{range_state}}] init {{init_state}};
     node_buffer_{{#}}: [0..{{size_buffer}}] init {{init_buffer}};
 
-    [{{cmd_off_to_on}}] node_state_{{#}} = {{const_off}} -> (1 - {{prob_off_to_on}}) : node_state_{{#}}' = node_state_{{#}}
-                                                          + {{prob_off_to_on}} : node_state_{{#}}' = {{const_on}};
+    [{{cmd_off_to_on}}] node_state_{{#}} = {{const_off}} -> (1 - {{prob_off_to_on}}) : (node_state_{{#}}' = node_state_{{#}})
+                                                          + {{prob_off_to_on}} : (node_state_{{#}}' = {{const_on}});
     
-    [{{cmd_on_to_off}}] node_state_{{#}} = {{const_on}} -> (1 - {{prob_on_to_off}}) : node_state_{{#}}' = node_state_{{#}}
+    [{{cmd_on_to_off}}] node_state_{{#}} = {{const_on}} -> (1 - {{prob_on_to_off}}) : (node_state_{{#}}' = node_state_{{#}})
                                                          + {{prob_on_to_off}} : (node_state_{{#}}' = {{const_off}})
                                                                              {%loop||interfaces||& (interface_state_{{interfaces[].#}}' = {{const_off}})
                                                                              %};
