@@ -8,7 +8,7 @@ module node_{{#}}
     
     [{{cmd_on_to_off}}] node_state_{{#}} = {{const_on}} -> (1 - {{prob_on_to_off}}) : node_state_{{#}}' = node_state_{{#}}
                                                         + {{prob_on_to_off}} : (node_state_{{#}}' = {{const_off}})
-                                                                             {^loop||interfaces||& (interface_state_{{interfaces[].#}}' = {{const_off}})
-                                                                             $};
+                                                                             {%loop||interfaces||& (interface_state_{{interfaces[].#}}' = {{const_off}})
+                                                                             %};
 
 endmodule

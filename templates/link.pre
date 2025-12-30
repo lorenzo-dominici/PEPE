@@ -31,8 +31,8 @@ module link_{{#}}
                                                                          & (interface_state_{{ref_interface_sender}}' = (interface_state_{{ref_interface_sender}} != {{const_working}}
                                                                                                                         ? {{const_failure}}
                                                                                                                         : interface_state_{{ref_interface_sender}}))
-                                                                         {^loop||next_links||& (link_prev_{{next_links[].ref_link_next}}' = false)
-                                                                         $}
+                                                                         {%loop||next_links||& (link_prev_{{next_links[].ref_link_next}}' = false)
+                                                                         %}
                                                   + {{prob_retry}} : (link_prev_{{#}}' = link_prev_{{#}})
                                                                    & (link_state_{{#}}'= (channel_state_{{ref_channel}} != {{const_working}}
                                                                                          ? {{const_failure}}
@@ -66,8 +66,8 @@ module link_{{#}}
                                                                                                           & (link_ref_counter_{{ref_link_ref_counter}}' = link_ref_counter_{{ref_link_ref_counter}} - 1)
                                                                                                           & (session_path_link_counter_{{#}}' = session_path_link_counter_{{#}} - 1)
                                                                                                           & (node_buffer_{{ref_node_buffer_receiver}}' = node_buffer_{{ref_node_buffer_receiver}} + 1)
-                                                                                                          {^loop||next_links||& (link_prev_{{next_links[].ref_link_next}}' = true)
-                                                                                                          $};
+                                                                                                          {%loop||next_links||& (link_prev_{{next_links[].ref_link_next}}' = true)
+                                                                                                          %};
     
     [{{cmd_receive_failure}}] (link_receiving_{{#}} = true) & (
                         (link_state_{{#}} != {{const_working}}) |
@@ -86,8 +86,8 @@ module link_{{#}}
                                                                                                                             & (interface_state_{{ref_interface_receiver}}' = (interface_state_{{ref_interface_receiver}} != {{const_working}}
                                                                                                                                                                            ? {{const_failure}}
                                                                                                                                                                            : interface_state_{{ref_interface_receiver}}))
-                                                                                                                            {^loop||next_links||& (link_prev_{{next_links[].ref_link_next}}' = false)
-                                                                                                                            $};
+                                                                                                                            {%loop||next_links||& (link_prev_{{next_links[].ref_link_next}}' = false)
+                                                                                                                            %};
                                                                                                      + {{prob_retry}} : (link_receiving_{{#}}' = false)
                                                                                                                       & (channel_bandwidth_{{ref_channel_bandwidth}}' = channel_bandwidth_{{ref_channel_bandwidth}} - 1)
                                                                                                                       & (link_prev_{{#}} = true)
