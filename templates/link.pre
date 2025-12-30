@@ -39,10 +39,10 @@ module link_{{#}}
                                                                                          : link_state_{{#}}))
                                                                    & (channel_state_{{ref_channel}}' = (channel_state_{{ref_channel}} != {{const_working}}
                                                                                                        ? {{const_failure}}
-                                                                                                       : channel_state_{{ref_channel}}));
+                                                                                                       : channel_state_{{ref_channel}}))
                                                                    & (interface_state_{{ref_interface_sender}}' = (interface_state_{{ref_interface_sender}} != {{const_working}}
                                                                                                                   ? {{const_failure}}
-                                                                                                                  : interface_state_{{ref_interface_sender}}))
+                                                                                                                  : interface_state_{{ref_interface_sender}}));
 
     [{{cmd_send_success}}] (link_prev_{{#}} = true) &
         (link_state_{{#}} = {{const_working}}) &
