@@ -1,7 +1,7 @@
 module session_checker_{{#}}
 
     session_checker_state_{{#}}: [{{range_state}}] init {{init_state}};
-    session_checker_sender_local_session_epoch_{{#}}: [{{range_sender_local_session_epoch}}] init {{init_sender_local_session_epoch}};
+    session_checker_sender_local_session_epoch_{{#}}: [0..{{size_sender_local_session_epoch}}] init {{init_sender_local_session_epoch}};
     session_checker_sender_local_session_system_message_{{#}}: [{{range_sender_local_session_system_message}}] init {{init_sender_local_session_system_message}};
     session_checker_sender_local_session_data_message_{{#}}: [{{range_sender_local_session_data_message}}] init {{init_sender_local_session_data_message}};
 
