@@ -54,7 +54,7 @@ module session_path_{{#}}
                                                                                                    & (session_path_system_message_{{#}}' = (session_path_prev_local_session_epoch_sender_{{#}} = 0
                                                                                                                                            ? {{const_message_reset}}
                                                                                                                                            : {{const_message_ratchet}}));
-                                                                                                     ||sender_key||(session_path_state_{{#}}' = (local_session_epoch_{{ref_local_session_sender}} == session_checker_sender_local_session_epoch_{{#}}
+                                                                                                     ||sender_key||(session_path_state_{{#}}' = (local_session_epoch_{{ref_local_session_sender}} = session_checker_sender_local_session_epoch_{{#}}
                                                                                                                                   ? {{const_run}}
                                                                                                                                   : {{const_alt_run}}))
                                                                                                    & (session_path_system_message_{{#}}' = {{const_message_data}});
