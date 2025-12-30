@@ -1,4 +1,4 @@
-module policy
+module policy_{{#}}
 
     {%loop||policies||[{{policies[].command}}] {{policies[].condition}} -> {{policies[].side_effects}};%}
 
