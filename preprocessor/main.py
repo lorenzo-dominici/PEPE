@@ -43,7 +43,7 @@ from pydantic import ValidationError
 
 from .load import load_data, load_data_dir, load_config
 from .process import process_instance
-from .store import write_file, ensure_dir, join_to_prism, delete_files
+from .store import write_file, ensure_dir, join_files, delete_files
 from .models import Config, PreprocessorData, JoinMode
 from .logger import configure_logging, get_logger, task_context, set_task_label
 from tqdm import tqdm
@@ -188,7 +188,7 @@ def run(
     if results and config.join_mode != JoinMode.none:
         joined_path = config.output_dir / config.joined_file
         logger.debug(f"Joining {len(results)} files into {joined_path}")
-        join_to_prism(results, joined_path)
+        join_files(results, joined_path)
         logger.info(f"Joined output written to: {joined_path}")
         
         # In clean_join mode, delete individual files after joining
