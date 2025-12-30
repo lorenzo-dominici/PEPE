@@ -87,7 +87,7 @@ module link_{{#}}
                                                                                                                                                                            ? {{const_failure}}
                                                                                                                                                                            : interface_state_{{ref_interface_receiver}}))
                                                                                                                             {%loop||next_links||& (link_prev_{{next_links[].ref_link_next}}' = false)
-                                                                                                                            %};
+                                                                                                                            %}
                                                                                                      + {{prob_retry}} : (link_receiving_{{#}}' = false)
                                                                                                                       & (channel_bandwidth_{{ref_channel_bandwidth}}' = channel_bandwidth_{{ref_channel_bandwidth}} - 1)
                                                                                                                       & (link_prev_{{#}} = true)
@@ -99,6 +99,6 @@ module link_{{#}}
                                                                                                                                                          : channel_state_{{ref_channel}}));
                                                                                                                      & (interface_state_{{ref_interface_receiver}}' = (interface_state_{{ref_interface_receiver}} != {{const_working}}
                                                                                                                                                                       ? {{const_failure}}
-                                                                                                                                                                      : interface_state_{{ref_interface_receiver}}))
+                                                                                                                                                                      : interface_state_{{ref_interface_receiver}}));
     
 endmodule
