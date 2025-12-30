@@ -1,12 +1,12 @@
 {
 	"output_dir": "examples/preprocessor_test",
 	"jobs": -1,
-	"join_mode": "join",
+	"join_mode": "clean_join",
 	"joined_file": "MODEL.prism",
 	"separators": {
-		"macro_open": "{^",
+		"macro_open": "{%",
 		"macro_separator": "||",
-		"macro_close": "$}",
+		"macro_close": "%}",
 		"match_default": "_",
 		"placeholder_open": "{{",
 		"placeholder_close": "}}"
