@@ -35,9 +35,9 @@
             "template": "templates/node.pre",
             "instances": [
                 {
-                    "name": "node_0.prism",
+                    "name": "node_0",
                     "#": 0,
-                    "range_state": "[0..1]",
+                    "range_state": "0..1",
                     "init_state": 0,
                     "size_buffer": 1,
                     "init_buffer": 0,
@@ -61,9 +61,9 @@
                     "cmd_on_to_off": "cmd_on_to_off_node_0"
                 },
                 {
-                    "name": "node_1.prism",
+                    "name": "node_1",
                     "#": 1,
-                    "range_state": "[0..1]",
+                    "range_state": "0..1",
                     "init_state": 0,
                     "size_buffer": 2,
                     "init_buffer": 0,
@@ -78,9 +78,9 @@
                     "cmd_on_to_off": "cmd_on_to_off_node_1"
                 },
                 {
-                    "name": "node_2.prism",
+                    "name": "node_2",
                     "#": 2,
-                    "range_state": "[0..1]",
+                    "range_state": "0..1",
                     "init_state": 0,
                     "size_buffer": 2,
                     "init_buffer": 0,
@@ -101,9 +101,9 @@
                     "cmd_on_to_off": "cmd_on_to_off_node_2"
                 },
                 {
-                    "name": "node_3.prism",
+                    "name": "node_3",
                     "#": 3,
-                    "range_state": "[0..1]",
+                    "range_state": "0..1",
                     "init_state": 0,
                     "size_buffer": 2,
                     "init_buffer": 0,
@@ -121,9 +121,9 @@
                     "cmd_on_to_off": "cmd_on_to_off_node_3"
                 },
                 {
-                    "name": "node_4.prism",
+                    "name": "node_4",
                     "#": 4,
-                    "range_state": "[0..1]",
+                    "range_state": "0..1",
                     "init_state": 0,
                     "size_buffer": 1,
                     "init_buffer": 0,
@@ -147,9 +147,9 @@
             "template": "templates/interface.pre",
             "instances": [
                 {
-                    "name": "interface_0_1.prism",
+                    "name": "interface_0_1",
                     "#": "0_1",
-                    "range_state": "[0..4]",
+                    "range_state": "0..4",
                     "init_state": 0,
                     "prob_off_to_working": 0.74,
                     "prob_off_to_error": 0.05,
@@ -164,9 +164,9 @@
                     "cmd_failure_to_working": "cmd_failure_to_working_interface_0_1"
                 },
                 {
-                    "name": "interface_0_2.prism",
+                    "name": "interface_0_2",
                     "#": "0_2",
-                    "range_state": "[0..4]",
+                    "range_state": "0..4",
                     "init_state": 0,
                     "prob_off_to_working": 0.74,
                     "prob_off_to_error": 0.05,
@@ -181,9 +181,9 @@
                     "cmd_failure_to_working": "cmd_failure_to_working_interface_0_2"
                 },
                 {
-                    "name": "interface_0_3.prism",
+                    "name": "interface_0_3",
                     "#": "0_3",
-                    "range_state": "[0..4]",
+                    "range_state": "0..4",
                     "init_state": 0,
                     "prob_off_to_working": 0.7,
                     "prob_off_to_error": 0.05,
@@ -198,9 +198,9 @@
                     "cmd_failure_to_working": "cmd_failure_to_working_interface_0_3"
                 },
                 {
-                    "name": "interface_0_4.prism",
+                    "name": "interface_0_4",
                     "#": "0_4",
-                    "range_state": "[0..4]",
+                    "range_state": "0..4",
                     "init_state": 0,
                     "prob_off_to_working": 0.76,
                     "prob_off_to_error": 0.02,
@@ -215,9 +215,9 @@
                     "cmd_failure_to_working": "cmd_failure_to_working_interface_0_4"
                 },
                 {
-                    "name": "interface_2_3.prism",
+                    "name": "interface_2_3",
                     "#": "2_3",
-                    "range_state": "[0..4]",
+                    "range_state": "0..4",
                     "init_state": 0,
                     "prob_off_to_working": 0.72,
                     "prob_off_to_error": 0.03,
@@ -232,9 +232,9 @@
                     "cmd_failure_to_working": "cmd_failure_to_working_interface_2_3"
                 },
                 {
-                    "name": "interface_2_4.prism",
+                    "name": "interface_2_4",
                     "#": "2_4",
-                    "range_state": "[0..4]",
+                    "range_state": "0..4",
                     "init_state": 0,
                     "prob_off_to_working": 0.72,
                     "prob_off_to_error": 0.02,
@@ -255,9 +255,9 @@
             "template": "templates/channel.pre",
             "instances": [
                 {
-                    "name": "channel_0_1.prism",
+                    "name": "channel_0_1",
                     "#": "0_1",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "size_bandwidth": 1,
                     "init_bandwidth": 1,
@@ -269,9 +269,9 @@
                     "cmd_failure_to_working": "cmd_failure_to_working_channel_0_1"
                 },
                 {
-                    "name": "channel_0_2.prism",
+                    "name": "channel_0_2",
                     "#": "0_2",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "size_bandwidth": 2,
                     "init_bandwidth": 2,
@@ -283,9 +283,9 @@
                     "cmd_failure_to_working": "cmd_failure_to_working_channel_0_2"
                 },
                 {
-                    "name": "channel_0_3.prism",
+                    "name": "channel_0_3",
                     "#": "0_3",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "size_bandwidth": 1,
                     "init_bandwidth": 1,
@@ -297,9 +297,9 @@
                     "cmd_failure_to_working": "cmd_failure_to_working_channel_0_3"
                 },
                 {
-                    "name": "channel_0_4.prism",
+                    "name": "channel_0_4",
                     "#": "0_4",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "size_bandwidth": 2,
                     "init_bandwidth": 2,
@@ -311,9 +311,9 @@
                     "cmd_failure_to_working": "cmd_failure_to_working_channel_0_4"
                 },
                 {
-                    "name": "channel_2_3.prism",
+                    "name": "channel_2_3",
                     "#": "2_3",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "size_bandwidth": 2,
                     "init_bandwidth": 2,
@@ -325,9 +325,9 @@
                     "cmd_failure_to_working": "cmd_failure_to_working_channel_2_3"
                 },
                 {
-                    "name": "channel_2_4.prism",
+                    "name": "channel_2_4",
                     "#": "2_4",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "size_bandwidth": 2,
                     "init_bandwidth": 2,
@@ -345,9 +345,9 @@
             "template": "templates/link.pre",
             "instances": [
                 {
-                    "name": "link_0_1_of_path_0_4.prism",
+                    "name": "link_0_1_of_path_0_4",
                     "#": "0_1_0_4",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -377,9 +377,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_1_of_path_0_4"
                 },
                 {
-                    "name": "link_0_2_of_path_0_4.prism",
+                    "name": "link_0_2_of_path_0_4",
                     "#": "0_2_0_4",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -409,9 +409,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_2_of_path_0_4"
                 },
                 {
-                    "name": "link_0_3_of_path_0_4.prism",
+                    "name": "link_0_3_of_path_0_4",
                     "#": "0_3_0_4",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -441,9 +441,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_3_of_path_0_4"
                 },
                 {
-                    "name": "link_0_4_of_path_0_4.prism",
+                    "name": "link_0_4_of_path_0_4",
                     "#": "0_4_0_4",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -473,9 +473,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_4_of_path_0_4"
                 },
                 {
-                    "name": "link_1_0_of_path_0_8.prism",
+                    "name": "link_1_0_of_path_0_8",
                     "#": "1_0_0_8",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -512,9 +512,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_1_0_of_path_0_8"
                 },
                 {
-                    "name": "link_0_2_of_path_0_8.prism",
+                    "name": "link_0_2_of_path_0_8",
                     "#": "0_2_0_8",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -544,9 +544,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_2_of_path_0_8"
                 },
                 {
-                    "name": "link_0_4_of_path_0_8.prism",
+                    "name": "link_0_4_of_path_0_8",
                     "#": "0_4_0_8",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -576,9 +576,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_4_of_path_0_8"
                 },
                 {
-                    "name": "link_2_0_of_path_0_13.prism",
+                    "name": "link_2_0_of_path_0_13",
                     "#": "2_0_0_13",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -612,9 +612,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_2_0_of_path_0_13"
                 },
                 {
-                    "name": "link_2_3_of_path_0_13.prism",
+                    "name": "link_2_3_of_path_0_13",
                     "#": "2_3_0_13",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -644,9 +644,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_2_3_of_path_0_13"
                 },
                 {
-                    "name": "link_2_4_of_path_0_13.prism",
+                    "name": "link_2_4_of_path_0_13",
                     "#": "2_4_0_13",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -676,9 +676,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_2_4_of_path_0_13"
                 },
                 {
-                    "name": "link_0_1_of_path_0_13.prism",
+                    "name": "link_0_1_of_path_0_13",
                     "#": "0_1_0_13",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -708,9 +708,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_1_of_path_0_13"
                 },
                 {
-                    "name": "link_3_0_of_path_0_17.prism",
+                    "name": "link_3_0_of_path_0_17",
                     "#": "3_0_0_17",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -744,9 +744,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_3_0_of_path_0_17"
                 },
                 {
-                    "name": "link_3_2_of_path_0_17.prism",
+                    "name": "link_3_2_of_path_0_17",
                     "#": "3_2_0_17",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -776,9 +776,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_3_2_of_path_0_17"
                 },
                 {
-                    "name": "link_0_1_of_path_0_17.prism",
+                    "name": "link_0_1_of_path_0_17",
                     "#": "0_1_0_17",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -808,9 +808,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_1_of_path_0_17"
                 },
                 {
-                    "name": "link_4_0_of_path_0_20.prism",
+                    "name": "link_4_0_of_path_0_20",
                     "#": "4_0_0_20",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -847,9 +847,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_4_0_of_path_0_20"
                 },
                 {
-                    "name": "link_0_1_of_path_0_20.prism",
+                    "name": "link_0_1_of_path_0_20",
                     "#": "0_1_0_20",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -879,9 +879,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_1_of_path_0_20"
                 },
                 {
-                    "name": "link_0_3_of_path_0_20.prism",
+                    "name": "link_0_3_of_path_0_20",
                     "#": "0_3_0_20",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -911,9 +911,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_3_of_path_0_20"
                 },
                 {
-                    "name": "link_0_1_of_path_0_0.prism",
+                    "name": "link_0_1_of_path_0_0",
                     "#": "0_1_0_0",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -943,9 +943,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_1_of_path_0_0"
                 },
                 {
-                    "name": "link_1_0_of_path_1_0.prism",
+                    "name": "link_1_0_of_path_1_0",
                     "#": "1_0_1_0",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -975,9 +975,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_1_0_of_path_1_0"
                 },
                 {
-                    "name": "link_0_2_of_path_0_1.prism",
+                    "name": "link_0_2_of_path_0_1",
                     "#": "0_2_0_1",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1007,9 +1007,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_2_of_path_0_1"
                 },
                 {
-                    "name": "link_2_0_of_path_1_1.prism",
+                    "name": "link_2_0_of_path_1_1",
                     "#": "2_0_1_1",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1039,9 +1039,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_2_0_of_path_1_1"
                 },
                 {
-                    "name": "link_0_3_of_path_0_2.prism",
+                    "name": "link_0_3_of_path_0_2",
                     "#": "0_3_0_2",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1071,9 +1071,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_3_of_path_0_2"
                 },
                 {
-                    "name": "link_3_0_of_path_1_2.prism",
+                    "name": "link_3_0_of_path_1_2",
                     "#": "3_0_1_2",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1103,9 +1103,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_3_0_of_path_1_2"
                 },
                 {
-                    "name": "link_0_4_of_path_0_3.prism",
+                    "name": "link_0_4_of_path_0_3",
                     "#": "0_4_0_3",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1135,9 +1135,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_4_of_path_0_3"
                 },
                 {
-                    "name": "link_4_0_of_path_1_3.prism",
+                    "name": "link_4_0_of_path_1_3",
                     "#": "4_0_1_3",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1167,9 +1167,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_4_0_of_path_1_3"
                 },
                 {
-                    "name": "link_1_0_of_path_0_5.prism",
+                    "name": "link_1_0_of_path_0_5",
                     "#": "1_0_0_5",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1199,9 +1199,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_1_0_of_path_0_5"
                 },
                 {
-                    "name": "link_0_1_of_path_1_5.prism",
+                    "name": "link_0_1_of_path_1_5",
                     "#": "0_1_1_5",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1231,9 +1231,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_1_of_path_1_5"
                 },
                 {
-                    "name": "link_1_0_of_path_0_6.prism",
+                    "name": "link_1_0_of_path_0_6",
                     "#": "1_0_0_6",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1267,9 +1267,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_1_0_of_path_0_6"
                 },
                 {
-                    "name": "link_0_2_of_path_0_6.prism",
+                    "name": "link_0_2_of_path_0_6",
                     "#": "0_2_0_6",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1299,9 +1299,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_2_of_path_0_6"
                 },
                 {
-                    "name": "link_2_0_of_path_1_6.prism",
+                    "name": "link_2_0_of_path_1_6",
                     "#": "2_0_1_6",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1335,9 +1335,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_2_0_of_path_1_6"
                 },
                 {
-                    "name": "link_0_1_of_path_1_6.prism",
+                    "name": "link_0_1_of_path_1_6",
                     "#": "0_1_1_6",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1367,9 +1367,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_1_of_path_1_6"
                 },
                 {
-                    "name": "link_1_0_of_path_0_7.prism",
+                    "name": "link_1_0_of_path_0_7",
                     "#": "1_0_0_7",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1403,9 +1403,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_1_0_of_path_0_7"
                 },
                 {
-                    "name": "link_0_4_of_path_0_7.prism",
+                    "name": "link_0_4_of_path_0_7",
                     "#": "0_4_0_7",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1435,9 +1435,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_4_of_path_0_7"
                 },
                 {
-                    "name": "link_4_0_of_path_1_7.prism",
+                    "name": "link_4_0_of_path_1_7",
                     "#": "4_0_1_7",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1471,9 +1471,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_4_0_of_path_1_7"
                 },
                 {
-                    "name": "link_0_1_of_path_1_7.prism",
+                    "name": "link_0_1_of_path_1_7",
                     "#": "0_1_1_7",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1503,9 +1503,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_1_of_path_1_7"
                 },
                 {
-                    "name": "link_2_0_of_path_0_9.prism",
+                    "name": "link_2_0_of_path_0_9",
                     "#": "2_0_0_9",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1535,9 +1535,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_2_0_of_path_0_9"
                 },
                 {
-                    "name": "link_0_2_of_path_1_9.prism",
+                    "name": "link_0_2_of_path_1_9",
                     "#": "0_2_1_9",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1567,9 +1567,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_2_of_path_1_9"
                 },
                 {
-                    "name": "link_2_0_of_path_0_10.prism",
+                    "name": "link_2_0_of_path_0_10",
                     "#": "2_0_0_10",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1603,9 +1603,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_2_0_of_path_0_10"
                 },
                 {
-                    "name": "link_0_1_of_path_0_10.prism",
+                    "name": "link_0_1_of_path_0_10",
                     "#": "0_1_0_10",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1635,9 +1635,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_1_of_path_0_10"
                 },
                 {
-                    "name": "link_1_0_of_path_1_10.prism",
+                    "name": "link_1_0_of_path_1_10",
                     "#": "1_0_1_10",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1671,9 +1671,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_1_0_of_path_1_10"
                 },
                 {
-                    "name": "link_0_2_of_path_1_10.prism",
+                    "name": "link_0_2_of_path_1_10",
                     "#": "0_2_1_10",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1703,9 +1703,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_2_of_path_1_10"
                 },
                 {
-                    "name": "link_2_3_of_path_0_11.prism",
+                    "name": "link_2_3_of_path_0_11",
                     "#": "2_3_0_11",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1735,9 +1735,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_2_3_of_path_0_11"
                 },
                 {
-                    "name": "link_3_2_of_path_1_11.prism",
+                    "name": "link_3_2_of_path_1_11",
                     "#": "3_2_1_11",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1767,9 +1767,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_3_2_of_path_1_11"
                 },
                 {
-                    "name": "link_2_4_of_path_0_12.prism",
+                    "name": "link_2_4_of_path_0_12",
                     "#": "2_4_0_12",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1799,9 +1799,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_2_4_of_path_0_12"
                 },
                 {
-                    "name": "link_4_2_of_path_1_12.prism",
+                    "name": "link_4_2_of_path_1_12",
                     "#": "4_2_1_12",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1831,9 +1831,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_4_2_of_path_1_12"
                 },
                 {
-                    "name": "link_3_0_of_path_0_14.prism",
+                    "name": "link_3_0_of_path_0_14",
                     "#": "3_0_0_14",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1863,9 +1863,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_3_0_of_path_0_14"
                 },
                 {
-                    "name": "link_0_3_of_path_1_14.prism",
+                    "name": "link_0_3_of_path_1_14",
                     "#": "0_3_1_14",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1895,9 +1895,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_3_of_path_1_14"
                 },
                 {
-                    "name": "link_3_0_of_path_0_15.prism",
+                    "name": "link_3_0_of_path_0_15",
                     "#": "3_0_0_15",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1931,9 +1931,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_3_0_of_path_0_15"
                 },
                 {
-                    "name": "link_0_1_of_path_0_15.prism",
+                    "name": "link_0_1_of_path_0_15",
                     "#": "0_1_0_15",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1963,9 +1963,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_1_of_path_0_15"
                 },
                 {
-                    "name": "link_1_0_of_path_1_15.prism",
+                    "name": "link_1_0_of_path_1_15",
                     "#": "1_0_1_15",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -1999,9 +1999,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_1_0_of_path_1_15"
                 },
                 {
-                    "name": "link_0_3_of_path_1_15.prism",
+                    "name": "link_0_3_of_path_1_15",
                     "#": "0_3_1_15",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -2031,9 +2031,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_3_of_path_1_15"
                 },
                 {
-                    "name": "link_3_2_of_path_0_16.prism",
+                    "name": "link_3_2_of_path_0_16",
                     "#": "3_2_0_16",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -2063,9 +2063,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_3_2_of_path_0_16"
                 },
                 {
-                    "name": "link_2_3_of_path_1_16.prism",
+                    "name": "link_2_3_of_path_1_16",
                     "#": "2_3_1_16",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -2095,9 +2095,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_2_3_of_path_1_16"
                 },
                 {
-                    "name": "link_4_0_of_path_0_18.prism",
+                    "name": "link_4_0_of_path_0_18",
                     "#": "4_0_0_18",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -2131,9 +2131,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_4_0_of_path_0_18"
                 },
                 {
-                    "name": "link_0_1_of_path_0_18.prism",
+                    "name": "link_0_1_of_path_0_18",
                     "#": "0_1_0_18",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -2163,9 +2163,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_1_of_path_0_18"
                 },
                 {
-                    "name": "link_1_0_of_path_1_18.prism",
+                    "name": "link_1_0_of_path_1_18",
                     "#": "1_0_1_18",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -2199,9 +2199,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_1_0_of_path_1_18"
                 },
                 {
-                    "name": "link_0_4_of_path_1_18.prism",
+                    "name": "link_0_4_of_path_1_18",
                     "#": "0_4_1_18",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -2231,9 +2231,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_4_of_path_1_18"
                 },
                 {
-                    "name": "link_4_0_of_path_0_19.prism",
+                    "name": "link_4_0_of_path_0_19",
                     "#": "4_0_0_19",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -2267,9 +2267,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_4_0_of_path_0_19"
                 },
                 {
-                    "name": "link_0_3_of_path_0_19.prism",
+                    "name": "link_0_3_of_path_0_19",
                     "#": "0_3_0_19",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -2299,9 +2299,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_0_3_of_path_0_19"
                 },
                 {
-                    "name": "link_3_0_of_path_1_19.prism",
+                    "name": "link_3_0_of_path_1_19",
                     "#": "3_0_1_19",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -2335,9 +2335,9 @@
                     "cmd_receive_failure": "cmd_receive_failure_link_3_0_of_path_1_19"
                 },
                 {
-                    "name": "link_0_4_of_path_1_19.prism",
+                    "name": "link_0_4_of_path_1_19",
                     "#": "0_4_1_19",
-                    "range_state": "[2..4]",
+                    "range_state": "2..4",
                     "init_state": 2,
                     "init_prev": false,
                     "init_sending": false,
@@ -2373,7 +2373,7 @@
             "template": "templates/link_ref.pre",
             "instances": [
                 {
-                    "name": "link_ref_0_of_path_0_4.prism",
+                    "name": "link_ref_0_of_path_0_4",
                     "#": "0_0_4",
                     "size_counter": 4,
                     "init_counter": 4,
@@ -2382,7 +2382,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_4"
                 },
                 {
-                    "name": "link_ref_1_of_path_0_4.prism",
+                    "name": "link_ref_1_of_path_0_4",
                     "#": "1_0_4",
                     "size_counter": 0,
                     "init_counter": 0,
@@ -2391,7 +2391,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_0_4"
                 },
                 {
-                    "name": "link_ref_2_of_path_0_4.prism",
+                    "name": "link_ref_2_of_path_0_4",
                     "#": "2_0_4",
                     "size_counter": 0,
                     "init_counter": 0,
@@ -2400,7 +2400,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_0_4"
                 },
                 {
-                    "name": "link_ref_3_of_path_0_4.prism",
+                    "name": "link_ref_3_of_path_0_4",
                     "#": "3_0_4",
                     "size_counter": 0,
                     "init_counter": 0,
@@ -2409,7 +2409,7 @@
                     "cmd_reset": "cmd_reset_link_ref_3_of_path_0_4"
                 },
                 {
-                    "name": "link_ref_4_of_path_0_4.prism",
+                    "name": "link_ref_4_of_path_0_4",
                     "#": "4_0_4",
                     "size_counter": 0,
                     "init_counter": 0,
@@ -2418,7 +2418,7 @@
                     "cmd_reset": "cmd_reset_link_ref_4_of_path_0_4"
                 },
                 {
-                    "name": "link_ref_1_of_path_0_8.prism",
+                    "name": "link_ref_1_of_path_0_8",
                     "#": "1_0_8",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2427,7 +2427,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_0_8"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_8.prism",
+                    "name": "link_ref_0_of_path_0_8",
                     "#": "0_0_8",
                     "size_counter": 2,
                     "init_counter": 2,
@@ -2436,7 +2436,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_8"
                 },
                 {
-                    "name": "link_ref_2_of_path_0_8.prism",
+                    "name": "link_ref_2_of_path_0_8",
                     "#": "2_0_8",
                     "size_counter": 0,
                     "init_counter": 0,
@@ -2445,7 +2445,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_0_8"
                 },
                 {
-                    "name": "link_ref_4_of_path_0_8.prism",
+                    "name": "link_ref_4_of_path_0_8",
                     "#": "4_0_8",
                     "size_counter": 0,
                     "init_counter": 0,
@@ -2454,7 +2454,7 @@
                     "cmd_reset": "cmd_reset_link_ref_4_of_path_0_8"
                 },
                 {
-                    "name": "link_ref_2_of_path_0_13.prism",
+                    "name": "link_ref_2_of_path_0_13",
                     "#": "2_0_13",
                     "size_counter": 3,
                     "init_counter": 3,
@@ -2463,7 +2463,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_0_13"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_13.prism",
+                    "name": "link_ref_0_of_path_0_13",
                     "#": "0_0_13",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2472,7 +2472,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_13"
                 },
                 {
-                    "name": "link_ref_1_of_path_0_13.prism",
+                    "name": "link_ref_1_of_path_0_13",
                     "#": "1_0_13",
                     "size_counter": 0,
                     "init_counter": 0,
@@ -2481,7 +2481,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_0_13"
                 },
                 {
-                    "name": "link_ref_3_of_path_0_13.prism",
+                    "name": "link_ref_3_of_path_0_13",
                     "#": "3_0_13",
                     "size_counter": 0,
                     "init_counter": 0,
@@ -2490,7 +2490,7 @@
                     "cmd_reset": "cmd_reset_link_ref_3_of_path_0_13"
                 },
                 {
-                    "name": "link_ref_4_of_path_0_13.prism",
+                    "name": "link_ref_4_of_path_0_13",
                     "#": "4_0_13",
                     "size_counter": 0,
                     "init_counter": 0,
@@ -2499,7 +2499,7 @@
                     "cmd_reset": "cmd_reset_link_ref_4_of_path_0_13"
                 },
                 {
-                    "name": "link_ref_3_of_path_0_17.prism",
+                    "name": "link_ref_3_of_path_0_17",
                     "#": "3_0_17",
                     "size_counter": 2,
                     "init_counter": 2,
@@ -2508,7 +2508,7 @@
                     "cmd_reset": "cmd_reset_link_ref_3_of_path_0_17"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_17.prism",
+                    "name": "link_ref_0_of_path_0_17",
                     "#": "0_0_17",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2517,7 +2517,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_17"
                 },
                 {
-                    "name": "link_ref_1_of_path_0_17.prism",
+                    "name": "link_ref_1_of_path_0_17",
                     "#": "1_0_17",
                     "size_counter": 0,
                     "init_counter": 0,
@@ -2526,7 +2526,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_0_17"
                 },
                 {
-                    "name": "link_ref_2_of_path_0_17.prism",
+                    "name": "link_ref_2_of_path_0_17",
                     "#": "2_0_17",
                     "size_counter": 0,
                     "init_counter": 0,
@@ -2535,7 +2535,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_0_17"
                 },
                 {
-                    "name": "link_ref_4_of_path_0_20.prism",
+                    "name": "link_ref_4_of_path_0_20",
                     "#": "4_0_20",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2544,7 +2544,7 @@
                     "cmd_reset": "cmd_reset_link_ref_4_of_path_0_20"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_20.prism",
+                    "name": "link_ref_0_of_path_0_20",
                     "#": "0_0_20",
                     "size_counter": 2,
                     "init_counter": 2,
@@ -2553,7 +2553,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_20"
                 },
                 {
-                    "name": "link_ref_1_of_path_0_20.prism",
+                    "name": "link_ref_1_of_path_0_20",
                     "#": "1_0_20",
                     "size_counter": 0,
                     "init_counter": 0,
@@ -2562,7 +2562,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_0_20"
                 },
                 {
-                    "name": "link_ref_3_of_path_0_20.prism",
+                    "name": "link_ref_3_of_path_0_20",
                     "#": "3_0_20",
                     "size_counter": 0,
                     "init_counter": 0,
@@ -2571,7 +2571,7 @@
                     "cmd_reset": "cmd_reset_link_ref_3_of_path_0_20"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_0.prism",
+                    "name": "link_ref_0_of_path_0_0",
                     "#": "0_0_0",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2580,7 +2580,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_0"
                 },
                 {
-                    "name": "link_ref_1_of_path_0_0.prism",
+                    "name": "link_ref_1_of_path_0_0",
                     "#": "1_0_0",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2589,7 +2589,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_0_0"
                 },
                 {
-                    "name": "link_ref_1_of_path_1_0.prism",
+                    "name": "link_ref_1_of_path_1_0",
                     "#": "1_1_0",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2598,7 +2598,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_1_0"
                 },
                 {
-                    "name": "link_ref_0_of_path_1_0.prism",
+                    "name": "link_ref_0_of_path_1_0",
                     "#": "0_1_0",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2607,7 +2607,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_1_0"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_1.prism",
+                    "name": "link_ref_0_of_path_0_1",
                     "#": "0_0_1",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2616,7 +2616,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_1"
                 },
                 {
-                    "name": "link_ref_2_of_path_0_1.prism",
+                    "name": "link_ref_2_of_path_0_1",
                     "#": "2_0_1",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2625,7 +2625,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_0_1"
                 },
                 {
-                    "name": "link_ref_2_of_path_1_1.prism",
+                    "name": "link_ref_2_of_path_1_1",
                     "#": "2_1_1",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2634,7 +2634,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_1_1"
                 },
                 {
-                    "name": "link_ref_0_of_path_1_1.prism",
+                    "name": "link_ref_0_of_path_1_1",
                     "#": "0_1_1",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2643,7 +2643,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_1_1"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_2.prism",
+                    "name": "link_ref_0_of_path_0_2",
                     "#": "0_0_2",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2652,7 +2652,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_2"
                 },
                 {
-                    "name": "link_ref_3_of_path_0_2.prism",
+                    "name": "link_ref_3_of_path_0_2",
                     "#": "3_0_2",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2661,7 +2661,7 @@
                     "cmd_reset": "cmd_reset_link_ref_3_of_path_0_2"
                 },
                 {
-                    "name": "link_ref_3_of_path_1_2.prism",
+                    "name": "link_ref_3_of_path_1_2",
                     "#": "3_1_2",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2670,7 +2670,7 @@
                     "cmd_reset": "cmd_reset_link_ref_3_of_path_1_2"
                 },
                 {
-                    "name": "link_ref_0_of_path_1_2.prism",
+                    "name": "link_ref_0_of_path_1_2",
                     "#": "0_1_2",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2679,7 +2679,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_1_2"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_3.prism",
+                    "name": "link_ref_0_of_path_0_3",
                     "#": "0_0_3",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2688,7 +2688,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_3"
                 },
                 {
-                    "name": "link_ref_4_of_path_0_3.prism",
+                    "name": "link_ref_4_of_path_0_3",
                     "#": "4_0_3",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2697,7 +2697,7 @@
                     "cmd_reset": "cmd_reset_link_ref_4_of_path_0_3"
                 },
                 {
-                    "name": "link_ref_4_of_path_1_3.prism",
+                    "name": "link_ref_4_of_path_1_3",
                     "#": "4_1_3",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2706,7 +2706,7 @@
                     "cmd_reset": "cmd_reset_link_ref_4_of_path_1_3"
                 },
                 {
-                    "name": "link_ref_0_of_path_1_3.prism",
+                    "name": "link_ref_0_of_path_1_3",
                     "#": "0_1_3",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2715,7 +2715,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_1_3"
                 },
                 {
-                    "name": "link_ref_1_of_path_0_5.prism",
+                    "name": "link_ref_1_of_path_0_5",
                     "#": "1_0_5",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2724,7 +2724,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_0_5"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_5.prism",
+                    "name": "link_ref_0_of_path_0_5",
                     "#": "0_0_5",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2733,7 +2733,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_5"
                 },
                 {
-                    "name": "link_ref_0_of_path_1_5.prism",
+                    "name": "link_ref_0_of_path_1_5",
                     "#": "0_1_5",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2742,7 +2742,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_1_5"
                 },
                 {
-                    "name": "link_ref_1_of_path_1_5.prism",
+                    "name": "link_ref_1_of_path_1_5",
                     "#": "1_1_5",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2751,7 +2751,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_1_5"
                 },
                 {
-                    "name": "link_ref_1_of_path_0_6.prism",
+                    "name": "link_ref_1_of_path_0_6",
                     "#": "1_0_6",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2760,7 +2760,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_0_6"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_6.prism",
+                    "name": "link_ref_0_of_path_0_6",
                     "#": "0_0_6",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2769,7 +2769,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_6"
                 },
                 {
-                    "name": "link_ref_2_of_path_0_6.prism",
+                    "name": "link_ref_2_of_path_0_6",
                     "#": "2_0_6",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2778,7 +2778,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_0_6"
                 },
                 {
-                    "name": "link_ref_2_of_path_1_6.prism",
+                    "name": "link_ref_2_of_path_1_6",
                     "#": "2_1_6",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2787,7 +2787,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_1_6"
                 },
                 {
-                    "name": "link_ref_0_of_path_1_6.prism",
+                    "name": "link_ref_0_of_path_1_6",
                     "#": "0_1_6",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2796,7 +2796,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_1_6"
                 },
                 {
-                    "name": "link_ref_1_of_path_1_6.prism",
+                    "name": "link_ref_1_of_path_1_6",
                     "#": "1_1_6",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2805,7 +2805,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_1_6"
                 },
                 {
-                    "name": "link_ref_1_of_path_0_7.prism",
+                    "name": "link_ref_1_of_path_0_7",
                     "#": "1_0_7",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2814,7 +2814,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_0_7"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_7.prism",
+                    "name": "link_ref_0_of_path_0_7",
                     "#": "0_0_7",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2823,7 +2823,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_7"
                 },
                 {
-                    "name": "link_ref_4_of_path_0_7.prism",
+                    "name": "link_ref_4_of_path_0_7",
                     "#": "4_0_7",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2832,7 +2832,7 @@
                     "cmd_reset": "cmd_reset_link_ref_4_of_path_0_7"
                 },
                 {
-                    "name": "link_ref_4_of_path_1_7.prism",
+                    "name": "link_ref_4_of_path_1_7",
                     "#": "4_1_7",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2841,7 +2841,7 @@
                     "cmd_reset": "cmd_reset_link_ref_4_of_path_1_7"
                 },
                 {
-                    "name": "link_ref_0_of_path_1_7.prism",
+                    "name": "link_ref_0_of_path_1_7",
                     "#": "0_1_7",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2850,7 +2850,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_1_7"
                 },
                 {
-                    "name": "link_ref_1_of_path_1_7.prism",
+                    "name": "link_ref_1_of_path_1_7",
                     "#": "1_1_7",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2859,7 +2859,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_1_7"
                 },
                 {
-                    "name": "link_ref_2_of_path_0_9.prism",
+                    "name": "link_ref_2_of_path_0_9",
                     "#": "2_0_9",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2868,7 +2868,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_0_9"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_9.prism",
+                    "name": "link_ref_0_of_path_0_9",
                     "#": "0_0_9",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2877,7 +2877,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_9"
                 },
                 {
-                    "name": "link_ref_0_of_path_1_9.prism",
+                    "name": "link_ref_0_of_path_1_9",
                     "#": "0_1_9",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2886,7 +2886,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_1_9"
                 },
                 {
-                    "name": "link_ref_2_of_path_1_9.prism",
+                    "name": "link_ref_2_of_path_1_9",
                     "#": "2_1_9",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2895,7 +2895,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_1_9"
                 },
                 {
-                    "name": "link_ref_2_of_path_0_10.prism",
+                    "name": "link_ref_2_of_path_0_10",
                     "#": "2_0_10",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2904,7 +2904,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_0_10"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_10.prism",
+                    "name": "link_ref_0_of_path_0_10",
                     "#": "0_0_10",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2913,7 +2913,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_10"
                 },
                 {
-                    "name": "link_ref_1_of_path_0_10.prism",
+                    "name": "link_ref_1_of_path_0_10",
                     "#": "1_0_10",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2922,7 +2922,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_0_10"
                 },
                 {
-                    "name": "link_ref_1_of_path_1_10.prism",
+                    "name": "link_ref_1_of_path_1_10",
                     "#": "1_1_10",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2931,7 +2931,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_1_10"
                 },
                 {
-                    "name": "link_ref_0_of_path_1_10.prism",
+                    "name": "link_ref_0_of_path_1_10",
                     "#": "0_1_10",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2940,7 +2940,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_1_10"
                 },
                 {
-                    "name": "link_ref_2_of_path_1_10.prism",
+                    "name": "link_ref_2_of_path_1_10",
                     "#": "2_1_10",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2949,7 +2949,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_1_10"
                 },
                 {
-                    "name": "link_ref_2_of_path_0_11.prism",
+                    "name": "link_ref_2_of_path_0_11",
                     "#": "2_0_11",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2958,7 +2958,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_0_11"
                 },
                 {
-                    "name": "link_ref_3_of_path_0_11.prism",
+                    "name": "link_ref_3_of_path_0_11",
                     "#": "3_0_11",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2967,7 +2967,7 @@
                     "cmd_reset": "cmd_reset_link_ref_3_of_path_0_11"
                 },
                 {
-                    "name": "link_ref_3_of_path_1_11.prism",
+                    "name": "link_ref_3_of_path_1_11",
                     "#": "3_1_11",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2976,7 +2976,7 @@
                     "cmd_reset": "cmd_reset_link_ref_3_of_path_1_11"
                 },
                 {
-                    "name": "link_ref_2_of_path_1_11.prism",
+                    "name": "link_ref_2_of_path_1_11",
                     "#": "2_1_11",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2985,7 +2985,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_1_11"
                 },
                 {
-                    "name": "link_ref_2_of_path_0_12.prism",
+                    "name": "link_ref_2_of_path_0_12",
                     "#": "2_0_12",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -2994,7 +2994,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_0_12"
                 },
                 {
-                    "name": "link_ref_4_of_path_0_12.prism",
+                    "name": "link_ref_4_of_path_0_12",
                     "#": "4_0_12",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3003,7 +3003,7 @@
                     "cmd_reset": "cmd_reset_link_ref_4_of_path_0_12"
                 },
                 {
-                    "name": "link_ref_4_of_path_1_12.prism",
+                    "name": "link_ref_4_of_path_1_12",
                     "#": "4_1_12",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3012,7 +3012,7 @@
                     "cmd_reset": "cmd_reset_link_ref_4_of_path_1_12"
                 },
                 {
-                    "name": "link_ref_2_of_path_1_12.prism",
+                    "name": "link_ref_2_of_path_1_12",
                     "#": "2_1_12",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3021,7 +3021,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_1_12"
                 },
                 {
-                    "name": "link_ref_3_of_path_0_14.prism",
+                    "name": "link_ref_3_of_path_0_14",
                     "#": "3_0_14",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3030,7 +3030,7 @@
                     "cmd_reset": "cmd_reset_link_ref_3_of_path_0_14"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_14.prism",
+                    "name": "link_ref_0_of_path_0_14",
                     "#": "0_0_14",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3039,7 +3039,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_14"
                 },
                 {
-                    "name": "link_ref_0_of_path_1_14.prism",
+                    "name": "link_ref_0_of_path_1_14",
                     "#": "0_1_14",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3048,7 +3048,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_1_14"
                 },
                 {
-                    "name": "link_ref_3_of_path_1_14.prism",
+                    "name": "link_ref_3_of_path_1_14",
                     "#": "3_1_14",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3057,7 +3057,7 @@
                     "cmd_reset": "cmd_reset_link_ref_3_of_path_1_14"
                 },
                 {
-                    "name": "link_ref_3_of_path_0_15.prism",
+                    "name": "link_ref_3_of_path_0_15",
                     "#": "3_0_15",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3066,7 +3066,7 @@
                     "cmd_reset": "cmd_reset_link_ref_3_of_path_0_15"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_15.prism",
+                    "name": "link_ref_0_of_path_0_15",
                     "#": "0_0_15",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3075,7 +3075,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_15"
                 },
                 {
-                    "name": "link_ref_1_of_path_0_15.prism",
+                    "name": "link_ref_1_of_path_0_15",
                     "#": "1_0_15",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3084,7 +3084,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_0_15"
                 },
                 {
-                    "name": "link_ref_1_of_path_1_15.prism",
+                    "name": "link_ref_1_of_path_1_15",
                     "#": "1_1_15",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3093,7 +3093,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_1_15"
                 },
                 {
-                    "name": "link_ref_0_of_path_1_15.prism",
+                    "name": "link_ref_0_of_path_1_15",
                     "#": "0_1_15",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3102,7 +3102,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_1_15"
                 },
                 {
-                    "name": "link_ref_3_of_path_1_15.prism",
+                    "name": "link_ref_3_of_path_1_15",
                     "#": "3_1_15",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3111,7 +3111,7 @@
                     "cmd_reset": "cmd_reset_link_ref_3_of_path_1_15"
                 },
                 {
-                    "name": "link_ref_3_of_path_0_16.prism",
+                    "name": "link_ref_3_of_path_0_16",
                     "#": "3_0_16",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3120,7 +3120,7 @@
                     "cmd_reset": "cmd_reset_link_ref_3_of_path_0_16"
                 },
                 {
-                    "name": "link_ref_2_of_path_0_16.prism",
+                    "name": "link_ref_2_of_path_0_16",
                     "#": "2_0_16",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3129,7 +3129,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_0_16"
                 },
                 {
-                    "name": "link_ref_2_of_path_1_16.prism",
+                    "name": "link_ref_2_of_path_1_16",
                     "#": "2_1_16",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3138,7 +3138,7 @@
                     "cmd_reset": "cmd_reset_link_ref_2_of_path_1_16"
                 },
                 {
-                    "name": "link_ref_3_of_path_1_16.prism",
+                    "name": "link_ref_3_of_path_1_16",
                     "#": "3_1_16",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3147,7 +3147,7 @@
                     "cmd_reset": "cmd_reset_link_ref_3_of_path_1_16"
                 },
                 {
-                    "name": "link_ref_4_of_path_0_18.prism",
+                    "name": "link_ref_4_of_path_0_18",
                     "#": "4_0_18",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3156,7 +3156,7 @@
                     "cmd_reset": "cmd_reset_link_ref_4_of_path_0_18"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_18.prism",
+                    "name": "link_ref_0_of_path_0_18",
                     "#": "0_0_18",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3165,7 +3165,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_18"
                 },
                 {
-                    "name": "link_ref_1_of_path_0_18.prism",
+                    "name": "link_ref_1_of_path_0_18",
                     "#": "1_0_18",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3174,7 +3174,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_0_18"
                 },
                 {
-                    "name": "link_ref_1_of_path_1_18.prism",
+                    "name": "link_ref_1_of_path_1_18",
                     "#": "1_1_18",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3183,7 +3183,7 @@
                     "cmd_reset": "cmd_reset_link_ref_1_of_path_1_18"
                 },
                 {
-                    "name": "link_ref_0_of_path_1_18.prism",
+                    "name": "link_ref_0_of_path_1_18",
                     "#": "0_1_18",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3192,7 +3192,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_1_18"
                 },
                 {
-                    "name": "link_ref_4_of_path_1_18.prism",
+                    "name": "link_ref_4_of_path_1_18",
                     "#": "4_1_18",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3201,7 +3201,7 @@
                     "cmd_reset": "cmd_reset_link_ref_4_of_path_1_18"
                 },
                 {
-                    "name": "link_ref_4_of_path_0_19.prism",
+                    "name": "link_ref_4_of_path_0_19",
                     "#": "4_0_19",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3210,7 +3210,7 @@
                     "cmd_reset": "cmd_reset_link_ref_4_of_path_0_19"
                 },
                 {
-                    "name": "link_ref_0_of_path_0_19.prism",
+                    "name": "link_ref_0_of_path_0_19",
                     "#": "0_0_19",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3219,7 +3219,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_0_19"
                 },
                 {
-                    "name": "link_ref_3_of_path_0_19.prism",
+                    "name": "link_ref_3_of_path_0_19",
                     "#": "3_0_19",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3228,7 +3228,7 @@
                     "cmd_reset": "cmd_reset_link_ref_3_of_path_0_19"
                 },
                 {
-                    "name": "link_ref_3_of_path_1_19.prism",
+                    "name": "link_ref_3_of_path_1_19",
                     "#": "3_1_19",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3237,7 +3237,7 @@
                     "cmd_reset": "cmd_reset_link_ref_3_of_path_1_19"
                 },
                 {
-                    "name": "link_ref_0_of_path_1_19.prism",
+                    "name": "link_ref_0_of_path_1_19",
                     "#": "0_1_19",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3246,7 +3246,7 @@
                     "cmd_reset": "cmd_reset_link_ref_0_of_path_1_19"
                 },
                 {
-                    "name": "link_ref_4_of_path_1_19.prism",
+                    "name": "link_ref_4_of_path_1_19",
                     "#": "4_1_19",
                     "size_counter": 1,
                     "init_counter": 1,
@@ -3261,14 +3261,14 @@
             "template": "templates/session_path.pre",
             "instances": [
                 {
-                    "name": "session_path_0_4.prism",
+                    "name": "session_path_0_4",
                     "#": "0_4",
                     "protocol": "sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3321,14 +3321,14 @@
                     "cmd_alt_run": "cmd_alt_run_session_path_0_4"
                 },
                 {
-                    "name": "session_path_0_8.prism",
+                    "name": "session_path_0_8",
                     "#": "0_8",
                     "protocol": "sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3368,14 +3368,14 @@
                     "cmd_alt_run": "cmd_alt_run_session_path_0_8"
                 },
                 {
-                    "name": "session_path_0_13.prism",
+                    "name": "session_path_0_13",
                     "#": "0_13",
                     "protocol": "sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3425,14 +3425,14 @@
                     "cmd_alt_run": "cmd_alt_run_session_path_0_13"
                 },
                 {
-                    "name": "session_path_0_17.prism",
+                    "name": "session_path_0_17",
                     "#": "0_17",
                     "protocol": "sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3475,14 +3475,14 @@
                     "cmd_alt_run": "cmd_alt_run_session_path_0_17"
                 },
                 {
-                    "name": "session_path_0_20.prism",
+                    "name": "session_path_0_20",
                     "#": "0_20",
                     "protocol": "sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3518,14 +3518,14 @@
                     "cmd_alt_run": "cmd_alt_run_session_path_0_20"
                 },
                 {
-                    "name": "session_path_5_0.prism",
+                    "name": "session_path_5_0",
                     "#": "5_0",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3550,14 +3550,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_5_0"
                 },
                 {
-                    "name": "session_path_6_0.prism",
+                    "name": "session_path_6_0",
                     "#": "6_0",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3582,14 +3582,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_6_0"
                 },
                 {
-                    "name": "session_path_7_1.prism",
+                    "name": "session_path_7_1",
                     "#": "7_1",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3614,14 +3614,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_7_1"
                 },
                 {
-                    "name": "session_path_8_1.prism",
+                    "name": "session_path_8_1",
                     "#": "8_1",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3646,14 +3646,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_8_1"
                 },
                 {
-                    "name": "session_path_9_2.prism",
+                    "name": "session_path_9_2",
                     "#": "9_2",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3678,14 +3678,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_9_2"
                 },
                 {
-                    "name": "session_path_10_2.prism",
+                    "name": "session_path_10_2",
                     "#": "10_2",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3710,14 +3710,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_10_2"
                 },
                 {
-                    "name": "session_path_11_3.prism",
+                    "name": "session_path_11_3",
                     "#": "11_3",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3742,14 +3742,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_11_3"
                 },
                 {
-                    "name": "session_path_12_3.prism",
+                    "name": "session_path_12_3",
                     "#": "12_3",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3774,14 +3774,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_12_3"
                 },
                 {
-                    "name": "session_path_13_5.prism",
+                    "name": "session_path_13_5",
                     "#": "13_5",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3806,14 +3806,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_13_5"
                 },
                 {
-                    "name": "session_path_14_5.prism",
+                    "name": "session_path_14_5",
                     "#": "14_5",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3838,14 +3838,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_14_5"
                 },
                 {
-                    "name": "session_path_15_6.prism",
+                    "name": "session_path_15_6",
                     "#": "15_6",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3870,14 +3870,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_15_6"
                 },
                 {
-                    "name": "session_path_16_6.prism",
+                    "name": "session_path_16_6",
                     "#": "16_6",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3902,14 +3902,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_16_6"
                 },
                 {
-                    "name": "session_path_17_7.prism",
+                    "name": "session_path_17_7",
                     "#": "17_7",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3934,14 +3934,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_17_7"
                 },
                 {
-                    "name": "session_path_18_7.prism",
+                    "name": "session_path_18_7",
                     "#": "18_7",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3966,14 +3966,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_18_7"
                 },
                 {
-                    "name": "session_path_19_9.prism",
+                    "name": "session_path_19_9",
                     "#": "19_9",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -3998,14 +3998,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_19_9"
                 },
                 {
-                    "name": "session_path_20_9.prism",
+                    "name": "session_path_20_9",
                     "#": "20_9",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4030,14 +4030,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_20_9"
                 },
                 {
-                    "name": "session_path_21_10.prism",
+                    "name": "session_path_21_10",
                     "#": "21_10",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4062,14 +4062,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_21_10"
                 },
                 {
-                    "name": "session_path_22_10.prism",
+                    "name": "session_path_22_10",
                     "#": "22_10",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4094,14 +4094,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_22_10"
                 },
                 {
-                    "name": "session_path_23_11.prism",
+                    "name": "session_path_23_11",
                     "#": "23_11",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4126,14 +4126,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_23_11"
                 },
                 {
-                    "name": "session_path_24_11.prism",
+                    "name": "session_path_24_11",
                     "#": "24_11",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4158,14 +4158,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_24_11"
                 },
                 {
-                    "name": "session_path_25_12.prism",
+                    "name": "session_path_25_12",
                     "#": "25_12",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4190,14 +4190,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_25_12"
                 },
                 {
-                    "name": "session_path_26_12.prism",
+                    "name": "session_path_26_12",
                     "#": "26_12",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4222,14 +4222,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_26_12"
                 },
                 {
-                    "name": "session_path_27_14.prism",
+                    "name": "session_path_27_14",
                     "#": "27_14",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4254,14 +4254,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_27_14"
                 },
                 {
-                    "name": "session_path_28_14.prism",
+                    "name": "session_path_28_14",
                     "#": "28_14",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4286,14 +4286,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_28_14"
                 },
                 {
-                    "name": "session_path_29_15.prism",
+                    "name": "session_path_29_15",
                     "#": "29_15",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4318,14 +4318,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_29_15"
                 },
                 {
-                    "name": "session_path_30_15.prism",
+                    "name": "session_path_30_15",
                     "#": "30_15",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4350,14 +4350,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_30_15"
                 },
                 {
-                    "name": "session_path_31_16.prism",
+                    "name": "session_path_31_16",
                     "#": "31_16",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4382,14 +4382,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_31_16"
                 },
                 {
-                    "name": "session_path_32_16.prism",
+                    "name": "session_path_32_16",
                     "#": "32_16",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4414,14 +4414,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_32_16"
                 },
                 {
-                    "name": "session_path_33_18.prism",
+                    "name": "session_path_33_18",
                     "#": "33_18",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4446,14 +4446,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_33_18"
                 },
                 {
-                    "name": "session_path_34_18.prism",
+                    "name": "session_path_34_18",
                     "#": "34_18",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4478,14 +4478,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_34_18"
                 },
                 {
-                    "name": "session_path_35_19.prism",
+                    "name": "session_path_35_19",
                     "#": "35_19",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4510,14 +4510,14 @@
                     "cmd_counter_reset": "cmd_counter_reset_session_path_35_19"
                 },
                 {
-                    "name": "session_path_36_19.prism",
+                    "name": "session_path_36_19",
                     "#": "36_19",
                     "protocol": "double_ratchet_sender_key",
-                    "range_depth": "[9..14]",
+                    "range_depth": "9..14",
                     "init_state": 10,
-                    "range_system_message": "[23..27]",
+                    "range_system_message": "23..27",
                     "init_system_message": 23,
-                    "range_data_message": "[20..23]",
+                    "range_data_message": "20..23",
                     "init_data_message": 23,
                     "range_prev_local_session_epoch_sender": 10,
                     "init_prev_local_session_epoch_sender": 0,
@@ -4548,10 +4548,10 @@
             "template": "templates/local_session.pre",
             "instances": [
                 {
-                    "name": "local_session_of_0_of_session_4.prism",
+                    "name": "local_session_of_0_of_session_4",
                     "#": "0_4",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4572,10 +4572,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_0_of_session_4"
                 },
                 {
-                    "name": "local_session_of_1_of_session_4.prism",
+                    "name": "local_session_of_1_of_session_4",
                     "#": "1_4",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4596,10 +4596,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_1_of_session_4"
                 },
                 {
-                    "name": "local_session_of_2_of_session_4.prism",
+                    "name": "local_session_of_2_of_session_4",
                     "#": "2_4",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4620,10 +4620,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_2_of_session_4"
                 },
                 {
-                    "name": "local_session_of_3_of_session_4.prism",
+                    "name": "local_session_of_3_of_session_4",
                     "#": "3_4",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4644,10 +4644,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_3_of_session_4"
                 },
                 {
-                    "name": "local_session_of_4_of_session_4.prism",
+                    "name": "local_session_of_4_of_session_4",
                     "#": "4_4",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4668,10 +4668,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_4_of_session_4"
                 },
                 {
-                    "name": "local_session_of_1_of_session_8.prism",
+                    "name": "local_session_of_1_of_session_8",
                     "#": "1_8",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4692,10 +4692,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_1_of_session_8"
                 },
                 {
-                    "name": "local_session_of_0_of_session_8.prism",
+                    "name": "local_session_of_0_of_session_8",
                     "#": "0_8",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4716,10 +4716,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_0_of_session_8"
                 },
                 {
-                    "name": "local_session_of_2_of_session_8.prism",
+                    "name": "local_session_of_2_of_session_8",
                     "#": "2_8",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4740,10 +4740,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_2_of_session_8"
                 },
                 {
-                    "name": "local_session_of_4_of_session_8.prism",
+                    "name": "local_session_of_4_of_session_8",
                     "#": "4_8",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4764,10 +4764,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_4_of_session_8"
                 },
                 {
-                    "name": "local_session_of_2_of_session_13.prism",
+                    "name": "local_session_of_2_of_session_13",
                     "#": "2_13",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4788,10 +4788,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_2_of_session_13"
                 },
                 {
-                    "name": "local_session_of_0_of_session_13.prism",
+                    "name": "local_session_of_0_of_session_13",
                     "#": "0_13",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4812,10 +4812,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_0_of_session_13"
                 },
                 {
-                    "name": "local_session_of_1_of_session_13.prism",
+                    "name": "local_session_of_1_of_session_13",
                     "#": "1_13",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4836,10 +4836,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_1_of_session_13"
                 },
                 {
-                    "name": "local_session_of_3_of_session_13.prism",
+                    "name": "local_session_of_3_of_session_13",
                     "#": "3_13",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4860,10 +4860,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_3_of_session_13"
                 },
                 {
-                    "name": "local_session_of_4_of_session_13.prism",
+                    "name": "local_session_of_4_of_session_13",
                     "#": "4_13",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4884,10 +4884,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_4_of_session_13"
                 },
                 {
-                    "name": "local_session_of_3_of_session_17.prism",
+                    "name": "local_session_of_3_of_session_17",
                     "#": "3_17",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4908,10 +4908,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_3_of_session_17"
                 },
                 {
-                    "name": "local_session_of_0_of_session_17.prism",
+                    "name": "local_session_of_0_of_session_17",
                     "#": "0_17",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4932,10 +4932,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_0_of_session_17"
                 },
                 {
-                    "name": "local_session_of_1_of_session_17.prism",
+                    "name": "local_session_of_1_of_session_17",
                     "#": "1_17",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4956,10 +4956,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_1_of_session_17"
                 },
                 {
-                    "name": "local_session_of_2_of_session_17.prism",
+                    "name": "local_session_of_2_of_session_17",
                     "#": "2_17",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -4980,10 +4980,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_2_of_session_17"
                 },
                 {
-                    "name": "local_session_of_4_of_session_20.prism",
+                    "name": "local_session_of_4_of_session_20",
                     "#": "4_20",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5004,10 +5004,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_4_of_session_20"
                 },
                 {
-                    "name": "local_session_of_1_of_session_20.prism",
+                    "name": "local_session_of_1_of_session_20",
                     "#": "1_20",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5028,10 +5028,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_1_of_session_20"
                 },
                 {
-                    "name": "local_session_of_3_of_session_20.prism",
+                    "name": "local_session_of_3_of_session_20",
                     "#": "3_20",
                     "protocol": "sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5052,10 +5052,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_3_of_session_20"
                 },
                 {
-                    "name": "local_session_of_0_of_session_0.prism",
+                    "name": "local_session_of_0_of_session_0",
                     "#": "0_0",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5076,10 +5076,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_0_of_session_0"
                 },
                 {
-                    "name": "local_session_of_1_of_session_0.prism",
+                    "name": "local_session_of_1_of_session_0",
                     "#": "1_0",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5100,10 +5100,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_1_of_session_0"
                 },
                 {
-                    "name": "local_session_of_0_of_session_1.prism",
+                    "name": "local_session_of_0_of_session_1",
                     "#": "0_1",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5124,10 +5124,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_0_of_session_1"
                 },
                 {
-                    "name": "local_session_of_2_of_session_1.prism",
+                    "name": "local_session_of_2_of_session_1",
                     "#": "2_1",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5148,10 +5148,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_2_of_session_1"
                 },
                 {
-                    "name": "local_session_of_0_of_session_2.prism",
+                    "name": "local_session_of_0_of_session_2",
                     "#": "0_2",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5172,10 +5172,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_0_of_session_2"
                 },
                 {
-                    "name": "local_session_of_3_of_session_2.prism",
+                    "name": "local_session_of_3_of_session_2",
                     "#": "3_2",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5196,10 +5196,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_3_of_session_2"
                 },
                 {
-                    "name": "local_session_of_0_of_session_3.prism",
+                    "name": "local_session_of_0_of_session_3",
                     "#": "0_3",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5220,10 +5220,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_0_of_session_3"
                 },
                 {
-                    "name": "local_session_of_4_of_session_3.prism",
+                    "name": "local_session_of_4_of_session_3",
                     "#": "4_3",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5244,10 +5244,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_4_of_session_3"
                 },
                 {
-                    "name": "local_session_of_1_of_session_5.prism",
+                    "name": "local_session_of_1_of_session_5",
                     "#": "1_5",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5268,10 +5268,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_1_of_session_5"
                 },
                 {
-                    "name": "local_session_of_0_of_session_5.prism",
+                    "name": "local_session_of_0_of_session_5",
                     "#": "0_5",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5292,10 +5292,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_0_of_session_5"
                 },
                 {
-                    "name": "local_session_of_1_of_session_6.prism",
+                    "name": "local_session_of_1_of_session_6",
                     "#": "1_6",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5316,10 +5316,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_1_of_session_6"
                 },
                 {
-                    "name": "local_session_of_2_of_session_6.prism",
+                    "name": "local_session_of_2_of_session_6",
                     "#": "2_6",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5340,10 +5340,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_2_of_session_6"
                 },
                 {
-                    "name": "local_session_of_1_of_session_7.prism",
+                    "name": "local_session_of_1_of_session_7",
                     "#": "1_7",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5364,10 +5364,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_1_of_session_7"
                 },
                 {
-                    "name": "local_session_of_4_of_session_7.prism",
+                    "name": "local_session_of_4_of_session_7",
                     "#": "4_7",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5388,10 +5388,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_4_of_session_7"
                 },
                 {
-                    "name": "local_session_of_2_of_session_9.prism",
+                    "name": "local_session_of_2_of_session_9",
                     "#": "2_9",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5412,10 +5412,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_2_of_session_9"
                 },
                 {
-                    "name": "local_session_of_0_of_session_9.prism",
+                    "name": "local_session_of_0_of_session_9",
                     "#": "0_9",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5436,10 +5436,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_0_of_session_9"
                 },
                 {
-                    "name": "local_session_of_2_of_session_10.prism",
+                    "name": "local_session_of_2_of_session_10",
                     "#": "2_10",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5460,10 +5460,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_2_of_session_10"
                 },
                 {
-                    "name": "local_session_of_1_of_session_10.prism",
+                    "name": "local_session_of_1_of_session_10",
                     "#": "1_10",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5484,10 +5484,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_1_of_session_10"
                 },
                 {
-                    "name": "local_session_of_2_of_session_11.prism",
+                    "name": "local_session_of_2_of_session_11",
                     "#": "2_11",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5508,10 +5508,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_2_of_session_11"
                 },
                 {
-                    "name": "local_session_of_3_of_session_11.prism",
+                    "name": "local_session_of_3_of_session_11",
                     "#": "3_11",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5532,10 +5532,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_3_of_session_11"
                 },
                 {
-                    "name": "local_session_of_2_of_session_12.prism",
+                    "name": "local_session_of_2_of_session_12",
                     "#": "2_12",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5556,10 +5556,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_2_of_session_12"
                 },
                 {
-                    "name": "local_session_of_4_of_session_12.prism",
+                    "name": "local_session_of_4_of_session_12",
                     "#": "4_12",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5580,10 +5580,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_4_of_session_12"
                 },
                 {
-                    "name": "local_session_of_3_of_session_14.prism",
+                    "name": "local_session_of_3_of_session_14",
                     "#": "3_14",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5604,10 +5604,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_3_of_session_14"
                 },
                 {
-                    "name": "local_session_of_0_of_session_14.prism",
+                    "name": "local_session_of_0_of_session_14",
                     "#": "0_14",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5628,10 +5628,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_0_of_session_14"
                 },
                 {
-                    "name": "local_session_of_3_of_session_15.prism",
+                    "name": "local_session_of_3_of_session_15",
                     "#": "3_15",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5652,10 +5652,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_3_of_session_15"
                 },
                 {
-                    "name": "local_session_of_1_of_session_15.prism",
+                    "name": "local_session_of_1_of_session_15",
                     "#": "1_15",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5676,10 +5676,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_1_of_session_15"
                 },
                 {
-                    "name": "local_session_of_3_of_session_16.prism",
+                    "name": "local_session_of_3_of_session_16",
                     "#": "3_16",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5700,10 +5700,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_3_of_session_16"
                 },
                 {
-                    "name": "local_session_of_2_of_session_16.prism",
+                    "name": "local_session_of_2_of_session_16",
                     "#": "2_16",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5724,10 +5724,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_2_of_session_16"
                 },
                 {
-                    "name": "local_session_of_4_of_session_18.prism",
+                    "name": "local_session_of_4_of_session_18",
                     "#": "4_18",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5748,10 +5748,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_4_of_session_18"
                 },
                 {
-                    "name": "local_session_of_1_of_session_18.prism",
+                    "name": "local_session_of_1_of_session_18",
                     "#": "1_18",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5772,10 +5772,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_1_of_session_18"
                 },
                 {
-                    "name": "local_session_of_4_of_session_19.prism",
+                    "name": "local_session_of_4_of_session_19",
                     "#": "4_19",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5796,10 +5796,10 @@
                     "cmd_decompromise": "cmd_decompromise_local_session_of_4_of_session_19"
                 },
                 {
-                    "name": "local_session_of_3_of_session_19.prism",
+                    "name": "local_session_of_3_of_session_19",
                     "#": "3_19",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[15..19]",
+                    "range_state": "15..19",
                     "init_state": 19,
                     "size_epoch": 10,
                     "init_epoch": 0,
@@ -5826,16 +5826,16 @@
             "template": "templates/session_checker.pre",
             "instances": [
                 {
-                    "name": "session_checker_of_1_of_path_0_4.prism",
+                    "name": "session_checker_of_1_of_path_0_4",
                     "#": "1_0_4",
                     "protocol": "sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "0_4",
                     "ref_session_path": "0_4",
@@ -5857,16 +5857,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_1_of_session_4"
                 },
                 {
-                    "name": "session_checker_of_2_of_path_0_4.prism",
+                    "name": "session_checker_of_2_of_path_0_4",
                     "#": "2_0_4",
                     "protocol": "sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "0_4",
                     "ref_session_path": "0_4",
@@ -5888,16 +5888,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_2_of_session_4"
                 },
                 {
-                    "name": "session_checker_of_3_of_path_0_4.prism",
+                    "name": "session_checker_of_3_of_path_0_4",
                     "#": "3_0_4",
                     "protocol": "sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "0_4",
                     "ref_session_path": "0_4",
@@ -5919,16 +5919,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_3_of_session_4"
                 },
                 {
-                    "name": "session_checker_of_4_of_path_0_4.prism",
+                    "name": "session_checker_of_4_of_path_0_4",
                     "#": "4_0_4",
                     "protocol": "sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "0_4",
                     "ref_session_path": "0_4",
@@ -5950,16 +5950,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_4_of_session_4"
                 },
                 {
-                    "name": "session_checker_of_0_of_path_0_8.prism",
+                    "name": "session_checker_of_0_of_path_0_8",
                     "#": "0_0_8",
                     "protocol": "sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "1_8",
                     "ref_session_path": "0_8",
@@ -5981,16 +5981,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_0_of_session_8"
                 },
                 {
-                    "name": "session_checker_of_2_of_path_0_8.prism",
+                    "name": "session_checker_of_2_of_path_0_8",
                     "#": "2_0_8",
                     "protocol": "sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "1_8",
                     "ref_session_path": "0_8",
@@ -6012,16 +6012,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_2_of_session_8"
                 },
                 {
-                    "name": "session_checker_of_4_of_path_0_8.prism",
+                    "name": "session_checker_of_4_of_path_0_8",
                     "#": "4_0_8",
                     "protocol": "sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "1_8",
                     "ref_session_path": "0_8",
@@ -6043,16 +6043,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_4_of_session_8"
                 },
                 {
-                    "name": "session_checker_of_0_of_path_0_13.prism",
+                    "name": "session_checker_of_0_of_path_0_13",
                     "#": "0_0_13",
                     "protocol": "sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "2_13",
                     "ref_session_path": "0_13",
@@ -6074,16 +6074,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_0_of_session_13"
                 },
                 {
-                    "name": "session_checker_of_1_of_path_0_13.prism",
+                    "name": "session_checker_of_1_of_path_0_13",
                     "#": "1_0_13",
                     "protocol": "sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "2_13",
                     "ref_session_path": "0_13",
@@ -6105,16 +6105,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_1_of_session_13"
                 },
                 {
-                    "name": "session_checker_of_3_of_path_0_13.prism",
+                    "name": "session_checker_of_3_of_path_0_13",
                     "#": "3_0_13",
                     "protocol": "sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "2_13",
                     "ref_session_path": "0_13",
@@ -6136,16 +6136,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_3_of_session_13"
                 },
                 {
-                    "name": "session_checker_of_4_of_path_0_13.prism",
+                    "name": "session_checker_of_4_of_path_0_13",
                     "#": "4_0_13",
                     "protocol": "sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "2_13",
                     "ref_session_path": "0_13",
@@ -6167,16 +6167,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_4_of_session_13"
                 },
                 {
-                    "name": "session_checker_of_0_of_path_0_17.prism",
+                    "name": "session_checker_of_0_of_path_0_17",
                     "#": "0_0_17",
                     "protocol": "sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "3_17",
                     "ref_session_path": "0_17",
@@ -6198,16 +6198,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_0_of_session_17"
                 },
                 {
-                    "name": "session_checker_of_1_of_path_0_17.prism",
+                    "name": "session_checker_of_1_of_path_0_17",
                     "#": "1_0_17",
                     "protocol": "sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "3_17",
                     "ref_session_path": "0_17",
@@ -6229,16 +6229,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_1_of_session_17"
                 },
                 {
-                    "name": "session_checker_of_2_of_path_0_17.prism",
+                    "name": "session_checker_of_2_of_path_0_17",
                     "#": "2_0_17",
                     "protocol": "sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "3_17",
                     "ref_session_path": "0_17",
@@ -6260,16 +6260,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_2_of_session_17"
                 },
                 {
-                    "name": "session_checker_of_1_of_path_0_20.prism",
+                    "name": "session_checker_of_1_of_path_0_20",
                     "#": "1_0_20",
                     "protocol": "sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "4_20",
                     "ref_session_path": "0_20",
@@ -6291,16 +6291,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_1_of_session_20"
                 },
                 {
-                    "name": "session_checker_of_3_of_path_0_20.prism",
+                    "name": "session_checker_of_3_of_path_0_20",
                     "#": "3_0_20",
                     "protocol": "sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "4_20",
                     "ref_session_path": "0_20",
@@ -6322,16 +6322,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_3_of_session_20"
                 },
                 {
-                    "name": "session_checker_of_1_of_path_0_0.prism",
+                    "name": "session_checker_of_1_of_path_0_0",
                     "#": "1_0_0",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "0_0",
                     "ref_session_path": "0_0",
@@ -6360,16 +6360,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_1_of_session_0"
                 },
                 {
-                    "name": "session_checker_of_0_of_path_1_0.prism",
+                    "name": "session_checker_of_0_of_path_1_0",
                     "#": "0_1_0",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "1_0",
                     "ref_session_path": "1_0",
@@ -6398,16 +6398,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_0_of_session_0"
                 },
                 {
-                    "name": "session_checker_of_2_of_path_0_1.prism",
+                    "name": "session_checker_of_2_of_path_0_1",
                     "#": "2_0_1",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "0_1",
                     "ref_session_path": "0_1",
@@ -6436,16 +6436,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_2_of_session_1"
                 },
                 {
-                    "name": "session_checker_of_0_of_path_1_1.prism",
+                    "name": "session_checker_of_0_of_path_1_1",
                     "#": "0_1_1",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "2_1",
                     "ref_session_path": "1_1",
@@ -6474,16 +6474,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_0_of_session_1"
                 },
                 {
-                    "name": "session_checker_of_3_of_path_0_2.prism",
+                    "name": "session_checker_of_3_of_path_0_2",
                     "#": "3_0_2",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "0_2",
                     "ref_session_path": "0_2",
@@ -6512,16 +6512,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_3_of_session_2"
                 },
                 {
-                    "name": "session_checker_of_0_of_path_1_2.prism",
+                    "name": "session_checker_of_0_of_path_1_2",
                     "#": "0_1_2",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "3_2",
                     "ref_session_path": "1_2",
@@ -6550,16 +6550,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_0_of_session_2"
                 },
                 {
-                    "name": "session_checker_of_4_of_path_0_3.prism",
+                    "name": "session_checker_of_4_of_path_0_3",
                     "#": "4_0_3",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "0_3",
                     "ref_session_path": "0_3",
@@ -6588,16 +6588,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_4_of_session_3"
                 },
                 {
-                    "name": "session_checker_of_0_of_path_1_3.prism",
+                    "name": "session_checker_of_0_of_path_1_3",
                     "#": "0_1_3",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "4_3",
                     "ref_session_path": "1_3",
@@ -6626,16 +6626,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_0_of_session_3"
                 },
                 {
-                    "name": "session_checker_of_0_of_path_0_5.prism",
+                    "name": "session_checker_of_0_of_path_0_5",
                     "#": "0_0_5",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "1_5",
                     "ref_session_path": "0_5",
@@ -6664,16 +6664,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_0_of_session_5"
                 },
                 {
-                    "name": "session_checker_of_1_of_path_1_5.prism",
+                    "name": "session_checker_of_1_of_path_1_5",
                     "#": "1_1_5",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "0_5",
                     "ref_session_path": "1_5",
@@ -6702,16 +6702,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_1_of_session_5"
                 },
                 {
-                    "name": "session_checker_of_2_of_path_0_6.prism",
+                    "name": "session_checker_of_2_of_path_0_6",
                     "#": "2_0_6",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "1_6",
                     "ref_session_path": "0_6",
@@ -6740,16 +6740,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_2_of_session_6"
                 },
                 {
-                    "name": "session_checker_of_1_of_path_1_6.prism",
+                    "name": "session_checker_of_1_of_path_1_6",
                     "#": "1_1_6",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "2_6",
                     "ref_session_path": "1_6",
@@ -6778,16 +6778,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_1_of_session_6"
                 },
                 {
-                    "name": "session_checker_of_4_of_path_0_7.prism",
+                    "name": "session_checker_of_4_of_path_0_7",
                     "#": "4_0_7",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "1_7",
                     "ref_session_path": "0_7",
@@ -6816,16 +6816,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_4_of_session_7"
                 },
                 {
-                    "name": "session_checker_of_1_of_path_1_7.prism",
+                    "name": "session_checker_of_1_of_path_1_7",
                     "#": "1_1_7",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "4_7",
                     "ref_session_path": "1_7",
@@ -6854,16 +6854,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_1_of_session_7"
                 },
                 {
-                    "name": "session_checker_of_0_of_path_0_9.prism",
+                    "name": "session_checker_of_0_of_path_0_9",
                     "#": "0_0_9",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "2_9",
                     "ref_session_path": "0_9",
@@ -6892,16 +6892,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_0_of_session_9"
                 },
                 {
-                    "name": "session_checker_of_2_of_path_1_9.prism",
+                    "name": "session_checker_of_2_of_path_1_9",
                     "#": "2_1_9",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "0_9",
                     "ref_session_path": "1_9",
@@ -6930,16 +6930,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_2_of_session_9"
                 },
                 {
-                    "name": "session_checker_of_1_of_path_0_10.prism",
+                    "name": "session_checker_of_1_of_path_0_10",
                     "#": "1_0_10",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "2_10",
                     "ref_session_path": "0_10",
@@ -6968,16 +6968,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_1_of_session_10"
                 },
                 {
-                    "name": "session_checker_of_2_of_path_1_10.prism",
+                    "name": "session_checker_of_2_of_path_1_10",
                     "#": "2_1_10",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "1_10",
                     "ref_session_path": "1_10",
@@ -7006,16 +7006,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_2_of_session_10"
                 },
                 {
-                    "name": "session_checker_of_3_of_path_0_11.prism",
+                    "name": "session_checker_of_3_of_path_0_11",
                     "#": "3_0_11",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "2_11",
                     "ref_session_path": "0_11",
@@ -7044,16 +7044,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_3_of_session_11"
                 },
                 {
-                    "name": "session_checker_of_2_of_path_1_11.prism",
+                    "name": "session_checker_of_2_of_path_1_11",
                     "#": "2_1_11",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "3_11",
                     "ref_session_path": "1_11",
@@ -7082,16 +7082,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_2_of_session_11"
                 },
                 {
-                    "name": "session_checker_of_4_of_path_0_12.prism",
+                    "name": "session_checker_of_4_of_path_0_12",
                     "#": "4_0_12",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "2_12",
                     "ref_session_path": "0_12",
@@ -7120,16 +7120,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_4_of_session_12"
                 },
                 {
-                    "name": "session_checker_of_2_of_path_1_12.prism",
+                    "name": "session_checker_of_2_of_path_1_12",
                     "#": "2_1_12",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "4_12",
                     "ref_session_path": "1_12",
@@ -7158,16 +7158,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_2_of_session_12"
                 },
                 {
-                    "name": "session_checker_of_0_of_path_0_14.prism",
+                    "name": "session_checker_of_0_of_path_0_14",
                     "#": "0_0_14",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "3_14",
                     "ref_session_path": "0_14",
@@ -7196,16 +7196,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_0_of_session_14"
                 },
                 {
-                    "name": "session_checker_of_3_of_path_1_14.prism",
+                    "name": "session_checker_of_3_of_path_1_14",
                     "#": "3_1_14",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "0_14",
                     "ref_session_path": "1_14",
@@ -7234,16 +7234,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_3_of_session_14"
                 },
                 {
-                    "name": "session_checker_of_1_of_path_0_15.prism",
+                    "name": "session_checker_of_1_of_path_0_15",
                     "#": "1_0_15",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "3_15",
                     "ref_session_path": "0_15",
@@ -7272,16 +7272,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_1_of_session_15"
                 },
                 {
-                    "name": "session_checker_of_3_of_path_1_15.prism",
+                    "name": "session_checker_of_3_of_path_1_15",
                     "#": "3_1_15",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "1_15",
                     "ref_session_path": "1_15",
@@ -7310,16 +7310,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_3_of_session_15"
                 },
                 {
-                    "name": "session_checker_of_2_of_path_0_16.prism",
+                    "name": "session_checker_of_2_of_path_0_16",
                     "#": "2_0_16",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "3_16",
                     "ref_session_path": "0_16",
@@ -7348,16 +7348,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_2_of_session_16"
                 },
                 {
-                    "name": "session_checker_of_3_of_path_1_16.prism",
+                    "name": "session_checker_of_3_of_path_1_16",
                     "#": "3_1_16",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "2_16",
                     "ref_session_path": "1_16",
@@ -7386,16 +7386,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_3_of_session_16"
                 },
                 {
-                    "name": "session_checker_of_1_of_path_0_18.prism",
+                    "name": "session_checker_of_1_of_path_0_18",
                     "#": "1_0_18",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "4_18",
                     "ref_session_path": "0_18",
@@ -7424,16 +7424,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_1_of_session_18"
                 },
                 {
-                    "name": "session_checker_of_4_of_path_1_18.prism",
+                    "name": "session_checker_of_4_of_path_1_18",
                     "#": "4_1_18",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "1_18",
                     "ref_session_path": "1_18",
@@ -7462,16 +7462,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_4_of_session_18"
                 },
                 {
-                    "name": "session_checker_of_3_of_path_0_19.prism",
+                    "name": "session_checker_of_3_of_path_0_19",
                     "#": "3_0_19",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "4_19",
                     "ref_session_path": "0_19",
@@ -7500,16 +7500,16 @@
                     "cmd_check_failure": "cmd_check_failure_session_checker_of_3_of_session_19"
                 },
                 {
-                    "name": "session_checker_of_4_of_path_1_19.prism",
+                    "name": "session_checker_of_4_of_path_1_19",
                     "#": "4_1_19",
                     "protocol": "double_ratchet_sender_key",
-                    "range_state": "[4..11]",
+                    "range_state": "4..11",
                     "init_state": 10,
                     "range_sender_local_session_epoch": 10,
                     "init_sender_local_session_epoch": 0,
-                    "range_sender_local_session_system_message": "[23..27]",
+                    "range_sender_local_session_system_message": "23..27",
                     "init_sender_local_session_system_message": 23,
-                    "range_sender_local_session_data_message": "[20..23]",
+                    "range_sender_local_session_data_message": "20..23",
                     "init_sender_local_session_data_message": 23,
                     "ref_local_session_sender": "3_19",
                     "ref_session_path": "1_19",
@@ -7544,17 +7544,17 @@
             "template": "templates/reward.pre",
             "instances": [
                 {
-                    "name": "reward_data_message_hpke.prism",
+                    "name": "reward_data_message_hpke",
                     "#": "reward_data_message_hpke",
                     "contributions": []
                 },
                 {
-                    "name": "reward_data_message_double_ratchet.prism",
+                    "name": "reward_data_message_double_ratchet",
                     "#": "reward_data_message_double_ratchet",
                     "contributions": []
                 },
                 {
-                    "name": "reward_data_message_sender_key.prism",
+                    "name": "reward_data_message_sender_key",
                     "#": "reward_data_message_sender_key",
                     "contributions": [
                         {
@@ -7585,22 +7585,22 @@
                     ]
                 },
                 {
-                    "name": "reward_data_message_mls.prism",
+                    "name": "reward_data_message_mls",
                     "#": "reward_data_message_mls",
                     "contributions": []
                 },
                 {
-                    "name": "reward_system_message_hpke.prism",
+                    "name": "reward_system_message_hpke",
                     "#": "reward_system_message_hpke",
                     "contributions": []
                 },
                 {
-                    "name": "reward_system_message_double_ratchet.prism",
+                    "name": "reward_system_message_double_ratchet",
                     "#": "reward_system_message_double_ratchet",
                     "contributions": []
                 },
                 {
-                    "name": "reward_system_message_sender_key.prism",
+                    "name": "reward_system_message_sender_key",
                     "#": "reward_system_message_sender_key",
                     "contributions": [
                         {
@@ -7766,12 +7766,12 @@
                     ]
                 },
                 {
-                    "name": "reward_system_message_mls.prism",
+                    "name": "reward_system_message_mls",
                     "#": "reward_system_message_mls",
                     "contributions": []
                 },
                 {
-                    "name": "reward_total_messages.prism",
+                    "name": "reward_total_messages",
                     "#": "reward_total_messages",
                     "contributions": [
                         {
