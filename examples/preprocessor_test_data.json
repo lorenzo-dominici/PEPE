@@ -7541,7 +7541,7 @@
         },
         {
             "name": "reward_modules",
-            "template": "templates/reward.pre",
+            "template": "templates/rewards.pre",
             "instances": [
                 {
                     "name": "reward_data_message_hpke",
