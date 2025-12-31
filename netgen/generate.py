@@ -1069,6 +1069,7 @@ class NetworkGenerator:
                 interface_ab["prob_failure_to_working"] = self.attributes.get("if_prob_failure_to_working")[0]
             else:
                 interface_ab["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_failure_to_working")[0], self.attributes.get("if_prob_failure_to_working")[1]), 2)
+            
             interface_ab["ref_node_state"] = f"{node_a}"
 
             interfaces_dict["instances"].append(interface_ab)
@@ -1117,6 +1118,8 @@ class NetworkGenerator:
             interface_ba["cmd_working_to_error"] = f"cmd_working_to_error_interface_{node_b}_{node_a}"
             interface_ba["cmd_error_to_working"] = f"cmd_error_to_working_interface_{node_b}_{node_a}"
             interface_ba["cmd_failure_to_working"] = f"cmd_failure_to_working_interface_{node_b}_{node_a}"
+
+            interface_ba["ref_node_state"] = f"{node_b}"
 
             interfaces_dict["instances"].append(interface_ba)
 
