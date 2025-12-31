@@ -3,14 +3,14 @@ module session_path_{{#}}
     session_path_state_{{#}}: [{{range_depth}}] init {{init_state}};
     session_path_system_message_{{#}}: [{{range_system_message}}] init {{init_system_message}};
     session_path_data_message_{{#}}: [{{range_data_message}}] init {{init_data_message}};
-    session_path_prev_local_session_epoch_sender_{{#}}: [{{range_prev_local_session_epoch_sender}}] init {{init_prev_local_session_epoch_sender}};
+    session_path_prev_local_session_epoch_sender_{{#}}: [0..{{size_prev_local_session_epoch_sender}}] init {{init_prev_local_session_epoch_sender}};
     session_path_link_counter_{{#}}: [0..{{size_link_counter}}] init {{init_link_counter}};
     session_path_checker_counter_{{#}}: [0..{{size_checker_counter}}] init {{init_checker_counter}};
 
     [{{cmd_run}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
                   (session_path_state_{{#}} = {{const_idle}}) -> (1 - {{prob_run}}) : (session_path_state_{{#}}' = {{const_idle}})
                                                                + {{prob_run}} : (session_path_state_{{#}}' = {{const_update}});
-    {^match||protocol
+    {%match||protocol
           ||mls||
     [{{cmd_update_data}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
                           (session_path_state_{{#}} = {{const_update}}) &
@@ -26,14 +26,14 @@ module session_path_{{#}}
                      (session_path_state_{{#}} = {{const_update}}) -> (local_session_state_{{ref_local_session_sender}}' = {{const_local_session_update}})
                                                                     & (session_path_prev_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
                                                                     & (session_path_state_{{#}}' = {{const_wait}});
-    $}
+    %}
     [{{cmd_update_failure}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
                              (session_path_state_{{#}} = {{const_wait}}) &
-                             (local_session_state_{{ref_local_session_sender}} = {{const_local_session_reset}}) -> session_path_state_{{#}}' = {{const_update}};
+                             (local_session_state_{{ref_local_session_sender}} = {{const_local_session_reset}}) -> (session_path_state_{{#}}' = {{const_update}});
 
     [{{cmd_update_success}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
                              (session_path_state_{{#}} = {{const_wait}}) &
-                             (local_session_state_{{ref_local_session_sender}} = {{const_local_session_valid}}) -> {^match||protocol
+                             (local_session_state_{{ref_local_session_sender}} = {{const_local_session_valid}}) -> {%match||protocol
                                                                                                      ||hpke||(session_path_state_{{#}}' = {{const_run}})
                                                                                                    & (session_path_system_message_{{#}}' = (session_path_prev_local_session_epoch_sender_{{#}} = 0
                                                                                                                                     ? {{const_message_reset}}
@@ -54,29 +54,29 @@ module session_path_{{#}}
                                                                                                    & (session_path_system_message_{{#}}' = (session_path_prev_local_session_epoch_sender_{{#}} = 0
                                                                                                                                            ? {{const_message_reset}}
                                                                                                                                            : {{const_message_ratchet}}));
-                                                                                                     ||sender_key||(session_path_state_{{#}}' = (local_session_epoch_{{ref_local_session_sender}} == session_checker_sender_local_session_epoch_{{#}}
+                                                                                                     ||sender_key||(session_path_state_{{#}}' = (local_session_epoch_{{ref_local_session_sender}} = session_checker_sender_local_session_epoch_{{#}}
                                                                                                                                   ? {{const_run}}
                                                                                                                                   : {{const_alt_run}}))
                                                                                                    & (session_path_system_message_{{#}}' = {{const_message_data}});
                                                                             
     [{{cmd_alt_run}}] session_path_state_{{#}} = {{const_alt_run}} -> (session_path_state_{{#}}' = {{const_idle}})
-                                                                    {^loop||one_to_one||& (session_path_state_{{ref_session_path}}' = {{const_update}})
-                                                                    & (session_path_data_message_{{ref_session_path}}' = {{const_message_sender_new_key}})
-                                                                    & (session_checker_sender_local_session_epoch_{{ref_session_checker_receiver}}' = local_session_epoch_{{ref_local_session_sender}})
-                                                                    $};
+                                                                    {%loop||one_to_one||& (session_path_state_{{one_to_one[].ref_session_path}}' = {{const_update}})
+                                                                    & (session_path_data_message_{{one_to_one[].ref_session_path}}' = {{const_message_sender_new_key}})
+                                                                    & (session_checker_sender_local_session_epoch_{{one_to_one[].ref_session_checker_receiver}}' = local_session_epoch_{{ref_local_session_sender}})
+                                                                    %};
                                                                                                      ||mls||(session_path_state_{{#}}' = {{const_run}})
                                                                                                    & (session_path_system_message_{{#}}' = (session_path_prev_local_session_epoch_sender_{{#}} = 0
                                                                                                                                            ? {{const_message_reset}}
                                                                                                                                            : (local_session_epoch_{{ref_local_session_sender}} > session_checker_sender_local_session_epoch_{{#}}
                                                                                                                                              ? {{const_message_ratchet}}
                                                                                                                                              : {{const_message_data}})));
-                                                                                                     $}
+                                                                                                     %}
     [{{cmd_send}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
                    (session_path_state_{{#}} = {{const_run}}) &
                    (node_buffer_{{ref_node_sender}} < {{size_buffer_sender}}) -> (session_path_state_{{#}}' = {{const_resolve}})
                                                                                & (node_buffer_{{ref_node_sender}}' = node_buffer_{{ref_node_sender}} + 1)
-                                                                               {^loop||first_links||& (link_prev_{{first_links[].#}}' = true)
-                                                                               $};
+                                                                               {%loop||first_links||& (link_prev_{{first_links[].#}}' = true)
+                                                                               %};
 
     [{{cmd_counter_reset}}] (session_path_link_counter_{{#}} = 0) &
                             (session_path_checker_counter_{{#}} = 0) &
