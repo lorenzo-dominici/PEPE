@@ -982,7 +982,7 @@ class NetworkGenerator:
         nodes = list(self.G.nodes())
         for node in nodes:
             node_to_add = {}
-            node_to_add["name"] = f"node_{node}"
+            node_to_add["name"] = f"node_{node}.prism"
             node_to_add["#"] = node
             node_to_add["range_state"] = range
             node_to_add["init_state"] = 0
@@ -1035,21 +1035,42 @@ class NetworkGenerator:
         for edge in self.G.edges():
             node_a = edge[0]
             node_b = edge[1]
+
             # interface from node_a to node_b
             interface_ab = {}
-            interface_ab["name"] = f"interface_{node_a}_{node_b}"
+            interface_ab["name"] = f"interface_{node_a}_{node_b}.prism"
             interface_ab["#"] = f"{node_a}_{node_b}"
             interface_ab["range_state"] = range_state
             interface_ab["init_state"] = 0
            
             # probabilities
-            interface_ab["prob_off_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_working")[0], self.attributes.get("if_prob_off_to_working")[1]), 2)
-            interface_ab["prob_off_to_error"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_error")[0], self.attributes.get("if_prob_off_to_error")[1]), 2)
-            interface_ab["prob_off_to_failure"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_failure")[0], self.attributes.get("if_prob_off_to_failure")[1]), 2)
-            interface_ab["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("if_prob_working_to_error")[0], self.attributes.get("if_prob_working_to_error")[1]), 2)
-            interface_ab["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_error_to_working")[0], self.attributes.get("if_prob_error_to_working")[1]), 2)
-            interface_ab["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_failure_to_working")[0], self.attributes.get("if_prob_failure_to_working")[1]), 2)
+            if self.attributes.get("if_prob_off_to_working")[0] == self.attributes.get("if_prob_off_to_working")[1]:
+                interface_ab["prob_off_to_working"] = self.attributes.get("if_prob_off_to_working")[0]
+            else:
+                interface_ab["prob_off_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_working")[0], self.attributes.get("if_prob_off_to_working")[1]), 2)
+            if self.attributes.get("if_prob_off_to_error")[0] == self.attributes.get("if_prob_off_to_error")[1]:
+                interface_ab["prob_off_to_error"] = self.attributes.get("if_prob_off_to_error")[0]
+            else:
+                interface_ab["prob_off_to_error"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_error")[0], self.attributes.get("if_prob_off_to_error")[1]), 2)
+            
+            if self.attributes.get("if_prob_off_to_failure")[0] == self.attributes.get("if_prob_off_to_failure")[1]:
+                interface_ab["prob_off_to_failure"] = self.attributes.get("if_prob_off_to_failure")[0]
+            else:
+                interface_ab["prob_off_to_failure"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_failure")[0], self.attributes.get("if_prob_off_to_failure")[1]), 2)
+            if self.attributes.get("if_prob_working_to_error")[0] == self.attributes.get("if_prob_working_to_error")[1]:
+                interface_ab["prob_working_to_error"] = self.attributes.get("if_prob_working_to_error")[0]
+            else:
+                interface_ab["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("if_prob_working_to_error")[0], self.attributes.get("if_prob_working_to_error")[1]), 2)
+            if self.attributes.get("if_prob_error_to_working")[0] == self.attributes.get("if_prob_error_to_working")[1]:
+                interface_ab["prob_error_to_working"] = self.attributes.get("if_prob_error_to_working")[0]
+            else:
+                interface_ab["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_error_to_working")[0], self.attributes.get("if_prob_error_to_working")[1]), 2)
+            if self.attributes.get("if_prob_failure_to_working")[0] == self.attributes.get("if_prob_failure_to_working")[1]:
+                interface_ab["prob_failure_to_working"] = self.attributes.get("if_prob_failure_to_working")[0]
+            else:
+                interface_ab["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_failure_to_working")[0], self.attributes.get("if_prob_failure_to_working")[1]), 2)
             interface_ab["ref_node_state"] = f"{node_a}"
+
             interfaces_dict["instances"].append(interface_ab)
 
             # commands
@@ -1057,6 +1078,47 @@ class NetworkGenerator:
             interface_ab["cmd_working_to_error"] = f"cmd_working_to_error_interface_{node_a}_{node_b}"
             interface_ab["cmd_error_to_working"] = f"cmd_error_to_working_interface_{node_a}_{node_b}"
             interface_ab["cmd_failure_to_working"] = f"cmd_failure_to_working_interface_{node_a}_{node_b}"
+
+            # interface from node_b to node_a
+            interface_ba = {}
+            interface_ba["name"] = f"interface_{node_b}_{node_a}.prism"
+            interface_ba["#"] = f"{node_b}_{node_a}"
+            interface_ba["range_state"] = range_state
+            interface_ba["init_state"] = 0
+
+            # probabilities
+            if self.attributes.get("if_prob_off_to_working")[0] == self.attributes.get("if_prob_off_to_working")[1]:
+                interface_ba["prob_off_to_working"] = self.attributes.get("if_prob_off_to_working")[0]
+            else:
+                interface_ba["prob_off_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_working")[0], self.attributes.get("if_prob_off_to_working")[1]), 2)
+            if self.attributes.get("if_prob_off_to_error")[0] == self.attributes.get("if_prob_off_to_error")[1]:
+                interface_ba["prob_off_to_error"] = self.attributes.get("if_prob_off_to_error")[0]
+            else:
+                interface_ba["prob_off_to_error"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_error")[0], self.attributes.get("if_prob_off_to_error")[1]), 2)
+            if self.attributes.get("if_prob_off_to_failure")[0] == self.attributes.get("if_prob_off_to_failure")[1]:
+                interface_ba["prob_off_to_failure"] = self.attributes.get("if_prob_off_to_failure")[0]
+            else:
+                interface_ba["prob_off_to_failure"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_failure")[0], self.attributes.get("if_prob_off_to_failure")[1]), 2)
+            if self.attributes.get("if_prob_working_to_error")[0] == self.attributes.get("if_prob_working_to_error")[1]:
+                interface_ba["prob_working_to_error"] = self.attributes.get("if_prob_working_to_error")[0]
+            else:
+                interface_ba["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("if_prob_working_to_error")[0], self.attributes.get("if_prob_working_to_error")[1]), 2)
+            if self.attributes.get("if_prob_error_to_working")[0] == self.attributes.get("if_prob_error_to_working")[1]:
+                interface_ba["prob_error_to_working"] = self.attributes.get("if_prob_error_to_working")[0]  
+            else:
+                interface_ba["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_error_to_working")[0], self.attributes.get("if_prob_error_to_working")[1]), 2)
+            if self.attributes.get("if_prob_failure_to_working")[0] == self.attributes.get("if_prob_failure_to_working")[1]:
+                interface_ba["prob_failure_to_working"] = self.attributes.get("if_prob_failure_to_working")[0]  
+            else:
+                interface_ba["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_failure_to_working")[0], self.attributes.get("if_prob_failure_to_working")[1]), 2)
+
+            # commands
+            interface_ba["cmd_off_to_on"] = f"cmd_off_to_on_interface_{node_b}_{node_a}"
+            interface_ba["cmd_working_to_error"] = f"cmd_working_to_error_interface_{node_b}_{node_a}"
+            interface_ba["cmd_error_to_working"] = f"cmd_error_to_working_interface_{node_b}_{node_a}"
+            interface_ba["cmd_failure_to_working"] = f"cmd_failure_to_working_interface_{node_b}_{node_a}"
+
+            interfaces_dict["instances"].append(interface_ba)
 
         return interfaces_dict
 
@@ -1079,10 +1141,10 @@ class NetworkGenerator:
             node_b = edge[1]
 
             channel = {}
-            channel["name"] = f"channel_{node_a}_{node_b}"
+            channel["name"] = f"channel_{node_a}_{node_b}.prism"
             channel["#"] = f"{node_a}_{node_b}"
             channel["range_state"] = range_state
-            init_value = int(range_state.strip('[]').split('..')[0])
+            init_value = int(range_state.split('..')[0])
             channel["init_state"] = init_value
             if self.attributes.get("channel_bandwidth_range")[0] == self.attributes.get("channel_bandwidth_range")[1]:
                 size_bandwidth = self.attributes.get("channel_bandwidth_range")[0]
@@ -1145,12 +1207,12 @@ class NetworkGenerator:
 
                     # links instances
                     link = {}
-                    link["name"] = f"link_{node_a}_{node_b}_of_path_{i}_{session_id}"
+                    link["name"] = f"link_{node_a}_{node_b}_of_path_{i}_{session_id}.prism"
                     link["#"] = f"{node_a}_{node_b}_{i}_{session_id}"
 
                     # states
                     link["range_state"] = range_state
-                    init_value = int(range_state.strip('[]').split('..')[0])
+                    init_value = int(range_state.split('..')[0])
                     link["init_state"] = init_value
                     link["init_prev"] = False
                     link["init_sending"] = False
@@ -1230,7 +1292,7 @@ class NetworkGenerator:
                 for node in path.nodes:
                     # link_ref_counter instances
                     link_ref = {}
-                    link_ref["name"] = f"link_ref_{node}_of_path_{i}_{session_id}"
+                    link_ref["name"] = f"link_ref_{node}_of_path_{i}_{session_id}.prism"
                     link_ref["#"] = f"{node}_{i}_{session_id}"
                     
                     if session.protocol in {"hpke", "double_ratchet", "hpke_sender_key", "double_ratchet_sender_key"}:
@@ -1290,11 +1352,11 @@ class NetworkGenerator:
                 session_path = {}
 
                 if session.protocol == "hpke_sender_key" or session.protocol == "double_ratchet_sender_key":
-                    session_path["name"] = f"session_path_{path_id}_{session_id}"
+                    session_path["name"] = f"session_path_{path_id}_{session_id}.prism"
                     session_path["#"] = f"{path_id}_{session_id}"
                     path_id += 1
                 else:
-                    session_path["name"] = f"session_path_{i}_{session_id}"
+                    session_path["name"] = f"session_path_{i}_{session_id}.prism"
                     session_path["#"] = f"{i}_{session_id}"
 
                 session_path["protocol"] = session.protocol
@@ -1306,7 +1368,7 @@ class NetworkGenerator:
                 session_path["init_system_message"] = const_message_data 
                 session_path["range_data_message"] = range_data_message
                 session_path["init_data_message"] = const_message_data 
-                session_path["range_prev_local_session_epoch_sender"] = path.nodes[sender]['epoch_size']
+                session_path["size_prev_local_session_epoch_sender"] = path.nodes[sender]['epoch_size']
                 session_path["init_prev_local_session_epoch_sender"] = 0
                 session_path["size_link_counter"] = len(path) - 1
                 session_path["init_link_counter"] = len(path) - 1
@@ -1403,7 +1465,7 @@ class NetworkGenerator:
             id = session.get_id()
             for node in nodes:
                 local_session = {}
-                local_session["name"] = f"local_session_of_{node}_of_session_{id}"
+                local_session["name"] = f"local_session_of_{node}_of_session_{id}.prism"
                 local_session["#"] = f"{node}_{id}"
                 local_session["protocol"] = session.protocol
 
@@ -1499,14 +1561,14 @@ class NetworkGenerator:
                 
                 for node in receivers:
                     session_checker = {}
-                    session_checker["name"] = f"session_checker_of_{node}_of_path_{i}_{session_id}"
+                    session_checker["name"] = f"session_checker_of_{node}_of_path_{i}_{session_id}.prism"
                     session_checker["#"] = f"{node}_{i}_{session_id}"
                     session_checker["protocol"] = session.protocol
 
                     # states
                     session_checker["range_state"] = state_range
                     session_checker["init_state"] = const_idle
-                    session_checker["range_sender_local_session_epoch"] = path.nodes[sender]['epoch_size']
+                    session_checker["size_sender_local_session_epoch"] = path.nodes[sender]['epoch_size']
                     session_checker["init_sender_local_session_epoch"] = 0
                     session_checker["range_sender_local_session_system_message"] = session_checker_sender_local_session_system_message_range
                     session_checker["init_sender_local_session_system_message"] = const_message_data
@@ -1595,12 +1657,12 @@ class NetworkGenerator:
             files_config = json.load(f)
             
         rewards_dict = {}
-        rewards_dict["name"] = "reward_modules"
-        rewards_dict["template"] = files_config.get("reward_template")
+        rewards_dict["name"] = "rewards_modules"
+        rewards_dict["template"] = files_config.get("rewards_template")
         rewards_dict["instances"] = []
         for reward in self.attributes.get("rewards", []):
             instance = {}
-            instance["name"] = reward.name
+            instance["name"] = f"{reward.name}.prism"
             instance["#"] = reward.name
             instance["contributions"] = []
             for contribution in reward.contributions:
