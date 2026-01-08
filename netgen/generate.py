@@ -1225,6 +1225,7 @@ class NetworkGenerator:
                     link["ref_channel"] = f"{node_a}_{node_b}"
                     link["ref_interface_sender"] = f"{node_a}_{node_b}"
                     link["ref_node_buffer_sender"] = f"{node_a}"
+                    link["ref_session_path"] = f"{i}_{session_id}"
                     link["ref_link_ref_counter"] = f"{node_a}_{i}_{session_id}"
                     next_links = []
                     successors = list(path.successors(node_b))
