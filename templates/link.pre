@@ -1,9 +1,9 @@
-module link_{{#}}
+global link_state_{{#}}: [{{range_state}}] init {{init_state}};
+global link_prev_{{#}}: bool init {{init_prev}};
+global link_sending_{{#}}: bool init {{init_sending}};
+global link_receiving_{{#}}: bool init {{init_receiving}};
 
-    link_state_{{#}}: [{{range_state}}] init {{init_state}};
-    link_prev_{{#}}: bool init {{init_prev}};
-    link_sending_{{#}}: bool init {{init_sending}};
-    link_receiving_{{#}}: bool init {{init_receiving}};
+module link_{{#}}
 
     [{{cmd_working_to_error}}] link_state_{{#}} = {{const_working}} -> (1 - {{prob_working_to_error}}) : (link_state_{{#}}' = link_state_{{#}})
                                                                      + {{prob_working_to_error}} : (link_state_{{#}}' = {{const_error}});

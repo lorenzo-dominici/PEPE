@@ -1,6 +1,6 @@
-module link_ref_{{#}}
+global link_ref_counter_{{#}}: [0..{{size_counter}}] init {{init_counter}};
 
-    link_ref_counter_{{#}}: [0..{{size_counter}}] init {{init_counter}};
+module link_ref_{{#}}
 
     [{{cmd_reset}}] (link_ref_counter_{{#}} = 0) &
                     (node_buffer_{{ref_node}} > 0) -> (link_ref_counter_{{#}}' = {{init_counter}})
