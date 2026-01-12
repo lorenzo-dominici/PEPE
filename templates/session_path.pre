@@ -1,11 +1,11 @@
-global session_path_state_{{#}}: [{{range_depth}}] init {{init_state}};
-global session_path_system_message_{{#}}: [{{range_system_message}}] init {{init_system_message}};
-global session_path_data_message_{{#}}: [{{range_data_message}}] init {{init_data_message}};
-global session_path_prev_local_session_epoch_sender_{{#}}: [0..{{size_prev_local_session_epoch_sender}}] init {{init_prev_local_session_epoch_sender}};
-global session_path_link_counter_{{#}}: [0..{{size_link_counter}}] init {{init_link_counter}};
-global session_path_checker_counter_{{#}}: [0..{{size_checker_counter}}] init {{init_checker_counter}};
-
 module session_path_{{#}}
+
+    session_path_state_{{#}}: [{{range_depth}}] init {{init_state}};
+    session_path_system_message_{{#}}: [{{range_system_message}}] init {{init_system_message}};
+    session_path_data_message_{{#}}: [{{range_data_message}}] init {{init_data_message}};
+    session_path_prev_local_session_epoch_sender_{{#}}: [0..{{size_prev_local_session_epoch_sender}}] init {{init_prev_local_session_epoch_sender}};
+    session_path_link_counter_{{#}}: [0..{{size_link_counter}}] init {{init_link_counter}};
+    session_path_checker_counter_{{#}}: [0..{{size_checker_counter}}] init {{init_checker_counter}};
 
     [{{cmd_run}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
                   (session_path_state_{{#}} = {{const_idle}}) -> (1 - {{prob_run}}) : (session_path_state_{{#}}' = {{const_idle}})

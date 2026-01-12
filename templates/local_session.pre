@@ -1,9 +1,9 @@
-global local_session_state_{{#}}: [{{range_state}}] init {{init_state}};
-global local_session_epoch_{{#}}: [0..{{size_epoch}}] init {{init_epoch}};
-global local_session_ratchet_{{#}}: [0..{{size_ratchet}}] init {{init_ratchet}};
-global local_session_compromised_{{#}}: bool init {{init_compromised}};
-
 module local_session_{{#}}
+
+    local_session_state_{{#}}: [{{range_state}}] init {{init_state}};
+    local_session_epoch_{{#}}: [0..{{size_epoch}}] init {{init_epoch}};
+    local_session_ratchet_{{#}}: [0..{{size_ratchet}}] init {{init_ratchet}};
+    local_session_compromised_{{#}}: bool init {{init_compromised}};
 
     [{{cmd_session_update_success}}] (node_state_{{ref_node}} = {{const_on}}) &
                                      (local_session_state_{{#}} = {{const_local_session_update}}) &
