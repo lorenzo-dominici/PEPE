@@ -1,6 +1,6 @@
-global interface_state_{{#}}: [{{range_state}}] init {{init_state}};
-
 module interface_{{#}}
+
+    interface_state_{{#}}: [{{range_state}}] init {{init_state}};
 
     [{{cmd_off_to_on}}] (interface_state_{{#}} = {{const_off}}) &
                         (node_state_{{ref_node_state}} = {{const_on}}) -> (1 - ({{prob_off_to_working}} + {{prob_off_to_error}} + {{prob_off_to_failure}})) : (interface_state_{{#}}' = interface_state_{{#}})
