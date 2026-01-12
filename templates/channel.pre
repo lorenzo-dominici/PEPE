@@ -12,4 +12,19 @@ module channel_{{#}}
     [{{cmd_failure_to_working}}] channel_state_{{#}} = {{const_failure}} -> (1 - {{prob_failure_to_working}}) : (channel_state_{{#}}' = channel_state_{{#}})
                                                                        + {{prob_failure_to_working}} : (channel_state_{{#}}' = {{const_working}});
 
+    {%loop||links||
+    [{{cmd_send_failure}}] true -> (channel_status_{{#}}' = (channel_status_{{#}} != {{const_working}}
+                                                     ? {{const_failure}}
+                                                     : {{const_working}}));
+                                                                                  
+    [{{cmd_send_success}}] true -> (channel_bandwidth_{{#}}' = channel_bandwidth_{{#}} - 1);
+
+    [{{cmd_receive_success}}] true -> (channel_bandwidth_{{#}}' = channel_bandwidth_{{#}} + 1);
+
+    [{{cmd_receive_failure}}] true -> (channel_bandwidth_{{#}}' = channel_bandwidth_{{#}} + 1)
+                                    & (channel_status_{{#}}' = (channel_status_{{#}} != {{const_working}}
+                                                               ? {{const_failure}}
+                                                               : {{const_working}}));
+    %}
+
 endmodule

@@ -3,9 +3,11 @@ module link_ref_{{#}}
     link_ref_counter_{{#}}: [0..{{size_counter}}] init {{init_counter}};
 
     [{{cmd_reset}}] (link_ref_counter_{{#}} = 0) &
-                    (node_buffer_{{ref_node}} > 0) -> (link_ref_counter_{{#}}' = {{init_counter}})
-                                                    & (node_buffer_{{ref_node}}' = ({{is_receiver}} = true
-                                                                                   ? node_buffer_{{ref_node}}
-                                                                                   : node_buffer_{{ref_node}} - 1));
+                    (node_buffer_{{ref_node}} > 0) -> (link_ref_counter_{{#}}' = {{init_counter}});
+
+    {%loop||links||
+    [{{cmd_link_cleanup}}] true -> (link_ref_counter_{{#}}' = link_ref_counter_{{#}} - 1);
+
+    %}
 
 endmodule

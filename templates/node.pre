@@ -1,14 +1,28 @@
 module node_{{#}}
 
     node_state_{{#}}: [{{range_state}}] init {{init_state}};
+    node_on_to_off_{{#}}: bool init {{init_on_to_off}};
     node_buffer_{{#}}: [0..{{size_buffer}}] init {{init_buffer}};
 
-    [{{cmd_off_to_on}}] node_state_{{#}} = {{const_off}} -> (1 - {{prob_off_to_on}}) : (node_state_{{#}}' = node_state_{{#}})
+    [{{cmd_off_to_on}}] node_state_{{#}} = {{const_off}} -> (1 - {{prob_off_to_on}}) : (true)
                                                           + {{prob_off_to_on}} : (node_state_{{#}}' = {{const_on}});
     
-    [{{cmd_on_to_off}}] node_state_{{#}} = {{const_on}} -> (1 - {{prob_on_to_off}}) : (node_state_{{#}}' = node_state_{{#}})
-                                                         + {{prob_on_to_off}} : (node_state_{{#}}' = {{const_off}})
-                                                                             {%loop||interfaces||& (interface_state_{{interfaces[].#}}' = {{const_off}})
-                                                                             %};
+    [{{cmd_on_to_off}}] (node_state_{{#}} = {{const_on}}) &
+                        (node_on_to_off_{{#}} = false) -> (1 - {{prob_on_to_off}}) : (true)
+                                                        + {{prob_on_to_off}} : (node_on_to_off_{{#}}' = true);
+    
+    [{{cmd_shutting_down}}] (node_state_{{#}} = {{const_on}}) &
+                            (node_on_to_off_{{#}} = true) -> (node_state_{{#}}' = {{const_off}})
+                                                           & (node_on_to_off_{{#}}' = false);
+
+    {%loop||links||
+    [{{cmd_receive_success}}] true -> (node_buffer_{{#}}' = node_buffer_{{#}} + 1);
+
+    %}
+
+    {%loop||link_refs||
+    [{{cmd_reset}}] true -> (node_buffer_{{#}}' = node_buffer_{{#}} - 1);
+    
+    %}
 
 endmodule
