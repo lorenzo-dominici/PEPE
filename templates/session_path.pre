@@ -10,6 +10,14 @@ module session_path_{{#}}
     [{{cmd_run}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
                   (session_path_state_{{#}} = {{const_idle}}) -> (1 - {{prob_run}}) : (session_path_state_{{#}}' = {{const_idle}})
                                                                + {{prob_run}} : (session_path_state_{{#}}' = {{const_update}});
+
+    {%match||is_broadest
+           ||true||
+    [{{cmd_decompromise}}] true -> (session_path_state_{{#}}' = {{const_update}})
+                                 {%match||protocol
+                                        ||sender_key||& (session_path_data_message_{{#}}' = {{const_message_sender_reset}})||_||%};
+           ||_||%}
+
     {%match||protocol
           ||mls||
     [{{cmd_update_data}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
@@ -22,7 +30,7 @@ module session_path_{{#}}
                               (session_path_state_{{#}} = {{const_update}}) &
                               (session_path_system_message_{{#}} != {{const_message_data}}) -> (session_path_state_{{#}}' = {{const_run}});
           ||_||
-    [{{cmd_update}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
+    [{{cmd_update_data}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
                      (session_path_state_{{#}} = {{const_update}}) -> (local_session_state_{{ref_local_session_sender}}' = {{const_local_session_update}})
                                                                     & (session_path_prev_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
                                                                     & (session_path_state_{{#}}' = {{const_wait}});
