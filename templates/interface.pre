@@ -11,30 +11,28 @@ module interface_{{#}}
                                                                         + {{prob_off_to_failure}} : (interface_state_{{#}}' = {{const_failure}});
 
     [{{cmd_working_to_error}}] interface_state_{{#}} = {{const_working}} -> (1 - {{prob_working_to_error}}) : (true)
-                                                            + {{prob_working_to_error}} : (interface_state_{{#}}' = {{const_error}});
+                                                                          + {{prob_working_to_error}} : (interface_state_{{#}}' = {{const_error}});
 
     [{{cmd_error_to_working}}] interface_state_{{#}} = {{const_error}} -> (1 - {{prob_error_to_working}}) : (true)
-                                                          + {{prob_error_to_working}} : (interface_state_{{#}}' = {{const_working}});
+                                                                        + {{prob_error_to_working}} : (interface_state_{{#}}' = {{const_working}});
 
     [{{cmd_failure_to_working}}] interface_state_{{#}} = {{const_failure}} -> (1 - {{prob_failure_to_working}}) : (true)
-                                                               + {{prob_failure_to_working}} : (interface_state_{{#}}' = {{const_working}});
+                                                                            + {{prob_failure_to_working}} : (interface_state_{{#}}' = {{const_working}});
 
     {%loop||out_links||
-    [{{cmd_send_failure}}] true -> (interface_state_{{#}}' = (interface_state_{{#}} = {{const_off}}
-                                                             ? {{const_off}}
-                                                             : (interface_state_{{#}} != {{const_working}}
-                                                               ? {{const_failure}}
-                                                               : {{const_working}})));
-
+    [{{out_links[].cmd_send_failure}}] true -> (interface_state_{{#}}' = (interface_state_{{#}} = {{const_off}}
+                                                                         ? {{const_off}}
+                                                                         : (interface_state_{{#}} != {{const_working}}
+                                                                           ? {{const_failure}}
+                                                                           : {{const_working}})));
     %}
 
     {%loop||in_links||
-    [{{cmd_receive_failure}}] true -> (interface_state_{{#}}' = (interface_state_{{#}} = {{const_off}}
-                                                             ? {{const_off}}
-                                                             : (interface_state_{{#}} != {{const_working}}
-                                                               ? {{const_failure}}
-                                                               : {{const_working}})));
-
+    [{{in_links[].cmd_receive_failure}}] true -> (interface_state_{{#}}' = (interface_state_{{#}} = {{const_off}}
+                                                                           ? {{const_off}}
+                                                                           : (interface_state_{{#}} != {{const_working}}
+                                                                             ? {{const_failure}}
+                                                                             : {{const_working}})));
     %}
 
 endmodule

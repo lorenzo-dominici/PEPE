@@ -15,14 +15,22 @@ module node_{{#}}
                             (node_on_to_off_{{#}} = true) -> (node_state_{{#}}' = {{const_off}})
                                                            & (node_on_to_off_{{#}}' = false);
 
-    {%loop||links||
-    [{{cmd_receive_success}}] true -> (node_buffer_{{#}}' = node_buffer_{{#}} + 1);
+    {%loop||session_paths||
+    [{{session_paths[].cmd_send}}] true -> (node_buffer_{{#}}' = node_buffer_{{#}} + 1); 
+    %}
 
+    {%loop||links||
+    [{{links[].cmd_receive_success}}] true -> (node_buffer_{{#}}' = node_buffer_{{#}} + 1);
     %}
 
     {%loop||link_refs||
-    [{{cmd_reset}}] true -> (node_buffer_{{#}}' = node_buffer_{{#}} - 1);
-    
+    [{{link_refs[].cmd_reset}}] true -> (node_buffer_{{#}}' = node_buffer_{{#}} - 1);
+    %}
+
+    {%loop||session_checkers||
+    [{{session_checkers[].cmd_clenaup}}] true -> (node_buffer_{{#}}' = (session_checker_message_arrived_{{session_checker[].#}} = true
+                                                                       ? node_buffer_{{#}} - 1
+                                                                       : node_buffer_{{#}}));
     %}
 
 endmodule
