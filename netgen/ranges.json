@@ -9,5 +9,6 @@
     "session_checker_sender_local_session_data_message_range": "20..23",
     "session_path_state_range": "9..14",
     "session_path_system_message_range": "23..27",
-    "session_path_data_message_range": "20..23"
+    "session_path_data_message_range": "20..23",
+    "link_range_phase": "28..32"
 }

@@ -965,6 +965,9 @@ class NetworkGenerator:
         with open(files_config.get("ranges"), "r") as f:
             ranges = json.load(f)
 
+        with open(files_config.get("init"), "r") as f:
+            init = json.load(f)
+
 
         nodes_dict = {}
         nodes_dict["name"] = "node_modules"
@@ -978,14 +981,15 @@ class NetworkGenerator:
             node_to_add["name"] = f"node_{node}.prism"
             node_to_add["#"] = node
             node_to_add["range_state"] = range
-            node_to_add["init_state"] = 0
+            node_to_add["init_state"] = init.get("node_init_state")
+            node_to_add["node_on_to_off_init"] = init.get("node_on_to_off_init")
             if self.attributes.get("buffer_size_range")[0] == self.attributes.get("buffer_size_range")[1]:
                 size_buffer = self.attributes.get("buffer_size_range")[0]
             else:
                 size_buffer = int(self.rng.integers(self.attributes.get("buffer_size_range")[0], self.attributes.get("buffer_size_range")[1] + 1))
             node_to_add["size_buffer"] = size_buffer    
             sizes[node] = size_buffer
-            node_to_add["init_buffer"] = 0
+            node_to_add["init_buffer"] = init.get("node_init_buffer")
             if self.attributes.get("node_prob_off_to_on")[0] == self.attributes.get("node_prob_off_to_on")[1]:
                 prob_off_to_on = self.attributes.get("node_prob_off_to_on")[0]
             else:
@@ -997,16 +1001,42 @@ class NetworkGenerator:
                 prob_on_to_off = round(self.rng.uniform(self.attributes.get("node_prob_on_to_off")[0], self.attributes.get("node_prob_on_to_off")[1]), 2)
             node_to_add["prob_on_to_off"] = prob_on_to_off
 
-            neighbors = list(self.G.neighbors(node))
-            node_to_add["interfaces"] = []
-            for neighbor in neighbors:
-                interface = {"#": f"{node}_{neighbor}"}
-                node_to_add["interfaces"].append(interface)
-
             # commands
             node_to_add["cmd_off_to_on"] = f"cmd_off_to_on_node_{node}"
             node_to_add["cmd_on_to_off"] = f"cmd_on_to_off_node_{node}"
+            node_to_add["cmd_shutting_down"] = f"cmd_shutting_down_node_{node}"
 
+            # now i need all the links that arrives to this node
+            links = []
+            sessions = self.attributes.get("sessions").copy()
+            for session in self.attributes.get("sessions"):
+                ss = session.get_subsessions()
+                sessions.extend(ss)
+            for session in sessions:
+                for i, path in enumerate(session.paths):
+                    if node in path.nodes():
+                        path_edges = list(path.edges())
+                        for edge in path_edges:
+                            if edge[1] == node:
+                                link_name = f"link_{edge[0]}_{edge[1]}_of_path_{i}_{session.id}"
+                                commands = {}
+                                commands["cmd_receive_success"] = f"cmd_receive_success_{link_name}"
+                                links.append(commands)
+
+            node_to_add["links"] = links
+
+            # here i need the list of the link_refs of this node
+            link_refs = []
+            for session in sessions:
+                for i, path in enumerate(session.paths):
+                    if node in path.nodes() and path.nodes[node].get("is_receiver") == False:
+                        commands = {}
+                        link_ref_name = f"link_ref_{node}_of_path_{i}_{session.id}"
+                        commands["cmd_reset"] = f"cmd_reset_{link_ref_name}"
+                        link_refs.append(commands)
+
+            node_to_add["link_refs"] = link_refs
+                                
             nodes_dict["instances"].append(node_to_add)
         self.attributes["nodes_buffer_sizes"] = sizes
         return nodes_dict
@@ -1018,6 +1048,9 @@ class NetworkGenerator:
 
         with open(files_config.get("ranges"), "r") as f:
             ranges = json.load(f)
+
+        with open(files_config.get("init"), "r") as f:
+            init = json.load(f)
 
 
         interfaces_dict = {}
@@ -1034,7 +1067,7 @@ class NetworkGenerator:
             interface_ab["name"] = f"interface_{node_a}_{node_b}.prism"
             interface_ab["#"] = f"{node_a}_{node_b}"
             interface_ab["range_state"] = range_state
-            interface_ab["init_state"] = 0
+            interface_ab["init_state"] = init.get("interface_init_state")
            
             # probabilities
             if self.attributes.get("if_prob_off_to_working")[0] == self.attributes.get("if_prob_off_to_working")[1]:
@@ -1065,13 +1098,12 @@ class NetworkGenerator:
             
             interface_ab["ref_node_state"] = f"{node_a}"
 
-            interfaces_dict["instances"].append(interface_ab)
-
             # commands
             interface_ab["cmd_off_to_on"] = f"cmd_off_to_on_interface_{node_a}_{node_b}"
             interface_ab["cmd_working_to_error"] = f"cmd_working_to_error_interface_{node_a}_{node_b}"
             interface_ab["cmd_error_to_working"] = f"cmd_error_to_working_interface_{node_a}_{node_b}"
             interface_ab["cmd_failure_to_working"] = f"cmd_failure_to_working_interface_{node_a}_{node_b}"
+            interface_ab["cmd_shutting_down"] = f"cmd_shutting_down_node_{node_a}"
 
             # interface from node_b to node_a
             interface_ba = {}
@@ -1111,9 +1143,52 @@ class NetworkGenerator:
             interface_ba["cmd_working_to_error"] = f"cmd_working_to_error_interface_{node_b}_{node_a}"
             interface_ba["cmd_error_to_working"] = f"cmd_error_to_working_interface_{node_b}_{node_a}"
             interface_ba["cmd_failure_to_working"] = f"cmd_failure_to_working_interface_{node_b}_{node_a}"
+            interface_ba["cmd_shutting_down"] = f"cmd_shutting_down_node_{node_b}"
 
             interface_ba["ref_node_state"] = f"{node_b}"
 
+
+            # now i need the list of the incoming links and outgoing links for each interface
+            in_links_ab = []
+            out_links_ab = []
+            in_links_ba = []
+            out_links_ba = []
+
+            sessions = self.attributes.get("sessions").copy()
+            for session in self.attributes.get("sessions"):
+                ss = session.get_subsessions()
+                sessions.extend(ss)
+            
+            for session in sessions:
+                for i, path in enumerate(session.paths):
+                    id = session.id
+                    session_path = f"{i}_{id}" 
+                    edges = list(path.edges())
+                    for edge in edges:
+                        if edge[0] == node_a and edge[1] == node_b:
+                            commands = {}
+                            commands["cmd_send_failure"] = f"cmd_send_failure_link {node_a}_{node_b}_of_path_{session_path}"
+                            out_links_ab.append(commands)
+
+                            commands = {}
+                            commands["cmd_receive_failure"] = f"cmd_receive_failure_link {node_a}_{node_b}_of_path_{session_path}"
+                            in_links_ba.append(commands)
+
+                        if edge[0] == node_b and edge[1] == node_a:
+                            commands = {}
+                            commands["cmd_send_failure"] = f"cmd_send_failure_link {node_b}_{node_a}_of_path_{session_path}"
+                            out_links_ba.append(commands)
+
+                            commands = {}
+                            commands["cmd_receive_failure"] = f"cmd_receive_failure_link {node_b}_{node_a}_of_path_{session_path}"
+                            in_links_ab.append(commands)
+            
+            interface_ab["in_links"] = in_links_ab
+            interface_ab["out_links"] = out_links_ab
+            interface_ba["in_links"] = in_links_ba
+            interface_ba["out_links"] = out_links_ba
+
+            interfaces_dict["instances"].append(interface_ab)
             interfaces_dict["instances"].append(interface_ba)
 
         return interfaces_dict
@@ -1125,6 +1200,9 @@ class NetworkGenerator:
 
         with open(files_config.get("ranges"), "r") as f:
             ranges = json.load(f)
+
+        with open(files_config.get("init"), "r") as f:
+            init = json.load(f)
 
 
         channels_dict = {}
@@ -1141,8 +1219,7 @@ class NetworkGenerator:
             channel["name"] = f"channel_{node_a}_{node_b}.prism"
             channel["#"] = f"{node_a}_{node_b}"
             channel["range_state"] = range_state
-            init_value = int(range_state.split('..')[0])
-            channel["init_state"] = init_value
+            channel["init_state"] = init.get("channel_init_state")
             if self.attributes.get("channel_bandwidth_range")[0] == self.attributes.get("channel_bandwidth_range")[1]:
                 size_bandwidth = self.attributes.get("channel_bandwidth_range")[0]
             else:
@@ -1168,8 +1245,6 @@ class NetworkGenerator:
             channel["cmd_working_to_error"] = f"cmd_working_to_error_channel_{node_a}_{node_b}"
             channel["cmd_error_to_working"] = f"cmd_error_to_working_channel_{node_a}_{node_b}"
             channel["cmd_failure_to_working"] = f"cmd_failure_to_working_channel_{node_a}_{node_b}"
-
-            channels_dict["instances"].append(channel)
 
             # channel b a
             channel_ba = {}
@@ -1204,6 +1279,41 @@ class NetworkGenerator:
             channel_ba["cmd_error_to_working"] = f"cmd_error_to_working_channel_{node_b}_{node_a}"
             channel_ba["cmd_failure_to_working"] = f"cmd_failure_to_working_channel_{node_b}_{node_a}"
 
+
+            # now i have to find all the links that use this channel and add the synchronous commands
+            links_ab = []
+            links_ba = []
+            sessions = self.attributes.get("sessions").copy()
+            for session in self.attributes.get("sessions"):
+                sessions.extend(session.get_subsessions())
+            for session in sessions:
+                session_id = session.get_id()
+                for i, path in enumerate(session.paths):
+                    for edge in path.edges():
+                        if (edge[0] == node_a) and (edge[1] == node_b):
+                            # this link uses the channel_ab
+                            ref = f"link_{node_a}_{node_b}_of_path_{i}_{session_id}"
+                            commands = {}
+                            commands["cmd_send_failure"] = f"cmd_send_failure_{ref}"
+                            commands["cmd_send_success"] = f"cmd_send_success_{ref}"
+                            commands["cmd_receive_success"] = f"cmd_receive_success_{ref}"
+                            commands["cmd_receive_failure"] = f"cmd_receive_failure_{ref}"
+                            links_ab.append(commands)
+
+                        if (edge[0] == node_b) and (edge[1] == node_a):
+                            # this link uses the channel_ba
+                            ref = f"link_{node_b}_{node_a}_of_path_{i}_{session_id}"
+                            commands = {}
+                            commands["cmd_send_failure"] = f"cmd_send_failure_{ref}"
+                            commands["cmd_send_success"] = f"cmd_send_success_{ref}"
+                            commands["cmd_receive_success"] = f"cmd_receive_success_{ref}"
+                            commands["cmd_receive_failure"] = f"cmd_receive_failure_{ref}"
+                            links_ba.append(commands)
+
+            channel["links"] = links_ab
+            channel_ba["links"] = links_ba
+
+            channels_dict["instances"].append(channel)
             channels_dict["instances"].append(channel_ba)
 
         return channels_dict
@@ -1215,6 +1325,9 @@ class NetworkGenerator:
 
         with open(files_config.get("ranges"), "r") as f:
             ranges = json.load(f)
+
+        with open(files_config.get("init"), "r") as f:
+            init = json.load(f)
 
         # generate links and link_ref_counters for each path
 
@@ -1244,18 +1357,16 @@ class NetworkGenerator:
 
                     # states
                     link["range_state"] = range_state
-                    init_value = int(range_state.split('..')[0])
-                    link["init_state"] = init_value
-                    link["init_prev"] = False
-                    link["init_sending"] = False
-                    link["init_receiving"] = False
+                    link["init_state"] = init.get("link_init_state")
+                    link["range_phase"] = ranges.get("link_range_phase")
+                    link["init_phase"] = init.get("link_init_phase")
 
                     # references
                     link["ref_channel"] = f"{node_a}_{node_b}"
                     link["ref_interface_sender"] = f"{node_a}_{node_b}"
                     link["ref_node_buffer_sender"] = f"{node_a}"
-                    link["ref_session_path"] = f"{i}_{session_id}"
-                    link["ref_link_ref_counter"] = f"{node_a}_{i}_{session_id}"
+                    # link["ref_session_path"] = f"{i}_{session_id}"
+                    # link["ref_link_ref_counter"] = f"{node_a}_{i}_{session_id}"
                     next_links = []
                     successors = list(path.successors(node_b))
                     for succ in successors:
@@ -1299,6 +1410,14 @@ class NetworkGenerator:
                     link["cmd_sending"] = f"cmd_sending_link_{node_a}_{node_b}_of_path_{i}_{session_id}"
                     link["cmd_receive_success"] = f"cmd_receive_success_link_{node_a}_{node_b}_of_path_{i}_{session_id}"
                     link["cmd_receive_failure"] = f"cmd_receive_failure_link_{node_a}_{node_b}_of_path_{i}_{session_id}"
+
+                    # if the link is the first link of the path, this command is syncronous with the cmd send of the path
+                    # if the link is not the first link of the path, this command is syncronous with the cmd receive of the previous link
+                    if node_a == sender:
+                        link["cmd_link_start"] = f"cmd_send_session_path_{i}_{session_id}"
+                    else:
+                        predecessor = list(path.predecessors(node_a))[0]
+                        link["cmd_link_start"] = f"cmd_receive_success_link_{predecessor}_{node_a}_of_path_{i}_{session_id}"
                     
                     links_dict["instances"].append(link)
 
@@ -1356,6 +1475,9 @@ class NetworkGenerator:
         with open(files_config.get("consts"), "r") as f:
             consts = json.load(f)
 
+        with open(files_config.get("init"), "r") as f:
+            init = json.load(f)
+
         session_paths_dict = {}
         session_paths_dict["name"] = "session_path_modules"
         session_paths_dict["template"] = files_config.get("session_path_template")
@@ -1390,13 +1512,13 @@ class NetworkGenerator:
 
                 # states
                 session_path["range_depth"] = range_state
-                session_path["init_state"] = consts_idle
+                session_path["init_state"] = init.get("session_path_init_state")
                 session_path["range_system_message"] = range_system_message
-                session_path["init_system_message"] = const_message_data 
+                session_path["init_system_message"] = init.get("session_path_init_system_message")
                 session_path["range_data_message"] = range_data_message
-                session_path["init_data_message"] = const_message_data 
+                session_path["init_data_message"] = init.get("session_path_init_data_message")
                 session_path["size_prev_local_session_epoch_sender"] = path.nodes[sender]['epoch_size']
-                session_path["init_prev_local_session_epoch_sender"] = 0
+                session_path["init_prev_local_session_epoch_sender"] = init.get("session_path_init_prev_local_session_epoch_sender")
                 session_path["size_link_counter"] = len(path) - 1
                 session_path["init_link_counter"] = len(path) - 1
                 session_path["size_checker_counter"] = len(receivers)  # one session checker for each receiver
@@ -1416,21 +1538,23 @@ class NetworkGenerator:
                 session_path["ref_node_sender"] = f"{sender}"
                 session_path["ref_local_session_sender"] = f"{sender}_{session_id}"
                 session_path["size_buffer_sender"] = self.attributes["nodes_buffer_sizes"][sender]
-                first_links = []
-                successors = list(path.successors(sender))
-                for succ in successors:
-                    if session.protocol == "hpke_sender_key" or session.protocol == "double_ratchet_sender_key":
-                        first_links.append({"#": f"{sender}_{succ}_{i}_{session_id}"})
-                    else:
-                        first_links.append({"#": f"{sender}_{succ}_{i}_{session_id}"})
-                session_path["first_links"] = first_links
+                # first_links = []
+                # successors = list(path.successors(sender))
+                # for succ in successors:
+                #     if session.protocol == "hpke_sender_key" or session.protocol == "double_ratchet_sender_key":
+                #         first_links.append({"#": f"{sender}_{succ}_{i}_{session_id}"})
+                #     else:
+                #         first_links.append({"#": f"{sender}_{succ}_{i}_{session_id}"})
+                # session_path["first_links"] = first_links
+
+                session_path["is_broadest"] = "true" #TODO fix for sender key
 
                 # probabilities
                 if session.protocol in {"hpke_sender_key", "double_ratchet_sender_key"}:
                     session_path["prob_run"] = 0.0
                 else:
                     if self.attributes.get("sp_prob_run")[0] == self.attributes.get("sp_prob_run")[1]:
-                            prob_run = self.attributes.get("sp_prob_run")[0]
+                        prob_run = self.attributes.get("sp_prob_run")[0]
                     else:
                         prob_run = round(self.rng.uniform(self.attributes.get("sp_prob_run")[0], self.attributes.get("sp_prob_run")[1]), 2)
                     session_path["prob_run"] = prob_run
@@ -1438,7 +1562,7 @@ class NetworkGenerator:
                 # commands
                 if session.protocol in {"hpke_sender_key", "double_ratchet_sender_key"}:
                     session_path["cmd_run"] = f"cmd_run_session_path_{i}_{session_id}"
-                    session_path["cmd_update"] = f"cmd_update_session_path_{i}_{session_id}"
+                    session_path["cmd_update_data"] = f"cmd_update_data_session_path_{i}_{session_id}"
                     session_path["cmd_update_failure"] = f"cmd_update_failure_session_path_{i}_{session_id}"
                     session_path["cmd_update_success"] = f"cmd_update_success_session_path_{i}_{session_id}"
                     session_path["cmd_send"] = f"cmd_send_session_path_{i}_{session_id}"
@@ -1472,6 +1596,9 @@ class NetworkGenerator:
         with open(files_config.get("consts"), "r") as f:
             consts = json.load(f)
 
+        with open(files_config.get("init"), "r") as f:
+            init = json.load(f)
+
         local_sessions_dict = {}
         local_sessions_dict["name"] = "local_session_modules"
         local_sessions_dict["template"] = files_config.get("local_session_template")
@@ -1495,15 +1622,24 @@ class NetworkGenerator:
 
                 # states
                 local_session["range_state"] = range_state
-                local_session["init_state"] = const_valid 
+                local_session["init_state"] = init.get("local_session_init_state")
                 local_session["size_epoch"] = list(session.paths)[0].nodes[node]['epoch_size']
-                local_session["init_epoch"] = 0
+                local_session["init_epoch"] = init.get("local_session_init_epoch")
                 local_session["size_ratchet"] = list(session.paths)[0].nodes[node]['ratchet_size']
-                local_session["init_ratchet"] = 0
-                local_session["init_compromised"] = False
+                local_session["init_ratchet"] = init.get("local_session_init_ratchet")
+                local_session["init_compromised"] = init.get("local_session_init_compromised")
 
                 # references
                 local_session["ref_node"] = f"{node}"
+
+                session_paths = []
+                for i, path in enumerate(session.paths):
+                    if path.nodes[0] == node:
+                        commands = {}
+                        commands["cmd_update_data"] = f"cmd_update_data_session_path_{i}_{id}"
+                        session_paths.append(commands)
+
+                local_session["session_paths"] = session_paths
                 
                 if session.protocol == "sender_key" and node != session.paths[0].nodes[0]:
                     for ss in session.get_subsessions():
@@ -1562,6 +1698,9 @@ class NetworkGenerator:
         with open(files_config.get("consts"), "r") as f:
             consts = json.load(f)
 
+        with open(files_config.get("init"), "r") as f:
+            init = json.load(f)
+
         state_range = ranges.get("session_checker_state_range")
         session_checker_sender_local_session_system_message_range = ranges.get("session_checker_sender_local_session_system_message_range")
         session_checker_sender_local_session_data_message_range = ranges.get("session_checker_sender_local_session_data_message_range")
@@ -1591,13 +1730,13 @@ class NetworkGenerator:
 
                     # states
                     session_checker["range_state"] = state_range
-                    session_checker["init_state"] = const_idle
+                    session_checker["init_state"] = init.get("session_checker_init_state")
                     session_checker["size_sender_local_session_epoch"] = path.nodes[sender]['epoch_size']
-                    session_checker["init_sender_local_session_epoch"] = 0
+                    session_checker["init_sender_local_session_epoch"] = init.get("session_checker_init_sender_local_session_epoch")
                     session_checker["range_sender_local_session_system_message"] = session_checker_sender_local_session_system_message_range
-                    session_checker["init_sender_local_session_system_message"] = const_message_data
+                    session_checker["init_sender_local_session_system_message"] = init.get("session_checker_init_sender_local_session_system_message")
                     session_checker["range_sender_local_session_data_message"] = session_checker_sender_local_session_data_message_range
-                    session_checker["init_sender_local_session_data_message"] = const_message_data
+                    session_checker["init_sender_local_session_data_message"] = init.get("session_checker_init_sender_local_session_data_message")
 
                     # references
                     session_checker["ref_local_session_sender"] = f"{sender}_{session_id}"

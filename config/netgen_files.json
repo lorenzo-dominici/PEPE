@@ -1,6 +1,7 @@
 {
     "consts" : "netgen/consts.json",
     "ranges" : "netgen/ranges.json",
+    "init" : "netgen/init.json",
     "channel_template" : "templates/channel.pre",
     "interface_template" : "templates/interface.pre",   
     "link_ref_template" : "templates/link_ref.pre",

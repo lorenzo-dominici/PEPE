@@ -26,6 +26,10 @@
     "const_message_reset": 24,
     "const_message_ratchet": 25,
     "const_message_tree_refresh": 26,
-    "const_message_current_tree": 27
-    
+    "const_message_current_tree": 27,
+    "const_phase_idle": 28,
+    "const_phase_fired": 29,
+    "const_phase_sending": 30,
+    "const_phase_receiving": 31,
+    "const_phase_cleanup": 32
 }
