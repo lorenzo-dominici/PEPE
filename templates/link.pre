@@ -58,7 +58,7 @@ module link_{{#}}
                                                                                                                             & (link_state_{{#}}'= (channel_state_{{ref_channel}} != {{const_working}}
                                                                                                                                                   ? {{const_failure}}
                                                                                                                                                   : link_state_{{#}}))
-                                                                                                     + {{prob_retry}} : (link_phase_{{#}}' = {{const_fired}})
+                                                                                                     + {{prob_retry}} : (link_phase_{{#}}' = {{const_phase_fired}})
                                                                                                                       & (link_state_{{#}}'= (channel_state_{{ref_channel}} != {{const_working}}
                                                                                                                                             ? {{const_failure}}
                                                                                                                                             : link_state_{{#}}));

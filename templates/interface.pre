@@ -5,7 +5,7 @@ module interface_{{#}}
     [{{cmd_shutting_down}}] true -> interface_state_{{#}}' = {{const_off}};
 
     [{{cmd_off_to_on}}] (interface_state_{{#}} = {{const_off}}) &
-                        (node_state_{{ref_node_state}} = {{const_on}}) -> (1 - ({{prob_off_to_working}} + {{prob_off_to_error}} + {{prob_off_to_failure}})) : (true)
+                        (node_state_{{ref_node}} = {{const_on}}) -> (1 - ({{prob_off_to_working}} + {{prob_off_to_error}} + {{prob_off_to_failure}})) : (true)
                                                                         + {{prob_off_to_working}} : (interface_state_{{#}}' = {{const_working}})
                                                                         + {{prob_off_to_error}} : (interface_state_{{#}}' = {{const_error}})
                                                                         + {{prob_off_to_failure}} : (interface_state_{{#}}' = {{const_failure}});

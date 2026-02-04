@@ -23,15 +23,15 @@ module local_session_{{#}}
                                                                                                      ? mod(local_session_epoch_{{#}} + 1, ({{size_epoch}} + 1))
                                                                                                      : local_session_epoch_{{#}}));
 
-    [{{cmd_update}}] (local_session_state_{{#}} = {{const_ratchet}}) -> (local_session_state_{{#}}' = {{const_idle}})
+    [{{cmd_ratchet}}] (local_session_state_{{#}} = {{const_ratchet}}) -> (local_session_state_{{#}}' = {{const_idle}})
                                                                       & (local_session_ratchet_{{#}}' = 0)
                                                                       & (local_session_epoch_{{#}}' = mod(local_session_epoch_{{#}} + 1, ({{size_epoch}} + 1)));
 
-    [{{cmd_update}}] (local_session_state_{{#}} = {{const_reset}}) -> (local_session_state_{{#}}' = {{const_idle}})
+    [{{cmd_reset}}] (local_session_state_{{#}} = {{const_reset}}) -> (local_session_state_{{#}}' = {{const_idle}})
                                                                     & (local_session_epoch_{{#}}' = 0)
                                                                     & (local_session_ratchet_{{#}}' = 0); 
 
-    [{{cmd_update}}] (local_session_state_{{#}} = {{const_none}}) -> (local_session_state_{{#}}' = {{const_idle}});
+    [{{cmd_none}}] (local_session_state_{{#}} = {{const_none}}) -> (local_session_state_{{#}}' = {{const_idle}});
 
     [{{cmd_compromise}}] (node_state_{{ref_node}} = {{const_on}}) &
                          (local_session_compromised_{{#}} = false) -> (1 - {{prob_compromised}}) : (local_session_compromised_{{#}}' = local_session_compromised_{{#}})
@@ -91,8 +91,8 @@ module local_session_{{#}}
     [{{session_checker[].cmd_resolve_sender_new_key}}] (local_session_mutex_{{#}} = true) -> (local_session_epoch_{{#}}' = session_path_cache_local_session_epoch_sender_{{session_checker[].ref_session_path}})
                                                                                            & (local_session_ratchet_{{#}}' = 0);
 
-    [{{cmd_resolve_sender_reset}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_ratchet}})
-                                                                       & (local_session_mutex_{{#}}' = false)
+    [{{session_checker[].cmd_resolve_sender_reset}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_ratchet}})
+                                                                                         & (local_session_mutex_{{#}}' = false)
             ||mls||
     [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_ratchet}})
                                                                                   & (local_session_mutex_{{#}}' = false);
