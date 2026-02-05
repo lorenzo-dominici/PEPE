@@ -28,7 +28,7 @@ module node_{{#}}
     %}
 
     {%loop||session_checkers||
-    [{{session_checkers[].cmd_clenaup}}] true -> (node_buffer_{{#}}' = (session_checker_message_arrived_{{session_checker[].#}} = true
+    [{{session_checkers[].cmd_cleanup}}] true -> (node_buffer_{{#}}' = (session_checker_message_arrived_{{session_checker[].#}} = true
                                                                        ? node_buffer_{{#}} - 1
                                                                        : node_buffer_{{#}}));
     %}
