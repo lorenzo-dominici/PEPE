@@ -90,9 +90,6 @@ module local_session_{{#}}
             ||sender_key||
     [{{session_checker[].cmd_resolve_sender_new_key}}] (local_session_mutex_{{#}} = true) -> (local_session_epoch_{{#}}' = session_path_cache_local_session_epoch_sender_{{session_checker[].ref_session_path}})
                                                                                            & (local_session_ratchet_{{#}}' = 0);
-
-    [{{session_checker[].cmd_resolve_sender_reset}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_ratchet}})
-                                                                                         & (local_session_mutex_{{#}}' = false)
             ||mls||
     [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_ratchet}})
                                                                                   & (local_session_mutex_{{#}}' = false);

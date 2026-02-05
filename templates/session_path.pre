@@ -1,6 +1,6 @@
 module session_path_{{#}}
 
-    session_path_state_{{#}}: [{{range_depth}}] init {{init_state}};
+    session_path_state_{{#}}: [{{range_state}}] init {{init_state}};
     session_path_system_message_{{#}}: [{{range_system_message}}] init {{init_system_message}};
     session_path_data_message_{{#}}: [{{range_data_message}}] init {{init_data_message}};
     session_path_cache_local_session_epoch_sender_{{#}}: [0..{{size_cache_local_session_epoch_sender}}] init {{init_cache_local_session_epoch_sender}};
@@ -42,7 +42,7 @@ module session_path_{{#}}
     [{{cmd_sender_key_reset}}] true -> (session_path_data_message_{{#}}' = {{const_message_sender_reset}})
                                      & (session_path_state_{{#}}' = {{const_update}});
 
-    [{{cmd_sender_key_refresh}}] true -> (session_path_data_message_{{#}}' = {{const_message_sender_refresh}})
+    [{{cmd_sender_key_failure}}] true -> (session_path_data_message_{{#}}' = {{const_message_sender_refresh}})
                                        & (session_path_state_{{#}}' = {{const_update}});
                   ||_||%}
     [{{cmd_hpke_reset}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
@@ -72,8 +72,8 @@ module session_path_{{#}}
     [{{cmd_sender_key_reset}}] true -> (session_path_data_message_{{#}}' = {{const_message_sender_reset}})
                                      & (session_path_state_{{#}}' = {{const_update}});
 
-    [{{cmd_sender_key_refresh}}] true -> (session_path_data_message_{{#}}' = {{const_message_sender_refresh}})
-                                     & (session_path_state_{{#}}' = {{const_update}});
+    [{{cmd_sender_key_failure}}] true -> (session_path_data_message_{{#}}' = {{const_message_sender_refresh}})
+                                       & (session_path_state_{{#}}' = {{const_update}});
                   ||_||%}
     [{{cmd_double_ratchet_reset}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
                                          & (session_path_system_message_{{#}}' = {{const_message_reset}})
@@ -83,23 +83,38 @@ module session_path_{{#}}
                                            & (session_path_system_message_{{#}}' = {{const_message_reset}})
                                            & (session_path_state_{{#}}' = {{const_run}});
            ||sender_key||
-    [{{cmd_resolve_sender_reset}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
-                                         & (session_path_state_{{#}}' = {{const_wait}})
+           {%loop||self_session_checkers||
+    [{{self_session_checkers[].cmd_resolve_sender_reset}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                                                 & (session_path_state_{{#}}' = {{const_wait}});
+           %}
            ||mls||
-           {%match||direction
-                  ||broadcast||
-    [{{cmd_mls_reset}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+           {%loop||self_session_checkers||
+               {%match||is_broadest
+                      ||true||
+    [{{self_session_checkers[].cmd_mls_reset}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
                               & (session_path_system_message_{{#}}' = {{const_message_reset}})
                               & (session_path_state_{{#}}' = {{const_run}});
-                  ||receiver_to_sender||
-    [{{cmd_mls_failure}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                   {%match||one_to_one||
+                          ||true||
+    [{{self_session_checkers[].cmd_mls_failure}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
                                 & (session_path_system_message_{{#}}' = {{const_message_tree_refresh}})
                                 & (session_path_state_{{#}}' = {{const_run}});
-                  ||sender_to_receiver||
-    [{{cmd_read_refresh}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                      
+    [{{self_session_checkers[].cmd_read_refresh}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                 & (session_path_system_message_{{#}}' = {{const_message_current_tree}})
+                                 & (session_path_state_{{#}}' = {{const_run}});                   
+                          ||_||%}
+                      ||_||
+    [{{self_session_checkers[].cmd_mls_failure}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                & (session_path_system_message_{{#}}' = {{const_message_tree_refresh}})
+                                & (session_path_state_{{#}}' = {{const_run}});
+                      
+    [{{self_session_checkers[].cmd_read_refresh}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
                                  & (session_path_system_message_{{#}}' = {{const_message_current_tree}})
                                  & (session_path_state_{{#}}' = {{const_run}});
-                  ||_||%}
+                      %}
+               
+           %}
 
     %}
 

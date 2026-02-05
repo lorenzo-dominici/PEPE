@@ -151,8 +151,6 @@ module session_checker_{{#}}
            ||sender_key||
     [{{cmd_resolve_sender_new_key}}] true -> (true);
 
-    [{{cmd_resolve_sender_reset}}] true -> (true);
-
     [{{cmd_sender_key_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                                (session_checker_state_{{#}} = {{const_reset}}) &
                                (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
