@@ -461,6 +461,11 @@ def validate_data(data):
             raise ValueError("ls_prob_none must be a list of two floats [min, max] with 0.0 <= min <= max <= 1.0")
     else:
         raise ValueError("Missing parameter: ls_prob_none")
+    
+    # the sum of ls_prob_none, ls_prob_session_reset and ls_prob_ratchet_reset must be lower than 1.0
+    min_sum = ls_prob_none[0] + ls_prob_session_reset[0] + ls_prob_ratchet_reset[0]
+    if min_sum >= 1.0:
+        raise ValueError("the sum of minimum values of ls_prob_none, ls_prob_session_reset and ls_prob_ratchet_reset must be lower than 1.0")
 
     ls_prob_compromised = data.get("ls_prob_compromised")
     if ls_prob_compromised:

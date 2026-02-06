@@ -5,17 +5,14 @@
     "interface_init_state": 0,
     "channel_init_state": 2,
     "link_init_state": 2,
-    "link_init_phase": 28,
+    "link_init_phase": 30,
     "session_path_init_state": 10,
-    "session_path_init_system_message": 23,
-    "session_path_init_data_message": 23,
-    "session_path_init_prev_local_session_epoch_sender": 0,
-    "local_session_init_state": 19,
+    "session_path_init_system_message": 19,
+    "session_path_init_data_message": 19,
+    "session_path_init_cache_local_session_epoch_sender": 0,
+    "local_session_init_state": 29,
     "local_session_init_epoch": 0,
     "local_session_init_ratchet": 0,
     "local_session_init_compromised": "false",
-    "session_checker_init_state": 10,
-    "session_checker_init_sender_local_session_epoch": 0,
-    "session_checker_init_sender_local_session_system_message": 23,
-    "session_checker_init_sender_local_session_data_message": 23
+    "session_checker_init_state": 10
 }
