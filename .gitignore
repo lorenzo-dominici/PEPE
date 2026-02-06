@@ -1,2 +1,3 @@
+netgen/output/*
 /preprocessor/__pycache__/
 /examples/preprocessor_test/
