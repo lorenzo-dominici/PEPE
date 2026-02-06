@@ -1,14 +1,16 @@
 # PEPE — PRISM Encryption Protocols Evaluation
 
-PEPE is a research-oriented repository that provides parametric PRISM model templates for the quantitative evaluation of encryption communication protocols. The models are written as `.pre` template files: they contain PRISM-compatible module code enriched with a small custom templating syntax (for example, `{{...}}` placeholders and `^...|...$` constructs) which is intended to be preprocessed into concrete PRISM models by a separate preprocessor (not yet implemented).
+PEPE is a research-oriented repository that provides parametric PRISM model templates for the quantitative evaluation of encryption communication protocols. The models are written as `.pre` template files: they contain PRISM-compatible module code enriched with a small custom templating syntax (for example, `{{...}}` placeholders and `{%...||...%}` constructs) which is preprocessed into concrete PRISM models by the included preprocessor.
 
 This project was developed as part of a course on Quantitative Evaluation of Stochastic Models and targets protocol families such as HPKE, Double Ratchet, Sender Key and MLS. The goals are to provide modular, parameterisable building blocks so researchers can compose network, channel and cryptographic protocol models, then explore reliability, robustness and session-security properties with PRISM.
 
 ## Table of contents
 
 - [What this repository contains](#what-this-repository-contains)
-  - [Files included](#files-included)
+  - [Directory structure](#directory-structure)
 - [How the .pre templates work](#how-the-pre-templates-work)
+  - [Macro syntax](#macro-syntax)
+  - [Placeholder syntax](#placeholder-syntax)
 - [Modules and main variables](#modules-and-main-variables)
   - [node](#node)
   - [interface](#interface)
@@ -18,11 +20,11 @@ This project was developed as part of a course on Quantitative Evaluation of Sto
   - [local_session](#local_session)
   - [session_path](#session_path)
   - [session_checker](#session_checker)
-- [Suggested workflow](#suggested-workflow)
-  - [Manual instantiation](manual-instantiation)
-  - [Scripted preprocessing](scripted-preprocessing)
-  - [Compose a top-level PRISM model](compose-a-top-level-prism-model)
-  - [Run PRISM](run-prism)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Running the preprocessor](#running-the-preprocessor)
+  - [Configuration](#configuration)
+  - [Data format](#data-format)
 - [Project Status](#project-status)
   - [Current status](#current-status)
   - [Limitations](#limitations)
@@ -33,27 +35,84 @@ This project was developed as part of a course on Quantitative Evaluation of Sto
 
 ## What this repository contains
 
-The workspace contains a set of `.pre` files. Each `.pre` file is a template for a PRISM module that, once instantiated with concrete parameters, produces a PRISM module implementing part of the system.
+The workspace contains `.pre` template files and a fully functional preprocessor that transforms them into PRISM modules.
 
-### Files included
+### Directory structure
 
-- `node.pre` — device/node model: node power state, local buffer and transitions that interact with attached interfaces and sessions.
-- `interface.pre` — network interface model: interface state machine (working / error / failure) and probabilistic transitions.
-- `channel.pre` — physical channel model: channel state and bandwidth variable.
-- `link_ref.pre` — reference-counter helper: coordinates buffer decrements across multiple outgoing links.
-- `link.pre` — logical link model: sending/receiving primitives, interactions with channel/interface/node buffer and retry logic.
-- `local_session.pre` — local session model: per-node session state, ratchets/epochs, and compromise/recovery transitions.
-- `session_path.pre` — session path controller (WIP): drives message creation and forwarding along a path of links for a given session.
-- `session_checker.pre` — session checker (WIP): receiver-side validation & message resolution logic (handling HPKE/Double Ratchet/sender-key behaviors).
-- `README.md` — this file (updated)
+```text
+PEPE/
+├── config/                    # Configuration files
+│   ├── netgen.json           # Network generator config (empty placeholder)
+│   └── preprocessor.json     # Preprocessor config (empty placeholder)
+├── examples/                  # Example configurations and data
+│   ├── netgen.json           # Network generator example (empty)
+│   ├── preprocessor_test_config.json  # Working preprocessor config
+│   └── preprocessor_test_data.json    # Working test data
+├── netgen/                    # Network generator (not yet implemented)
+│   ├── generate.py           # Placeholder
+│   ├── load.py               # Placeholder
+│   ├── main.py               # Placeholder
+│   └── store.py              # Placeholder
+├── preprocessor/              # Template preprocessor (fully implemented)
+│   ├── load.py               # JSON/template loading utilities
+│   ├── logger.py             # Logging with color support & multiprocessing
+│   ├── macro.py              # Macro resolution engine (match, loop)
+│   ├── main.py               # CLI entry point and orchestration
+│   ├── models.py             # Pydantic models for config/data validation
+│   ├── process.py            # Template processing pipeline
+│   ├── replace.py            # Placeholder substitution with JSON-path
+│   ├── requirements.txt      # Python dependencies
+│   └── store.py              # File output and joining utilities
+├── templates/                 # PRISM module templates
+│   ├── channel.pre           # Physical channel model
+│   ├── interface.pre         # Network interface model
+│   ├── link.pre              # Logical link model
+│   ├── link_ref.pre          # Reference counter helper
+│   ├── local_session.pre     # Per-node session state
+│   ├── node.pre              # Device/node model
+│   ├── policy.pre            # Policy definitions
+│   ├── rewards.pre           # Reward structures
+│   ├── session_checker.pre   # Receiver-side validation (WIP)
+│   └── session_path.pre      # Session path controller (WIP)
+└── README.md
+```
 
 ## How the `.pre` templates work
 
-- Placeholders: The templates use double-curly placeholders like `{{name}}` for substituting identifiers, constants and numeric parameters.
-- Control directives: The repository uses special markers (for example `^...|...$`) to express higher-level constructs such as loops, matches or conditional blocks that a preprocessor should expand into valid PRISM code.
-- Output: After preprocessing, each `.pre` file should become a syntactically valid `.prism` file (or be directly includable by a PRISM model) with concrete names and numeric values.
+Templates use a two-phase processing system implemented by the preprocessor:
 
-The preprocessor is intentionally left out of this repository: it is part of the future work. The README below explains the suggested workflow to proceed without a preprocessor for quick experiments and how to approach building one.
+### Macro syntax
+
+Macros are control structures enclosed in `{%...%}` (configurable). Fields are separated by `||`.
+
+**Match (conditional):**
+
+```text
+{%match||key||value1||output1||value2||output2||_||default_output%}
+```
+
+Evaluates the data key and outputs the corresponding branch. Use `_` for the default fallback.
+
+**Loop (iteration):**
+
+```text
+{%loop||list_key||
+    body template with {{list_key[].field}}
+%}
+```
+
+Repeats the body for each item in the list. Use `list_key[]` to reference the current item.
+
+**Nesting:** Macros can be nested; the preprocessor handles depth-aware parsing.
+
+### Placeholder syntax
+
+Placeholders use `{{...}}` (configurable) and support JSON-path-like access:
+
+- Simple key: `{{name}}`
+- Nested access: `{{user.profile.email}}`
+- Array indexing: `{{items[0].price}}`, `{{items[-1]}}`
+- Quoted keys: `{{data."key.with.dots"}}`
 
 ## Modules and main variables
 
@@ -97,66 +156,147 @@ Each template implements a PRISM module whose state is expressed with small sets
 
 - receiver-side validation logic that depends on the chosen protocol (patterns for HPKE, Double Ratchet, Sender Key)
 
-## Suggested workflow
+## Installation
 
-### Manual instantiation
+1. Ensure you have Python 3.10+ installed
+2. Install dependencies:
 
-Open a `.pre` file and manually replace `{{...}}` placeholders with concrete names and values to produce a `.prism` module. This works well for single-shot tests or small variations.
+```bash
+pip install -r preprocessor/requirements.txt
+```
 
-### Scripted preprocessing
+Required packages:
 
-Implement a small preprocessor (Python/JS) that reads `.pre` files and a parameter specification (YAML/JSON) and emits `.prism` modules. The preprocessor should:
+- `pydantic` — Configuration and data validation
+- `colorama` — Colored console output
+- `tqdm` — Progress bar for parallel processing
 
-- Replace `{{...}}` placeholders with values from the parameter file.
-- Expand `^...|...$` blocks according to simple rules (loop/match expansion).
-- Validate basic PRISM syntax (optional) before writing output.
+## Usage
 
-### Compose a top-level PRISM model
+### Running the preprocessor
 
-Create a top-level `.prism` file that imports the generated modules, defines global constants, and declares any rewards or properties to check.
+Run the preprocessor using the module syntax:
 
-### Run PRISM
+```bash
+python -m preprocessor.main --config examples\preprocessor_test_config.json --data examples\preprocessor_test_data.json --log-file examples\preprocessor_test\_preprocessor.log
+```
 
-Use PRISM to run probabilistic model checking or simulation experiments against the generated `.prism` model, measure reliability, message delivery probabilities, compromise rates, latency proxies (counters/epochs), etc.
+**Command-line arguments:**
+
+| Argument | Required | Description |
+| -------- | -------- | ----------- |
+| `--config` | Yes | Path to preprocessor configuration JSON file |
+| `--data` | Yes | Path to data JSON file or directory of data files |
+| `--log-level` | No | Logging level: DEBUG, INFO, WARNING, ERROR (default: INFO) |
+| `--log-file` | No | Path for log file output (defaults to stderr) |
+
+### Configuration
+
+The preprocessor configuration file (JSON) defines:
+
+```json
+{
+    "output_dir": "examples/preprocessor_test",
+    "jobs": -1,
+    "join_mode": "clean_join",
+    "joined_file": "MODEL.prism",
+    "separators": {
+        "macro_open": "{%",
+        "macro_separator": "||",
+        "macro_close": "%}",
+        "match_default": "_",
+        "placeholder_open": "{{",
+        "placeholder_close": "}}"
+    }
+}
+```
+
+| Field | Description |
+| ----- | ----------- |
+| `output_dir` | Directory for generated output files |
+| `jobs` | Number of parallel workers (-1 or 0 = auto, based on CPU count) |
+| `join_mode` | `none` (individual files), `join` (also create joined file), `clean_join` (join and delete individuals) |
+| `joined_file` | Filename for the joined output |
+| `separators` | Token definitions for macro and placeholder syntax |
+
+### Data format
+
+The data file (JSON) provides constants and template instances:
+
+```json
+{
+    "consts": {
+        "const_off": 0,
+        "const_on": 1,
+        "version": "1.0"
+    },
+    "items": [
+        {
+            "name": "node_modules",
+            "template": "templates/node.pre",
+            "instances": [
+                {"name": "node_0.prism", "#": 0, "range_state": "0..1", ...},
+                {"name": "node_1.prism", "#": 1, "range_state": "0..1", ...}
+            ]
+        }
+    ]
+}
+```
+
+- `consts`: Shared values available to all instances
+- `items`: List of template groups, each with:
+  - `name`: Descriptive name for the group
+  - `template`: Path to the `.pre` template file
+  - `instances`: List of data dictionaries (each must have a `name` key for output filename)
 
 ## Project Status
 
 ### Current status
 
-The repository contains the template `.pre` modules and documentation. The templates are the canonical specification of the intended system, but they are not yet automatically usable because the preprocessor that turns `.pre` into concrete PRISM code has not been implemented.
+**Preprocessor** — Fully implemented with the following features:
+
+- Two-phase template processing: macro resolution followed by placeholder substitution
+- Macro support: `match` (conditional branching) and `loop` (iteration)
+- JSON-path-like placeholder syntax with dot notation and array indexing
+- Pydantic-based configuration and data validation
+- Parallel processing using multiprocessing with progress tracking
+- Configurable output file joining (`none`, `join`, `clean_join` modes)
+- Comprehensive logging with color support and multiprocessing-safe queue handlers
+- CLI with flexible argument handling
+
+**Templates** — Complete set of `.pre` template files for PRISM modules covering nodes, interfaces, channels, links, sessions, and protocol-specific logic.
+
+**Network Generator (netgen)** — Not yet implemented. The `netgen/` directory contains placeholder files for a planned tool to generate network topologies and corresponding preprocessor data files.
 
 ### Limitations
 
-- No preprocessor included — templates must be instantiated manually or via a user-provided script.
-- Some modules are marked WIP (`session_path.pre`, `session_checker.pre`) and contain partial/templated logic intended to support multiple protocol variants.
-- The repository does not currently include top-level property files, experimental scripts, or automated runs against PRISM.
+- The `netgen` module is not implemented — data files must be created manually or via external tools.
+- The repository does not include top-level property files or automated PRISM experiment scripts.
+- Configuration files in `config/` are empty placeholders; use `examples/` for working configurations.
 
 ### Next steps
 
-1. Implement the preprocessor (Python is a good choice). Minimal features:
+1. **Implement netgen**: Build the network topology generator to automatically produce data files from high-level network descriptions.
 
-    - Token substitution for `{{...}}` placeholders.
-    - Simple loop and match expansions for `^...|...$` blocks.
-    - Parameter file support (JSON/YAML) and a small CLI.
+2. **Add PCTL properties**: Create a property suite for safety, availability, and session-security metrics.
 
-2. Provide a set of example parameter files and a few generated `.prism` models that exercise each protocol (HPKE, Double Ratchet, Sender Key, MLS).
+3. **Experiment automation**: Add scripts to run PRISM experiments and collect results.
 
-3. Add at least one top-level PRISM model and a small property suite (PCTL) for safety/availability/session-security metrics.
-
-4. Optionally add CI to run basic syntax checks on generated models and a short PRISM smoke test if PRISM is available in the environment.
+4. **CI integration**: Add automated syntax checks on generated models and smoke tests if PRISM is available.
 
 ## Contributing
 
-Contributions are welcome. Suggested low-effort ways to help:
+Contributions are welcome. Suggested ways to help:
 
-- Add the preprocessor implementation and example parameter files.
-- Create example instantiations (generated `.prism` files) for each protocol.
-- Add PCTL properties and scripts to run PRISM experiments.
+- **Implement netgen**: Build the network topology generator module.
+- **Add properties**: Create PCTL property files for PRISM experiments.
+- **Documentation**: Improve template documentation and add usage examples.
+- **Testing**: Add unit tests for the preprocessor modules.
 
-### License & authorship
+## License & authorship
 
 This repository was created as course work for the Quantitative Evaluation of Stochastic Models class. If you want to reuse or extend the work, please include attribution.
 
-### Contacts
+## Contacts
 
-If you want help turning templates into runnable PRISM models or designing the preprocessor, open an issue or reach out to the repository owner.
+If you want help turning templates into runnable PRISM models or extending the preprocessor, open an issue or reach out to the repository owner.
