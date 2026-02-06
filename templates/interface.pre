@@ -2,21 +2,21 @@ module interface_{{#}}
 
     interface_state_{{#}}: [{{range_state}}] init {{init_state}};
 
-    [{{cmd_shutting_down}}] true -> interface_state_{{#}}' = {{const_off}};
+    [{{cmd_shutting_down}}] true -> (interface_state_{{#}}' = {{const_off}});
 
     [{{cmd_off_to_on}}] (interface_state_{{#}} = {{const_off}}) &
-                        (node_state_{{ref_node_state}} = {{const_on}}) -> (1 - ({{prob_off_to_working}} + {{prob_off_to_error}} + {{prob_off_to_failure}})) : (true)
+                        (node_state_{{ref_node}} = {{const_on}}) -> (1 - ({{prob_off_to_working}} + {{prob_off_to_error}} + {{prob_off_to_failure}})) : (interface_state_{{#}}' = {{const_off}})
                                                                         + {{prob_off_to_working}} : (interface_state_{{#}}' = {{const_working}})
                                                                         + {{prob_off_to_error}} : (interface_state_{{#}}' = {{const_error}})
                                                                         + {{prob_off_to_failure}} : (interface_state_{{#}}' = {{const_failure}});
 
-    [{{cmd_working_to_error}}] interface_state_{{#}} = {{const_working}} -> (1 - {{prob_working_to_error}}) : (true)
+    [{{cmd_working_to_error}}] interface_state_{{#}} = {{const_working}} -> (1 - {{prob_working_to_error}}) : (interface_state_{{#}}' = {{const_working}})
                                                                           + {{prob_working_to_error}} : (interface_state_{{#}}' = {{const_error}});
 
-    [{{cmd_error_to_working}}] interface_state_{{#}} = {{const_error}} -> (1 - {{prob_error_to_working}}) : (true)
+    [{{cmd_error_to_working}}] interface_state_{{#}} = {{const_error}} -> (1 - {{prob_error_to_working}}) : (interface_state_{{#}}' = {{const_error}})
                                                                         + {{prob_error_to_working}} : (interface_state_{{#}}' = {{const_working}});
 
-    [{{cmd_failure_to_working}}] interface_state_{{#}} = {{const_failure}} -> (1 - {{prob_failure_to_working}}) : (true)
+    [{{cmd_failure_to_working}}] interface_state_{{#}} = {{const_failure}} -> (1 - {{prob_failure_to_working}}) : (interface_state_{{#}}' = {{const_failure}})
                                                                             + {{prob_failure_to_working}} : (interface_state_{{#}}' = {{const_working}});
 
     {%loop||out_links||
