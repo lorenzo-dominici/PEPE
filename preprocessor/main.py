@@ -223,7 +223,7 @@ def main(argv: List[str] | None = None) -> int:
     """
     # Set up argument parser
     ap = argparse.ArgumentParser(prog="preprocessor")
-    ap.add_argument("--config", default=None, help="Path to preprocessor configuration file")
+    ap.add_argument("--config", required=True, help="Path to preprocessor configuration file")
     ap.add_argument("--data", required=True, help="Path to preprocessor JSON data file or directory")
     ap.add_argument("--log-level", default="INFO", help="Logging level (DEBUG, INFO, WARNING, ERROR)")
     ap.add_argument("--log-file", default=None, help="Path for log output; defaults to stderr")
