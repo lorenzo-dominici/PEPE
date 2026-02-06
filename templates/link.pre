@@ -15,7 +15,7 @@ module link_{{#}}
 
     [{{cmd_link_start}}] true -> (link_phase_{{#}}' = {{const_phase_fired}});
 
-    [{{cmd_link_cleanup}}] link_phase_{{#}} = {{const_phase_cleanup}} -> (link_phase_{{#}}' = {{const_phase_idle}})
+    [{{cmd_cleanup}}] link_phase_{{#}} = {{const_phase_cleanup}} -> (link_phase_{{#}}' = {{const_phase_idle}})
                                                                        & (link_outcome_{{#}}' = false);
 
     [{{cmd_send_failure}}] (link_phase_{{#}} = {{const_phase_fired}}) & (

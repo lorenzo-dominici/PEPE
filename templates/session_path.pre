@@ -176,7 +176,7 @@ module session_path_{{#}}
 
     {%match||protocol
            ||sender_key||                                           
-    [{{cmd_sub_run}}] session_path_state_{{#}} = {{const_alt_run}} -> (session_path_state_{{#}}' = {{const_sub_resolve}});
+    [{{cmd_sub_run}}] session_path_state_{{#}} = {{const_sub_run}} -> (session_path_state_{{#}}' = {{const_sub_resolve}});
 
     [{{cmd_sub_resolve}}] (session_path_receivers_counter_{{#}} = 0) &
                           (session_path_state_{{#}} = {{const_resolve}}) -> (session_path_state_{{#}}' = {{const_idle}})
