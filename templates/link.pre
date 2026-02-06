@@ -39,7 +39,7 @@ module link_{{#}}
         (node_buffer_{{ref_node_buffer_sender}} > 0) &
         (channel_bandwidth_{{ref_channel}} > 0) -> (link_phase_{{#}}' = {{const_phase_sending}});
 
-    [{{cmd_sending}}] link_phase_{{#}} = {{const_phase_sending}} -> (1 - {{prob_sending}}) : (true)
+    [{{cmd_sending}}] link_phase_{{#}} = {{const_phase_sending}} -> (1 - {{prob_sending}}) : (link_phase_{{#}}' = {{const_phase_sending}})
                                                                   + {{prob_sending}} : (link_phase_{{#}}' = {{const_phase_receiving}});
 
     [{{cmd_receive_success}}] (link_phase_{{#}} = {{const_phase_receiving}}) &

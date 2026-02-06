@@ -4,11 +4,11 @@ module node_{{#}}
     node_on_to_off_{{#}}: bool init {{init_on_to_off}};
     node_buffer_{{#}}: [0..{{size_buffer}}] init {{init_buffer}};
 
-    [{{cmd_off_to_on}}] node_state_{{#}} = {{const_off}} -> (1 - {{prob_off_to_on}}) : (true)
+    [{{cmd_off_to_on}}] node_state_{{#}} = {{const_off}} -> (1 - {{prob_off_to_on}}) : (node_state_{{#}}' = {{const_off}})
                                                           + {{prob_off_to_on}} : (node_state_{{#}}' = {{const_on}});
     
     [{{cmd_on_to_off}}] (node_state_{{#}} = {{const_on}}) &
-                        (node_on_to_off_{{#}} = false) -> (1 - {{prob_on_to_off}}) : (true)
+                        (node_on_to_off_{{#}} = false) -> (1 - {{prob_on_to_off}}) : (node_state_{{#}}' = {{const_on}})
                                                         + {{prob_on_to_off}} : (node_on_to_off_{{#}}' = true);
     
     [{{cmd_shutting_down}}] (node_state_{{#}} = {{const_on}}) &
