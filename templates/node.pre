@@ -16,19 +16,19 @@ module node_{{#}}
                                                            & (node_on_to_off_{{#}}' = false);
 
     {%loop||session_paths||
-    [{{session_paths[].cmd_send}}] true -> (node_buffer_{{#}}' = node_buffer_{{#}} + 1); 
+    [{{session_paths[].cmd_send}}] (node_buffer_{{#}} < {{size_buffer}}) -> (node_buffer_{{#}}' = node_buffer_{{#}} + 1); 
     %}
 
     {%loop||links||
-    [{{links[].cmd_receive_success}}] true -> (node_buffer_{{#}}' = node_buffer_{{#}} + 1);
+    [{{links[].cmd_receive_success}}] (node_buffer_{{#}} < {{size_buffer}}) -> (node_buffer_{{#}}' = node_buffer_{{#}} + 1);
     %}
 
     {%loop||link_refs||
-    [{{link_refs[].cmd_reset}}] true -> (node_buffer_{{#}}' = node_buffer_{{#}} - 1);
+    [{{link_refs[].cmd_reset}}] (node_buffer_{{#}} > 0) -> (node_buffer_{{#}}' = node_buffer_{{#}} - 1);
     %}
 
     {%loop||session_checkers||
-    [{{session_checkers[].cmd_cleanup}}] true -> (node_buffer_{{#}}' = (session_checker_message_arrived_{{session_checkers[].#}} = true
+    [{{session_checkers[].cmd_cleanup}}] (session_checker_message_arrived_{{session_checkers[].#}} = false | node_buffer_{{#}} > 0) -> (node_buffer_{{#}}' = (session_checker_message_arrived_{{session_checkers[].#}} = true
                                                                        ? node_buffer_{{#}} - 1
                                                                        : node_buffer_{{#}}));
     %}

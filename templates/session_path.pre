@@ -94,7 +94,7 @@ module session_path_{{#}}
     [{{self_session_checkers[].cmd_mls_reset}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
                               & (session_path_system_message_{{#}}' = {{const_message_reset}})
                               & (session_path_state_{{#}}' = {{const_run}});
-                   {%match||one_to_one||
+                   {%match||one_to_one
                           ||true||
     [{{self_session_checkers[].cmd_mls_failure}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
                                 & (session_path_system_message_{{#}}' = {{const_message_tree_refresh}})
@@ -185,7 +185,7 @@ module session_path_{{#}}
                                                                           & (session_path_data_message_{{#}}' = {{const_message_data}});
 
     {%loop||sub_session_paths||
-    [{{sub_session_paths[].cmd_resolve}}] true -> (session_path_receivers_counter_{{#}}' = session_path_receivers_counter_{{#}} - 1);
+    [{{sub_session_paths[].cmd_resolve}}] (session_path_receivers_counter_{{#}} > 0) -> (session_path_receivers_counter_{{#}}' = session_path_receivers_counter_{{#}} - 1);
     %}
           ||_||%}
 
@@ -196,7 +196,7 @@ module session_path_{{#}}
                                                                       & (session_path_data_message_{{#}}' = {{const_message_data}});
 
     {%loop||session_checkers||
-    [{{session_checkers[].cmd_cleanup}}] true -> (session_path_receivers_counter_{{#}}' = session_path_receivers_counter_{{#}} - 1);
+    [{{session_checkers[].cmd_cleanup}}] (session_path_receivers_counter_{{#}} > 0) -> (session_path_receivers_counter_{{#}}' = session_path_receivers_counter_{{#}} - 1);
     %}
 
 endmodule

@@ -62,7 +62,7 @@ module local_session_{{#}}
     [{{session_checkers[].cmd_read_reset}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_session_reset}})
                                                                                 & (local_session_mutex_{{#}}' = false);
 
-    [{{session_checker[].cmd_hpke_failure}}] true -> (local_session_state_{{#}}' = {{const_session_reset}});
+    [{{session_checkers[].cmd_hpke_failure}}] true -> (local_session_state_{{#}}' = {{const_session_reset}});
             ||hpke_sender_key||
     [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_session_ratchet}})
                                                                                   & (local_session_mutex_{{#}}' = false);

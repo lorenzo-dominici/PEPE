@@ -6,7 +6,7 @@ module link_ref_{{#}}
                     (node_buffer_{{ref_node}} > 0) -> (link_ref_counter_{{#}}' = {{init_counter}});
 
     {%loop||links||
-    [{{links[].cmd_link_cleanup}}] true -> (link_ref_counter_{{#}}' = link_ref_counter_{{#}} - 1);
+    [{{links[].cmd_link_cleanup}}] (link_ref_counter_{{#}} > 0) -> (link_ref_counter_{{#}}' = link_ref_counter_{{#}} - 1);
 
     %}
 
