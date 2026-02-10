@@ -136,7 +136,7 @@ module session_path_{{#}}
 
     [{{cmd_set_message}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
                           (session_path_state_{{#}} = {{const_wait}}) &
-                          (local_session_state_{{ref_local_session_sender}} = {{const_idle}}) -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                          (local_session_state_{{ref_local_session_sender}} = {{const_session_idle}}) -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
                                                                                                & {%match||protocol
                                                                                                         ||hpke||(session_path_state_{{#}}' = {{const_run}})
                                                                                                & (session_path_system_message_{{#}}' = (((local_session_epoch_{{ref_local_session_sender}} = 0) & (local_session_ratchet_{{ref_local_session_sender}} = 0))

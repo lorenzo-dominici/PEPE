@@ -13,13 +13,13 @@ module session_checker_{{#}}
 
     [{{cmd_update}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                              (session_checker_state_{{#}} = {{const_update}}) &
-                             (local_session_state_{{ref_local_session_receiver}} = {{const_idle}}) -> (session_checker_state_{{#}}' = (((local_session_epoch_{{ref_local_session_receiver}} = 0) & (local_session_ratchet_{{ref_local_session_receiver}} = 0))
+                             (local_session_state_{{ref_local_session_receiver}} = {{const_session_idle}}) -> (session_checker_state_{{#}}' = (((local_session_epoch_{{ref_local_session_receiver}} = 0) & (local_session_ratchet_{{ref_local_session_receiver}} = 0))
                                                                                                                                       ? {{const_reset}}
                                                                                                                                       : {{const_check}}));
 
     [{{cmd_check_success}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                             (session_checker_state_{{#}} = {{const_check}}) &
-                            (local_session_state_{{ref_local_session_receiver}} = {{const_idle}}) &
+                            (local_session_state_{{ref_local_session_receiver}} = {{const_session_idle}}) &
                             (local_session_epoch_{{ref_local_session_receiver}} = session_path_cache_local_session_epoch_sender_{{ref_session_path}}) -> (session_checker_state_{{#}}' = {{const_resolve}});
                             
     [{{cmd_resolve_data}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
@@ -33,7 +33,7 @@ module session_checker_{{#}}
     
     [{{cmd_check_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                             (session_checker_state_{{#}} = {{const_check}}) &
-                            (local_session_state_{{ref_local_session_receiver}} = {{const_idle}}) &
+                            (local_session_state_{{ref_local_session_receiver}} = {{const_session_idle}}) &
                             (local_session_epoch_{{ref_local_session_receiver}} != session_path_cache_local_session_epoch_sender_{{ref_session_path}}) -> (session_checker_state_{{#}}' = {{const_failure}});
     {%match||protocol
            ||hpke||

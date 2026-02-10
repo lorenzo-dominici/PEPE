@@ -39,7 +39,7 @@ module local_session_{{#}}
 
     [{{cmd_alert}}] (node_state_{{ref_node}} = {{const_on}}) &
                     (local_session_compromised_{{#}} = true) &
-                    (session_path_state_{{ref_broadest_session_path}} = {{const_session_idle}}) -> (local_session_compromised_{{#}}' = true);
+                    (session_path_state_{{ref_broadest_session_path}} = {{const_idle}}) -> (local_session_compromised_{{#}}' = true);
 
     [{{cmd_decompromise}}] true -> (local_session_compromised_{{#}}' = false); //on cmd_resolve of ref_broadest_session_path
 
