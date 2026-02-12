@@ -4,6 +4,9 @@ module link_{{#}}
     link_phase_{{#}}: [{{range_phase}}] init {{init_phase}};
     link_outcome_{{#}}: bool init {{init_outcome}};
 
+    {%match||abstraction
+           ||high||
+           ||_||
     [{{cmd_working_to_error}}] link_state_{{#}} = {{const_working}} -> (1 - {{prob_working_to_error}}) : (link_state_{{#}}' = link_state_{{#}})
                                                                      + {{prob_working_to_error}} : (link_state_{{#}}' = {{const_error}});
 
@@ -12,6 +15,7 @@ module link_{{#}}
 
     [{{cmd_failure_to_working}}] link_state_{{#}} = {{const_failure}} -> (1 - {{prob_failure_to_working}}) : (link_state_{{#}}' = link_state_{{#}})
                                                                        + {{prob_failure_to_working}} : (link_state_{{#}}' = {{const_working}});
+    %}
 
     [{{cmd_link_start}}] true -> (link_phase_{{#}}' = {{const_phase_fired}});
 

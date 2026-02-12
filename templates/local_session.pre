@@ -33,6 +33,9 @@ module local_session_{{#}}
 
     [{{cmd_none}}] (local_session_state_{{#}} = {{const_session_none}}) -> (local_session_state_{{#}}' = {{const_session_idle}});
 
+    {%match||abstraction
+           ||high||
+           ||_||
     [{{cmd_compromise}}] (node_state_{{ref_node}} = {{const_on}}) &
                          (local_session_compromised_{{#}} = false) -> (1 - {{prob_compromised}}) : (local_session_compromised_{{#}}' = local_session_compromised_{{#}})
                                                                     + {{prob_compromised}} : (local_session_compromised_{{#}}' = true);
@@ -42,6 +45,7 @@ module local_session_{{#}}
                     (session_path_state_{{ref_broadest_session_path}} = {{const_idle}}) -> (local_session_compromised_{{#}}' = true);
 
     [{{cmd_decompromise}}] true -> (local_session_compromised_{{#}}' = false); //on cmd_resolve of ref_broadest_session_path
+    %}
 
     {%loop||session_paths||
     [{{session_paths[].cmd_update_data}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_session_trigger_update}})

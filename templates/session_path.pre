@@ -6,9 +6,27 @@ module session_path_{{#}}
     session_path_cache_local_session_epoch_sender_{{#}}: [0..{{size_cache_local_session_epoch_sender}}] init {{init_cache_local_session_epoch_sender}};
     session_path_receivers_counter_{{#}}: [0..{{size_receivers_counter}}] init {{init_receivers_counter}};
 
+    {%match||protocol
+           ||hpke||
     [{{cmd_run}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
                   (session_path_state_{{#}} = {{const_idle}}) -> (1 - {{prob_run}}) : (session_path_state_{{#}}' = {{const_idle}})
                                                                + {{prob_run}} : (session_path_state_{{#}}' = {{const_update}});
+           ||double_ratchet||
+    [{{cmd_run}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
+                  (session_path_state_{{#}} = {{const_idle}}) -> (1 - {{prob_run}}) : (session_path_state_{{#}}' = {{const_idle}})
+                                                               + {{prob_run}} : (session_path_state_{{#}}' = {{const_update}});
+           ||sender_key||
+    [{{cmd_run}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
+                  (session_path_state_{{#}} = {{const_idle}}) -> (1 - {{prob_run}}) : (session_path_state_{{#}}' = {{const_idle}})
+                                                               + {{prob_run}} : (session_path_state_{{#}}' = {{const_update}});
+           ||mls||
+           {%match||is_broadest
+                  ||true||
+    [{{cmd_run}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
+                  (session_path_state_{{#}} = {{const_idle}}) -> (1 - {{prob_run}}) : (session_path_state_{{#}}' = {{const_idle}})
+                                                               + {{prob_run}} : (session_path_state_{{#}}' = {{const_update}});
+           ||_||%}
+    %}
 
     {%match||is_broadest
            ||true||

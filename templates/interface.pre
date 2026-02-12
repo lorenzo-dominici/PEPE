@@ -2,6 +2,9 @@ module interface_{{#}}
 
     interface_state_{{#}}: [{{range_state}}] init {{init_state}};
 
+    {%match||abstraction
+           ||high||
+           ||_||
     [{{cmd_shutting_down}}] true -> (interface_state_{{#}}' = {{const_off}});
 
     [{{cmd_off_to_on}}] (interface_state_{{#}} = {{const_off}}) &
@@ -18,6 +21,7 @@ module interface_{{#}}
 
     [{{cmd_failure_to_working}}] interface_state_{{#}} = {{const_failure}} -> (1 - {{prob_failure_to_working}}) : (interface_state_{{#}}' = {{const_failure}})
                                                                             + {{prob_failure_to_working}} : (interface_state_{{#}}' = {{const_working}});
+    %}
 
     {%loop||out_links||
     [{{out_links[].cmd_send_failure}}] true -> (interface_state_{{#}}' = (interface_state_{{#}} = {{const_off}}
