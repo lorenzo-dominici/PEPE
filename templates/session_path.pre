@@ -27,9 +27,12 @@ module session_path_{{#}}
                                                                + {{prob_run}} : (session_path_state_{{#}}' = {{const_update}});
            ||_||%}
     %}
-
-    {%match||is_broadest
-           ||true||
+    
+    {%match||abstraction
+           ||high||
+           ||_||
+           {%match||is_broadest
+                  ||true||
     [{{cmd_alert}}] true -> (session_path_state_{{#}}' = {{const_update}})
                           {%match||protocol
                                  ||hpke_sender_key||
@@ -37,7 +40,8 @@ module session_path_{{#}}
                                  ||double_ratchet_sender_key||
                           & (session_path_data_message_{{#}}' = {{const_message_sender_reset}})
                                  ||_||%};
-           ||_||%}
+                  ||_||%}
+    %}
 
     {%match||protocol
            ||hpke||
