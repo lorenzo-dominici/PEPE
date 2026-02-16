@@ -1,8 +1,8 @@
 {
-    "node_init_state": 0,
+    "node_init_state": 1,
     "node_init_buffer": 0,
     "node_on_to_off_init": "false",
-    "interface_init_state": 0,
+    "interface_init_state": 2,
     "channel_init_state": 2,
     "link_init_state": 2,
     "link_init_phase": 30,

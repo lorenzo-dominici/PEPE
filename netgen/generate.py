@@ -1,14 +1,74 @@
-# This module generates the output elements according to the input data.
-from networkx.classes.function import neighbors
+"""
+generate.py — Core generation engine for the PEPE network generator.
+
+This module translates validated configuration parameters into a complete
+network descriptor ready for the PRISM model checker preprocessor.  The
+pipeline executed by :class:`NetworkGenerator` is:
+
+1. **Topology generation** — Build an undirected NetworkX graph using one of
+   three models (random / small-world / scale-free), optionally with
+   clustering.  Node degrees can be bounded post-hoc via an interface range.
+
+2. **Path generation** — Create directed communication paths (as
+   ``nx.DiGraph`` trees) between nodes, according to the selected protocol:
+   - *hpke* / *double_ratchet*: one-to-one bidirectional paths.
+   - *sender_key*: one-to-many broadcast tree with one-to-one sub-sessions
+     (using the chosen support protocol).
+   - *mls*: group multicast — every member sends to all others; nodes are
+     partitioned into groups of ≥ 2.
+
+3. **Reward generation** — Assemble PRISM reward structures that evaluate
+   message counts, vulnerability, bandwidth, memory, availability and
+   degradation at model-checking time.
+
+4. **JSON serialisation** — Produce a dictionary that maps directly to the
+   PRISM preprocessor input (nodes, interfaces, channels, links, link_refs,
+   session_paths, local_sessions, session_checkers, rewards).
+
+Supporting data classes
+-----------------------
+``Session``
+    Groups one or more directed path trees sharing the same protocol and
+    session id; may own sub-sessions (e.g. sender_key).
+``Contribution``
+    A single reward-structure contribution: ``(command, condition, value)``.
+``Reward``
+    Named collection of :class:`Contribution` objects corresponding to one
+    PRISM ``rewards "name" ... endrewards`` block.
+"""
+
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import zipf
 import json
-from pprint import pprint
 
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Data-model classes
+# ═══════════════════════════════════════════════════════════════════════════════
 
 class Session:
+    """Logical communication session between a set of nodes.
+
+    A session owns one or more directed path trees (``nx.DiGraph``) and may
+    contain sub-sessions (used by the *sender_key* protocol to wrap one-to-one
+    support-protocol paths).
+
+    Attributes
+    ----------
+    id : int | None
+        Unique session identifier (assigned after construction).
+    protocol : str | None
+        Protocol name (e.g. ``"hpke"``, ``"mls"``).
+    nodes : list[int]
+        Participating node ids.
+    paths : list[nx.DiGraph]
+        Directed path trees.  Each tree's first node is the sender.
+    subsessions : list[Session]
+        Child sessions (empty unless the protocol requires sub-sessions).
+    """
+
     def __init__(self):
         self.id = None
         self.protocol = None
@@ -26,9 +86,11 @@ class Session:
         self.nodes = nodes
 
     def add_path(self, path):
+        """Append a directed path tree to this session."""
         self.paths.append(path)
 
     def add_subsession(self, subsession):
+        """Register a child session (e.g. support-protocol session)."""
         self.subsessions.append(subsession)
 
     def get_id(self):
@@ -41,276 +103,443 @@ class Session:
         return self.paths
 
     def get_subsessions(self):
+        """Return a shallow copy to prevent external mutation."""
         return self.subsessions.copy()
 
 
 class Contribution:
-    def __init__(self, command, condition, value):
+    """Single contribution to a PRISM reward structure.
+
+    In the generated PRISM code this maps to a line of the form::
+
+        [command] condition : value;
+
+    Attributes
+    ----------
+    command : str
+        Synchronisation label (may be empty for state-rewards).
+    condition : str
+        Boolean guard expression in PRISM syntax.
+    value : str
+        Numeric or arithmetic expression yielding the reward value.
+    """
+
+    def __init__(self, command: str, condition: str, value: str):
         self.command = command
         self.condition = condition
         self.value = value
 
 
 class Reward:
-    def __init__(self, name):
+    """Named PRISM reward structure, collecting multiple :class:`Contribution` s.
+
+    Each instance maps to a ``rewards "<name>" ... endrewards`` block in the
+    generated PRISM model.
+
+    Attributes
+    ----------
+    name : str
+        Reward structure identifier (e.g. ``"reward_total_messages_sent"``).
+    contributions : list[Contribution]
+        Ordered list of reward entries.
+    """
+
+    def __init__(self, name: str):
         self.name = name
         self.contributions = []
 
-
-    def add_contribution(self, contribution):
+    def add_contribution(self, contribution: Contribution):
+        """Append a contribution line to this reward structure."""
         self.contributions.append(contribution)
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Main generator class
+# ═══════════════════════════════════════════════════════════════════════════════
+
 class NetworkGenerator: 
-    def __init__(self, params):
+    """End-to-end network generator targeting the PRISM model checker.
+
+    The generator is fully deterministic for a given *seed*: all stochastic
+    decisions (topology, path selection, probability sampling) are drawn from a
+    single ``numpy.random.Generator`` instance.
+
+    Attributes
+    ----------
+    params : dict
+        Validated configuration parameters (mutated in-place for defaults).
+    rng : numpy.random.Generator
+        Seeded PRNG used throughout the generation pipeline.
+    G : nx.Graph
+        Undirected topology graph built during ``_generate_topology()``.
+    nodes_buffer_sizes : dict[int, int]
+        Mapping ``node_id → buffer_size``, populated when nodes are serialised.
+    sessions : list[Session]
+        Communication sessions, populated by ``_generate_paths()``.
+    rewards : list[Reward]
+        PRISM reward structures, populated by ``_generate_rewards()``.
+    channel_bandwidth : dict[str, int]
+        Mapping ``"nodeA_nodeB" → bandwidth``, set during channel serialisation.
+    """
+
+    def __init__(self, params: dict):
+        """Initialise the generator with validated parameters.
+
+        Parameters
+        ----------
+        params : dict
+            Output of :func:`load.validate_data`.  The constructor applies
+            default values for ``seed``, ``connected`` and ``gen_model`` when
+            they are absent, so partial dicts are accepted.
+        """
         self.params = params
-        self.protocol = params.get("protocol")
-        self.seed = params.get("seed")
-        self.node_number = params.get("node_number")
-        self.connected = params.get("connected")
 
-        self.gen_model = params.get("gen_model")
+        # Apply defaults for optional params that may be None
+        if self.params.get("seed") is None:
+            self.params["seed"] = 42
+        if self.params.get("connected") is None:
+            self.params["connected"] = False
+        if self.params.get("gen_model") is None:
+            self.params["gen_model"] = "random"
 
-        self.conn_prob = params.get("conn_prob")
-        self.degree_distr = params.get("degree_distr")
-        self.if_range = params.get("if_range")
-
-        self.mean_degree_range = params.get("mean_degree_range")
-        self.rewiring_prob = params.get("rewiring_prob")
-        self.delete_rewired = params.get("delete_rewired")
-
-        self.initial_degree_range = params.get("initial_degree_range")
-        self.new_edges_prob = params.get("new_edges_prob")
-
-        self.local_clustering_coeff = params.get("local_clustering_coeff")
-        self.clusters_number_range = params.get("clusters_number_range")
-        self.nodes_range_per_cluster = params.get("nodes_range_per_cluster")
-        self.inter_clusters_coeff = params.get("inter_clusters_coeff")
-
-        self.central_nodes_range = params.get("central_nodes_range")
-        self.central_nodes_min_degree = params.get("central_nodes_min_degree")
-
-        self.edge_per_new_node = params.get("edge_per_new_node")
-
-        self.buffer_size_range = params.get("buffer_size_range")
-        self.central_nodes_buffer_size = params.get("central_nodes_buffer_size")
-        self.channel_bandwidth_range = params.get("channel_bandwidth_range")
-        self.path_perc = params.get("path_perc")
-
-
-        if self.seed == None:
-            self.seed = 42 # default seed
-        self.rng = np.random.default_rng(seed = self.seed)
-        
-        if self.connected == None:
-            self.connected = False
-
-        if self.gen_model == None:
-            self.gen_model = "RANDOM"
-
-
+        # Single seeded PRNG for full reproducibility
+        self.rng = np.random.default_rng(seed=self.params["seed"])
+        # Undirected topology — populated by _generate_topology()
         self.G = nx.Graph()
-        self.attributes = {}
+        # Per-node buffer sizes — populated by _add_nodes_to_dict()
+        self.nodes_buffer_sizes = {}
 
 
-    def generate_network(self):
-        self._generate_topology()
+    def generate_network(self, output_dir: str) -> tuple[dict, dict]:
+        """Run the full generation pipeline and return the output data.
 
-        self._assign_attributes()
-        
+        Parameters
+        ----------
+        output_dir : str
+            Directory where the graph visualisation PNG is saved.
+
+        Returns
+        -------
+        tuple[dict, dict]
+            ``(network_dict, sessions_summary)`` — the PRISM-ready network
+            descriptor and the human-readable sessions summary.
+        """
+        self._generate_topology(output_dir)
         self._generate_paths()
+        network_dict = self._generate_json()
+        sessions_summary = self._generate_sessions_summary()
+        return network_dict, sessions_summary
 
-        self._generate_rewards()
-        
-        return self._generate_json()
+    # ── Topology generation ──────────────────────────────────────────────────
 
-    
-    def _generate_topology(self):
-        # topology generation logic based on parameters
-        # first of all, check if the clustering is required; if so, first generate subgraphs and then connect them
-        clustering = self.clusters_number_range is not None
+    def _generate_topology(self, output_dir: str) -> None:
+        """Build the undirected topology graph and save its visualisation.
+
+        When clustering is enabled (``clusters_number_range`` is set), the
+        method creates independent sub-graphs, assigns each a random colour,
+        and wires them together via :meth:`_join_subgraphs`.  Otherwise a
+        single graph is produced.
+
+        The resulting graph is stored in ``self.G`` and a spring-layout PNG
+        is saved to ``<output_dir>/<filename>_graph.png``.
+        """
+        # Determine whether multi-cluster topology is requested
+        clustering = self.params["clusters_number_range"] is not None
         if clustering:
             clusters_sizes = self._partition()
             
             subgraphs = []
-            # generate the subgraphs
+            # Generate one sub-graph per cluster and assign unique colours
             for i in range(len(clusters_sizes)):
                 size = clusters_sizes[i]
                 subgraphs.append(self._generate_graph(size))
                 color = tuple(self.rng.random(3))
                 nx.set_node_attributes(subgraphs[i], color, 'color')
                 nx.set_edge_attributes(subgraphs[i], color, 'color')
-            # concatenate the subgraphs
+            # Merge sub-graphs and add inter-cluster edges
             self._join_subgraphs(subgraphs)
 
         else:
-            # no clusters, a single subgraph is created
+            # No clusters — a single subgraph fills the whole topology
             self.G = self._generate_graph()
             nx.set_node_attributes(self.G, "orange", 'color')
             nx.set_edge_attributes(self.G, "black", 'color')
 
-
-        self._draw_graph()
+        # Persist the graph visualisation in the output directory
+        base_name = self.params.get("filename", "network")
+        graph_path = f"{output_dir}/{base_name}_graph.png"
+        self._draw_graph(output_path=graph_path)
 
     
-    def _partition(self):
-        # return the partition of the nodes in each cluster
+    def _partition(self) -> list[int]:
+        """Partition ``node_number`` nodes into clusters.
 
-        min_c, max_c = self.clusters_number_range[0], self.clusters_number_range[1]
+        Returns a list of integers whose sum equals ``node_number``, each
+        entry representing the size of one cluster.
+
+        The algorithm handles five cases:
+
+        1. No per-cluster range is given → equal split + remainder distribution.
+        2. Per-cluster minimum too large for ``min_clusters`` → fall back to
+           equal split with ``min_clusters``.
+        3. Per-cluster maximum too small for ``max_clusters`` → fall back to
+           equal split with ``max_clusters``.
+        4. General case → start every cluster at ``min`` and randomly increment
+           until the total reaches ``node_number``.
+        5. All edge cases clip the cluster count to the valid interval.
+
+        Returns
+        -------
+        list[int]
+            Cluster sizes summing to ``self.params["node_number"]``.
+        """
+        # Resolve the number of clusters from the configured range
+        min_c, max_c = self.params["clusters_number_range"][0], self.params["clusters_number_range"][1]
         if min_c == max_c:
             clusters_number = min_c
         else:
             clusters_number = self.rng.integers(min_c, max_c)
-        while clusters_number > self.node_number:
+        while clusters_number > self.params["node_number"]:
                 clusters_number = self.rng.integers(min_c, max_c)
 
-        # if self.nodes_range_per_cluster == None, the nodes are equally distributed in each cluster. 
-        if self.nodes_range_per_cluster == None:
-            nodes_per_cluster = self.node_number // clusters_number
+        # --- Equal split when no per-cluster range is specified ---
+        if self.params["nodes_range_per_cluster"] is None:
+            nodes_per_cluster = self.params["node_number"] // clusters_number
             sizes = [nodes_per_cluster] * clusters_number
-            remaining = self.node_number % clusters_number
+            remaining = self.params["node_number"] % clusters_number
             for i in range(remaining):
                 sizes[i] += 1
             return sizes
         else:  
-            # if the min nodes per cluster is too high
-            if self.nodes_range_per_cluster[0] * min_c > self.node_number:
+            # --- Fallback: per-cluster minimum too large for min_clusters ---
+            if self.params["nodes_range_per_cluster"][0] * min_c > self.params["node_number"]:
                 clusters_number = min_c
-                nodes_per_cluster = self.node_number // clusters_number
+                nodes_per_cluster = self.params["node_number"] // clusters_number
                 sizes = [nodes_per_cluster] * clusters_number
-                remaining = self.node_number % clusters_number
+                remaining = self.params["node_number"] % clusters_number
                 for i in range(remaining):
                     sizes[i] += 1
                     return sizes
 
-            # if the max nodes per cluster is too small
-            if self.nodes_range_per_cluster[1] * max_c < self.node_number:
+            # --- Fallback: per-cluster maximum too small for max_clusters ---
+            if self.params["nodes_range_per_cluster"][1] * max_c < self.params["node_number"]:
                 clusters_number = max_c
-                nodes_per_cluster = self.node_number // clusters_number
+                nodes_per_cluster = self.params["node_number"] // clusters_number
                 sizes = [nodes_per_cluster] * clusters_number
-                remaining = self.node_number % clusters_number
+                remaining = self.params["node_number"] % clusters_number
                 for i in range(remaining):
                     sizes[i] += 1
                     return sizes
                 
-            # if there is the nodes range per cluster
-            while (clusters_number * self.nodes_range_per_cluster[0] > self.node_number or clusters_number * self.nodes_range_per_cluster[1] < self.node_number):
+            # --- General case: resample until clusters_number fits, then
+            #     start each cluster at the minimum and randomly increment ---
+            while (clusters_number * self.params["nodes_range_per_cluster"][0] > self.params["node_number"] or clusters_number * self.params["nodes_range_per_cluster"][1] < self.params["node_number"]):
                 clusters_number = self.rng.integers(min_c, max_c)
 
-            sizes = [self.nodes_range_per_cluster[0]] * clusters_number
-            while sum(sizes) < self.node_number:
+            sizes = [self.params["nodes_range_per_cluster"][0]] * clusters_number
+            while sum(sizes) < self.params["node_number"]:
                 i = self.rng.integers(0, len(sizes) - 1)
-                if sizes[i] < self.nodes_range_per_cluster[1]:
+                if sizes[i] < self.params["nodes_range_per_cluster"][1]:
                     sizes[i] += 1
             return sizes
     
     
-    def _generate_graph(self, size: int = None):
-        if size == None:
-            size = self.node_number
+    def _generate_graph(self, size: int = None) -> nx.Graph:
+        """Dispatch graph construction to the model-specific method.
+
+        Parameters
+        ----------
+        size : int, optional
+            Number of nodes.  Defaults to ``self.params["node_number"]``
+            (used when building a single non-clustered graph).
+
+        Returns
+        -------
+        nx.Graph
+            The generated undirected graph with ``size`` nodes.
+
+        Notes
+        -----
+        After the model-specific method returns, the ``if_range`` bound (if
+        set) is enforced post-hoc by :meth:`_bound_nodes_degrees`.
+        """
+        if size is None:
+            size = self.params["node_number"]
 
         G = nx.Graph()
 
-        match self.gen_model:
-            case "RANDOM":
+        match self.params["gen_model"]:
+            case "random":
                 G = self._generate_random_graph(size)
-            case "SMART-WORLD":
+            case "smart-world":
                 G = self._generate_smart_world_graph(size)
-            case "SCALE-FREE":
+            case "scale-free":
                 G = self._generate_scale_free_graph(size)
 
-        # if the if_range parameter exists, use it to bound the degrees of the nodes
-        if self.if_range != None:
+        # Post-hoc degree bounding (min/max interfaces per node)
+        if self.params["if_range"] is not None:
             self._bound_nodes_degrees(G)
         
         return G
     
 
-    def _generate_random_graph(self, size):
-        # random graph generation with the Erdős–Rényi algorithm if the conn_prob exists
-        if self.conn_prob != None:
-            G = nx.gnp_random_graph(size, self.conn_prob, seed = self.rng)
-            if self.connected:
+    def _generate_random_graph(self, size: int) -> nx.Graph:
+        """Generate a random graph using one of three strategies.
+
+        Strategy selection follows a priority chain:
+
+        1. **conn_prob set** → Erdős–Rényi ``G(n, p)`` via
+           ``nx.gnp_random_graph``.  If ``connected`` is requested, retries
+           up to 1 000 times.
+        2. **degree_distr set** → Havel-Hakimi algorithm using the degree
+           sequence sampled from the configured distribution.  Connectedness
+           is attempted via ``nx.double_edge_swap``.
+        3. **if_range set** → Havel-Hakimi with a uniform degree distribution
+           bounded by the interface range.
+
+        Parameters
+        ----------
+        size : int
+            Number of nodes in the graph.
+
+        Returns
+        -------
+        nx.Graph
+
+        Raises
+        ------
+        nx.NetworkXUnfeasible
+            If the ``connected`` constraint cannot be satisfied.
+        """
+        # --- Strategy 1: Erdős–Rényi G(n, p) ---
+        if self.params["conn_prob"] is not None:
+            G = nx.gnp_random_graph(size, self.params["conn_prob"], seed = self.rng)
+            if self.params["connected"]:
                 tries = 0
                 while not(nx.is_connected(G)) and tries <= 1000:
-                    G = nx.gnp_random_graph(size, self.conn_prob, seed = self.rng)
+                    G = nx.gnp_random_graph(size, self.params["conn_prob"], seed = self.rng)
                     tries += 1
                 if not(nx.is_connected(G)):
-                    raise nx.NetworkXUnfeasible("can't generate a connected graph with theese parameters")
+                    raise nx.NetworkXUnfeasible("can't generate a connected graph with these parameters")
             return G
         
-        # graph generation with the Havel-Hakimi algorithm using a degree distribution
-        if self.degree_distr != None:
+        # --- Strategy 2: Havel-Hakimi from a degree distribution ---
+        if self.params["degree_distr"] is not None:
             degrees = self._get_degrees_from_distr()
-            print(degrees)
-            print ("\n")
-            print (len(degrees))
             G = nx.havel_hakimi_graph(degrees)
-            if self.connected:
+            if self.params["connected"]:
                 tries = 0
                 while not(nx.is_connected(G)) and tries <=1000:
                     nx.double_edge_swap(G, nswap=5*len(G.edges()), max_tries=100*len(G.edges()))
                     tries += 1
                 if not(nx.is_connected(G)):
-                    raise nx.NetworkXUnfeasible("Ccan't generate a connected graph with theese parameters")
+                    raise nx.NetworkXUnfeasible("Can't generate a connected graph with these parameters")
             return G
         
-        # graph generation in exixts the bound for the interfces. Uses the uniform distribution 
-        if self.if_range != None:
-            degrees = self._get_degrees_from_distr(type = "UNIFORM", params = self.if_range)
+        # --- Strategy 3: uniform degree from if_range bounds ---
+        if self.params["if_range"] is not None:
+            degrees = self._get_degrees_from_distr(distr_type = "uniform", distr_params = self.params["if_range"])
             G = nx.havel_hakimi_graph(degrees)
-            if self.connected:
+            if self.params["connected"]:
                 tries = 0
                 while not(nx.is_connected(G)) and tries <=1000:
                     nx.double_edge_swap(G, nswap=5*len(G.edges()), max_tries=100*len(G.edges()))
                     tries += 1
                 if not(nx.is_connected(G)):
-                    raise nx.NetworkXUnfeasible("can't generate a connected graph with theese parameters")
+                    raise nx.NetworkXUnfeasible("can't generate a connected graph with these parameters")
             return G
 
 
-    def _generate_smart_world_graph(self, size):
-        # Graph generation using the Watts-Strogatz algorithm in 2 variants: deleting or not the rewired edge
-        if self.mean_degree_range is None:
+    def _generate_smart_world_graph(self, size: int) -> nx.Graph:
+        """Generate a small-world graph (Watts-Strogatz family).
+
+        Two variants are available:
+
+        * ``delete_rewired == True`` → classical **Watts-Strogatz** model, where
+          rewired edges replace the original edges.
+        * ``delete_rewired == False`` (default) → **Newman-Watts-Strogatz**
+          model, where shortcut edges are *added* without removing existing ones.
+
+        Parameters
+        ----------
+        size : int
+            Number of nodes.
+
+        Returns
+        -------
+        nx.Graph
+
+        Raises
+        ------
+        nx.NetworkXUnfeasible
+            If the connected variant fails after 1 000 tries.
+        """
+        if self.params["mean_degree_range"] is None:
             mean = size // 2
-        elif self.mean_degree_range[0] >= size:
+        elif self.params["mean_degree_range"][0] >= size:
             mean = size - 1
-        elif self.mean_degree_range[0] == self.mean_degree_range[1]:
-            mean = self.mean_degree_range[0]
+        elif self.params["mean_degree_range"][0] == self.params["mean_degree_range"][1]:
+            mean = self.params["mean_degree_range"][0]
         else:
-            mean = self.rng.integers(self.mean_degree_range[0], self.mean_degree_range[1])
+            mean = self.rng.integers(self.params["mean_degree_range"][0], self.params["mean_degree_range"][1])
             while mean >= size:
-                mean = self.rng.integers(self.mean_degree_range[0], self.mean_degree_range[1])
+                mean = self.rng.integers(self.params["mean_degree_range"][0], self.params["mean_degree_range"][1])
         
-        if self.rewiring_prob is None:
+        if self.params["rewiring_prob"] is None:
             p = 0.5
         else:
-            p = self.rewiring_prob
+            p = self.params["rewiring_prob"]
 
-        G = nx.Graph()
-        # if delete_rewired is true, use the Watts-Strogatz algorithm
-        if self.delete_rewired == True:
-            if self.connected:
+        # Select variant based on delete_rewired flag
+        # If delete_rewired is true, use the Watts-Strogatz algorithm
+        if self.params["delete_rewired"] == True:
+            if self.params["connected"]:
                 try:
                     G = nx.connected_watts_strogatz_graph(size, mean, p, tries = 1000, seed = self.rng)
                 except Exception:
-                    raise nx.NetworkXUnfeasible("Can't generate a connected graph with theese parameters")
+                    raise nx.NetworkXUnfeasible("Can't generate a connected graph with these parameters")
             else:
                 G = nx.watts_strogatz_graph(size, mean, p, seed = self.rng)
-        # else use the Newmann-Watts_Strogatz algorithm that doesn't delete the rewired edges
+        # Newman-Watts-Strogatz: shortcuts are added (no edge deletion),
+        # producing a graph that is always connected by construction.
         else:
             G = nx.newman_watts_strogatz_graph(size, mean, p, seed = self.rng)
         return G
                     
 
-    def _generate_scale_free_graph(self, size):
-        # generation of scale free graph with the extended Albert_Barabasi algorithm
+    def _generate_scale_free_graph(self, size: int) -> nx.Graph:
+        """Generate a scale-free graph via the **extended Barabási-Albert** model.
+
+        The extended BA model accepts three probabilities:
+
+        * ``m`` — initial degree (number of edges each new node brings).
+        * ``p`` — probability of adding a new edge between existing nodes.
+        * ``q`` — probability of rewiring an existing edge.
+
+        The constraint ``p + q < 1`` is checked during validation in
+        :func:`load.validate_data`.
+
+        Parameters
+        ----------
+        size : int
+            Number of nodes.
+
+        Returns
+        -------
+        nx.Graph
+
+        Raises
+        ------
+        nx.NetworkXUnfeasible
+            If the connected constraint cannot be met within 1 000 attempts.
+        """
+        # generation of scale-free graph with the extended Barabási-Albert algorithm
 
         n = size
-        if self.initial_degree_range == None:
+        if self.params["initial_degree_range"] is None:
             m = n // 2
         else:
-            min_d, max_d = self.initial_degree_range[0], self.initial_degree_range[1]
+            min_d, max_d = self.params["initial_degree_range"][0], self.params["initial_degree_range"][1]
             if min_d >= n:
                 m = n - 1
             elif min_d == max_d:
@@ -319,95 +548,144 @@ class NetworkGenerator:
                 m = self.rng.integers(min_d, max_d)
                 while m >= n:
                     m = self.rng.integers(min_d, max_d)
-        if self.new_edges_prob == None:
+        if self.params["new_edges_prob"] is None:
             p = 0
         else:
-            p = self.new_edges_prob
-        if self.rewiring_prob == None:
+            p = self.params["new_edges_prob"]
+        if self.params["rewiring_prob"] is None:
             q = 0
         else:
-            q = self.rewiring_prob
+            q = self.params["rewiring_prob"]
 
         G = nx.Graph()
         G = nx.extended_barabasi_albert_graph(n, m, p, q, seed = self.rng)
-        if self.connected:
+        if self.params["connected"]:
             tries = 0
             while not(nx.is_connected(G)) and tries < 1000:
                 G = nx.extended_barabasi_albert_graph(n, m, p, q, seed = self.rng)
             if not(nx.is_connected(G)):
-                raise nx.NetworkXUnfeasible("can't generate a connected graph with theese parameters")
+                raise nx.NetworkXUnfeasible("can't generate a connected graph with these parameters")
             
         return G
     
     
-    def _get_degrees_from_distr(self, type = None, params = None):
-        if type == None:
-            type = self.degree_distr.get("type")
-        if params == None:
-            params = self.degree_distr.get("params")
+    def _get_degrees_from_distr(self, distr_type: str = None, distr_params=None) -> list:
+        """Sample a graphical degree sequence from a statistical distribution.
+
+        The method draws ``node_number`` degree values according to the
+        selected distribution, enforces the *even-sum* invariant (required by
+        the handshaking lemma for undirected graphs), and clips every entry to
+        ``[0, node_number]``.
+
+        Supported distributions
+        -----------------------
+        * **binomial** — ``numpy.random.Generator.binomial(n, p, size)``
+        * **uniform** — ``numpy.random.Generator.integers(low, high+1, size)``
+        * **normal** — ``numpy.random.Generator.normal(mean, stddev, size)``,
+          rounded to integers.
+        * **powerlaw** — ``scipy.stats.zipf.rvs(a=gamma, loc=k_min, size)``
+        * **custom** — user-supplied Python list literal; padded/trimmed to
+          ``node_number`` and adjusted for parity.
+
+        Parameters
+        ----------
+        distr_type : str, optional
+            Overrides ``self.params["degree_distr"]["type"]`` (used when the
+            caller wants a uniform sequence from ``if_range``).
+        distr_params : list, optional
+            Overrides ``self.params["degree_distr"]["params"]``.
+
+        Returns
+        -------
+        list[int]
+            Degree sequence of length ``node_number`` with even sum.
+        """
+        if distr_type is None:
+            distr_type = self.params["degree_distr"].get("type")
+        if distr_params is None:
+            distr_params = self.params["degree_distr"].get("params")
         degrees = []
-        # generate the sequence of the degrees starting from the parameters of the degree distribution.
-        # note that the sum of the degrees must be even, because each edge connect 2 nodes
-        match type:
-            case "BINOMIAL":
-                n = params[0]
-                if n > self.node_number:
-                    n = self.node_number
-                p = params[1]
-                degrees = self.rng.binomial(n, p, self.node_number)
+        # Generate the degree sequence from the distribution parameters.
+        # NOTE: the sum of the degrees must be even (handshaking lemma).
+        match distr_type:
+            case "binomial":
+                n = distr_params[0]
+                if n > self.params["node_number"]:
+                    n = self.params["node_number"]
+                p = distr_params[1]
+                degrees = self.rng.binomial(n, p, self.params["node_number"])
                 while sum(degrees) % 2 != 0:
-                    degrees = self.rng.binomial(n, p, self.node_number)
-            case "UNIFORM":
-                min = params[0]
-                max = params[1]
-                if max > self.node_number:
-                    max = self.node_number
-                degrees = self.rng.integers(min, max + 1, self.node_number)
+                    degrees = self.rng.binomial(n, p, self.params["node_number"])
+            case "uniform":
+                low = distr_params[0]
+                high = distr_params[1]
+                if high > self.params["node_number"]:
+                    high = self.params["node_number"]
+                degrees = self.rng.integers(low, high + 1, self.params["node_number"])
                 while sum(degrees) % 2 != 0:
-                    degrees = self.rng.integers(min, max + 1, self.node_number)
-            case "NORMAL":
-                mean = params[0]
-                stddev = params[1]
-                if mean > self.node_number:
-                    mean = self.node_number
-                degrees = self.rng.normal(mean, stddev, self.node_number)
+                    degrees = self.rng.integers(low, high + 1, self.params["node_number"])
+            case "normal":
+                mean = distr_params[0]
+                stddev = distr_params[1]
+                if mean > self.params["node_number"]:
+                    mean = self.params["node_number"]
+                degrees = self.rng.normal(mean, stddev, self.params["node_number"])
                 degrees = np.round(degrees).astype(int)
                 while sum(degrees) % 2 != 0:
-                    degrees = self.rng.normal(mean, stddev, self.node_number)
+                    degrees = self.rng.normal(mean, stddev, self.params["node_number"])
                     degrees = np.round(degrees).astype(int)
-            case "POWERLAW":
-                gamma = params[0]
-                k_min = params[1]
-                if k_min > self.node_number:
-                    k_min = self.node_number
-                degrees = zipf.rvs(a = gamma, loc = k_min, size = self.node_number, random_state = self.rng)
+            case "powerlaw":
+                gamma = distr_params[0]
+                k_min = distr_params[1]
+                if k_min > self.params["node_number"]:
+                    k_min = self.params["node_number"]
+                degrees = zipf.rvs(a = gamma, loc = k_min, size = self.params["node_number"], random_state = self.rng)
                 while sum(degrees) % 2 != 0:
-                    degrees = zipf.rvs(a = gamma, loc = k_min, size = self.node_number, random_state = self.rng)
-            case "CUSTOM":
-                degrees = eval(params)
-                if len(degrees) < self.node_number:
-                    n = self.node_number - len(degrees)
+                    degrees = zipf.rvs(a = gamma, loc = k_min, size = self.params["node_number"], random_state = self.rng)
+            case "custom":
+                degrees = eval(distr_params)
+                if len(degrees) < self.params["node_number"]:
+                    n = self.params["node_number"] - len(degrees)
                     to_append = [degrees[-1]] * n
                     degrees.extend(to_append)
-                elif len(degrees) > self.node_number:
-                    degrees = degrees[:self.node_number]
+                elif len(degrees) > self.params["node_number"]:
+                    degrees = degrees[:self.params["node_number"]]
                 while sum(degrees) % 2 != 0:
                     i = self.rng.integers(0, len(degrees) - 1)
-                    if degrees[i] < self.node_number:
+                    if degrees[i] < self.params["node_number"]:
                         degrees[i] += 1
         
-        # the degree of a node must be 0 <= deg <= node_number
+        # Clip every degree to the valid range [0, node_number]
         for i in range(len(degrees)):
             if degrees[i] < 0:
                 degrees[i] = 0
-            elif degrees[i] > self.node_number:
-                degrees[i] = self.node_number
+            elif degrees[i] > self.params["node_number"]:
+                degrees[i] = self.params["node_number"]
 
         return degrees
 
     
-    def _bound_nodes_degrees(self, G):
-        min_if, max_if = self.if_range[0], self.if_range[1]
+    def _bound_nodes_degrees(self, G: nx.Graph) -> None:
+        """Enforce the ``if_range`` degree bounds on every node in *G*.
+
+        The method runs two iterative passes:
+
+        1. **Excess-degree removal** — Nodes whose degree exceeds ``max_if``
+           have edges removed.  When ``connected`` is ``True``, bridge edges
+           are skipped to preserve connectivity.
+        2. **Deficit-degree addition** — Nodes whose degree is below ``min_if``
+           gain edges to random non-neighbours that still have capacity.
+
+        Both passes loop until convergence (no further modification is
+        possible).  If the constraints cannot be fully satisfied,
+        ``NetworkXUnfeasible`` is raised.
+
+        Raises
+        ------
+        nx.NetworkXUnfeasible
+            If bounds are infeasible for the current graph structure.
+        """
+        min_if, max_if = self.params["if_range"][0], self.params["if_range"][1]
         nodes = list(nx.nodes(G))
         modified = True
         while modified:
@@ -418,7 +696,7 @@ class NetworkGenerator:
                     self.rng.shuffle(neighbors)
                     for node_b in neighbors:
                         if nx.degree(G, node_b) > min_if and nx.degree(G, node_a) > max_if:
-                            if self.connected == False:
+                            if self.params["connected"] == False:
                                 G.remove_edge(node_a, node_b)
                                 modified = True
                                 break
@@ -452,10 +730,20 @@ class NetworkGenerator:
                 raise nx.NetworkXUnfeasible("can't bound the number of interfaces for each node")
         
     
-    def _join_subgraphs(self, subgraphs):
+    def _join_subgraphs(self, subgraphs: list[nx.Graph]) -> None:
+        """Merge *subgraphs* into ``self.G`` and add inter-cluster edges.
+
+        The sub-graphs are concatenated via ``nx.disjoint_union_all`` (which
+        relabels nodes to avoid collisions).  Then, for every pair of clusters,
+        each possible inter-cluster edge is included independently with
+        probability ``inter_clusters_coeff`` (defaults to 0.01).
+
+        The implementation uses vectorised NumPy meshgrids and boolean masks
+        for efficiency on large cluster pairs.
+        """
         n_clusters = len(subgraphs)
-        p = self.inter_clusters_coeff
-        if p == None:
+        p = self.params["inter_clusters_coeff"]
+        if p is None:
             p = 0.01
         self.G = nx.disjoint_union_all(subgraphs)
         all_nodes = list(self.G.nodes())
@@ -478,16 +766,22 @@ class NetworkGenerator:
                 for u, v in zip(u_flat[mask], v_flat[mask]):
                     self.G.add_edge(int(u), int(v), color = "black")
 
-    
-    def _handle_central_nodes(self):
-        # Logic to identify and handle central nodes
-        pass
 
+    def _draw_graph(self, output_path: str = None) -> None:
+        """Render the topology as a spring-layout visualisation.
 
-    def _draw_graph(self):
-        pos = nx.spring_layout(self.G, seed = self.seed)
+        Node sizes are proportional to degree centrality (squared, so that
+        hub nodes are visually prominent).  Node/edge colours are taken from
+        the ``'color'`` attribute set during topology generation.
+
+        Parameters
+        ----------
+        output_path : str, optional
+            If provided, the figure is saved as a PNG (150 dpi) and the
+            matplotlib figure is closed.  Otherwise ``plt.show()`` is called.
+        """
+        pos = nx.spring_layout(self.G, seed = self.params["seed"])
         centrality = nx.degree_centrality(self.G)
-        # nodes_sizes = list(v * ((1 / self.node_number) * (200000000 * np.var(list(centrality.values())))) + 50 for v in centrality.values())
         scale_factor = 10000
         nodes_sizes = [ (v ** 2) * scale_factor + 50 for v in centrality.values() ]
 
@@ -498,32 +792,46 @@ class NetworkGenerator:
         nx.draw(self.G, pos, with_labels=True, node_size=nodes_sizes, node_color=node_colors, edge_color = edge_colors, font_size=7, font_weight='bold')
         plt.title("Grafo")
         plt.axis('off')
-        plt.show()
+        if output_path:
+            plt.savefig(output_path, dpi=150, bbox_inches='tight')
+            plt.close()
+        else:
+            plt.show()
 
-    
-    def _assign_attributes(self):
-        # Logic to assign attributes like buffer sizes and channel bandwidths and all the probabilities
-        
-        attributes_to_add = [
-            "mls_sessions_range", "filename", "support_protocol",
-            "buffer_size_range", "node_prob_off_to_on", "node_prob_on_to_off",
-            "channel_bandwidth_range", 
-            "channel_prob_working_to_error", "channel_prob_error_to_working", "channel_prob_failure_to_working",
-            "if_prob_off_to_working", "if_prob_off_to_error", "if_prob_off_to_failure",
-            "if_prob_working_to_error", "if_prob_error_to_working", "if_prob_failure_to_working",
-            "link_prob_working_to_error", "link_prob_error_to_working", "link_prob_failure_to_working", "link_prob_retry", "link_prob_sending",
-            "ls_prob_session_reset", "ls_prob_ratchet_reset", "ls_prob_none", "ls_prob_compromised",
-            "sp_prob_run"
-        ]
-        
-        for attr_name in attributes_to_add:
-            self.attributes[attr_name] = self.params[attr_name]
+    # ── Path / session generation ────────────────────────────────────────────
 
-        
-    def _generate_paths(self):
+    def _generate_paths(self) -> None:
+        """Create directed communication paths and populate ``self.sessions``.
+
+        The structure of the sessions depends on the protocol:
+
+        **hpke / double_ratchet** (point-to-point):
+            For every ordered pair of nodes ``(a, b)`` with ``a < b``,
+            a bidirectional session is created with probability ``path_perc``.
+            Each session holds two paths: ``a→b`` and ``b→a`` (return path).
+
+        **sender_key** (one-to-many + one-to-one sub-sessions):
+            Each node is selected as a sender with probability ``path_perc``.
+            For each sender, receivers are sampled (again with ``path_perc``),
+            producing a broadcast tree (``nx.DiGraph``).  Additionally, a
+            one-to-one sub-session (using the configured support protocol) is
+            created for every sender-receiver pair (forward + return path).
+
+        **mls** (group multicast):
+            Nodes are shuffled and partitioned into groups of ≥ 2 nodes.
+            Within each group every member creates a one-to-many broadcast
+            tree to all other members.  When a group has > 2 members, the
+            one-to-one paths for each pair are also added.
+
+        Every path tree is an ``nx.DiGraph`` whose first node is the sender.
+        Receiver nodes carry the attribute ``is_receiver = True``.  Epoch and
+        ratchet sizes are sampled per session from ``ls_size_epoch_range``
+        and ``ls_size_ratchet_range``.
+        """
         nodes = list(self.G.nodes())
-        #if the protocol is hpke or double ratchet, we need only one-to-one paths and return paths
-        match self.protocol:
+        # Route according to the selected protocol
+        match self.params["protocol"]:
+            # ── HPKE / Double-Ratchet: bidirectional one-to-one paths ──
             case "hpke" | "double_ratchet":
                 paths = []
                 return_paths = []
@@ -534,10 +842,10 @@ class NetworkGenerator:
                         if i != j:
                             a = nodes[i]
                             b = nodes[j]
-                            if self.rng.random() < self.path_perc:
+                            if self.rng.random() < self.params["path_perc"]:
                                 path = nx.DiGraph()
                                 nx.add_path(path, nx.shortest_path(self.G, a, b))
-                                # select the size of epoch and ratchet for sender and receiver
+                                # Sample epoch / ratchet sizes for this session
                                 if self.params.get("ls_size_epoch_range")[0] == self.params.get("ls_size_epoch_range")[1]:
                                     epoch_size = int(self.params.get("ls_size_epoch_range")[0])
                                 else:
@@ -556,7 +864,7 @@ class NetworkGenerator:
 
                                 paths.append(path)
 
-                                # generate the return path
+                                # Generate the symmetric return path (b → a)
                                 return_path = nx.DiGraph()
                                 nx.add_path(return_path, nx.shortest_path(self.G, b, a))
 
@@ -570,32 +878,26 @@ class NetworkGenerator:
 
                                 session = Session()
                                 session.set_id(id)
-                                session.set_protocol(self.protocol)
+                                session.set_protocol(self.params["protocol"])
                                 session.set_nodes([a, b])
                                 session.add_path(path)
                                 session.add_path(return_path)
                                 sessions.append(session)
                                 id += 1
 
-                                # correspondence between paths and sessions
-                                print(f"Session ID: {session.get_id()}, Nodes: {session.get_nodes()}")
-                                print("Paths:")
-                                for p in session.get_paths():
-                                    print(list(p.edges()))
-                                print("\n")
+                self.sessions = sessions
 
-                self.attributes["paths"] = paths
-                self.attributes["return_paths"] = return_paths
-                self.attributes["sessions"] = sessions
-
-            # for sender key, we need one-to-many paths and all the one-to-one paths sender_receiver and receiver_sender
+            # ── Sender-Key: one-to-many + sub-session per receiver ──
+            # For sender_key, we need one-to-many paths and all the one-to-one
+            # paths sender→receiver and receiver→sender (via support protocol).
             case "sender_key":
-                # first, select senders
+                # Step 1: select senders with probability path_perc
                 senders = []
                 for node in nodes:
-                    if self.rng.random() < self.path_perc:
+                    if self.rng.random() < self.params["path_perc"]:
                         senders.append(node)
-                # now, for each sender, select receivers and generate paths
+                # Step 2: for each sender, select receivers and build broadcast
+                # tree via shortest paths on the undirected topology graph.
                 one_to_many_paths = []
                 sessions = []
                 for sender in senders:
@@ -611,7 +913,7 @@ class NetworkGenerator:
 
                     destinations = []
                     for node in nodes:
-                        if node != sender and self.rng.random() < self.path_perc:
+                        if node != sender and self.rng.random() < self.params["path_perc"]:
                             destinations.append(node)
                     if len(destinations) == 0:
                         destinations.append(self.rng.choice([n for n in nodes if n != sender]))
@@ -619,7 +921,8 @@ class NetworkGenerator:
                     tree.add_node(sender)
                     tree.nodes[sender]['epoch_size'] = epoch_size
                     tree.nodes[sender]['ratchet_size'] = ratchet_size
-                    # for each destination, generate the shortest path from sender to destination and add it to the tree
+                    # Step 3: for each destination, compute the shortest path from
+                    # sender to dest and merge it into the broadcast tree.
                     for dest in destinations:
                         path = nx.DiGraph()
                         nx.add_path(path, nx.shortest_path(self.G, sender, dest))
@@ -630,9 +933,8 @@ class NetworkGenerator:
                         tree.nodes[dest]['ratchet_size'] = ratchet_size
                     one_to_many_paths.append(tree)
 
-                self.attributes["one_to_many_paths"] = one_to_many_paths
-
-                # generate all the one-to-one paths from sender to each receiver
+                # Step 4: create bidirectional one-to-one support-protocol
+                # sub-sessions between sender and each receiver.
                 one_to_one_paths = []
                 one_to_one_return_paths = []
                 id = 0
@@ -677,15 +979,16 @@ class NetworkGenerator:
 
                         subsession = Session()
                         subsession.set_id(id)
-                        subsession.set_protocol(self.attributes.get("support_protocol"))
+                        subsession.set_protocol(self.params["support_protocol"])
                         subsession.set_nodes([sender, receiver])
                         subsession.add_path(path)
                         subsession.add_path(return_path)
                         subsessions.append(subsession)
                         id += 1
-                    # now add the subsessions to the main session. Select the session of the sender
+                    # Assemble the main sender_key session: broadcast tree +
+                    # all one-to-one sub-sessions.
                     session.set_id(id)
-                    session.set_protocol(self.protocol)
+                    session.set_protocol(self.params["protocol"])
                     session.set_nodes([sender] + receivers)
                     session.add_path(tree)
                     for subsession in subsessions:
@@ -693,56 +996,52 @@ class NetworkGenerator:
                     sessions.append(session)
                     id += 1
                 
-                self.attributes["one_to_one_paths"] = one_to_one_paths
-                self.attributes["one_to_one_return_paths"] = one_to_one_return_paths
-                self.attributes["sessions"] = sessions
+                
+                
+                self.sessions = sessions
 
-                # correspondence between paths and sessions
-                for session in sessions:
-                    print(f"Session ID: {session.get_id()}, Nodes: {session.get_nodes()}")
-                    print("Paths:")
-                    for p in session.get_paths():
-                        print(list(p.edges()))
-                    print("Subsessions:")
-                    for ss in session.get_subsessions():
-                        print(f"  Subsession ID: {ss.get_id()}, Nodes: {ss.get_nodes()}")
-                        for p in ss.get_paths():
-                            print(f"    {list(p.edges())}")
-                    print("\n")
-            
+            # ── MLS: group multicast, one-to-many per member ──
             case "mls":
-                # for mls, generate random sessions and one-to-many paths in each session with the one to one return paths
-                # partition the nodes into sessions
+                # For MLS, partition nodes into groups and within each group
+                # every member broadcasts to all other members.
                 nodes = nodes.copy()
                 self.rng.shuffle(nodes)
+
+                # Determine the number of groups from mls_sessions_range
                 if self.params.get("mls_sessions_range") is None:
                     sessions_number = 1
-                if self.params.get("mls_sessions_range")[0] == self.params.get("mls_sessions_range")[1]:
+                elif self.params.get("mls_sessions_range")[0] == self.params.get("mls_sessions_range")[1]:
                     sessions_number = self.params.get("mls_sessions_range")[0]
-                    if sessions_number > len(nodes):
+                    if sessions_number > len(nodes) // 2:
                         sessions_number = 1
                 else:
                     sessions_number = self.rng.integers(self.params.get("mls_sessions_range")[0], self.params.get("mls_sessions_range")[1] + 1)
-                    while sessions_number > len(nodes):
+                    while sessions_number > len(nodes) // 2:
                         sessions_number = self.rng.integers(self.params.get("mls_sessions_range")[0], self.params.get("mls_sessions_range")[1] + 1)
 
-                cut_points = sorted(self.rng.choice(range(1, len(nodes)), sessions_number - 1, replace = False))
-                cut_points = [0] + cut_points + [len(nodes)]
-                groups = []
-                for i in range(len(cut_points) - 1):
-                    start = cut_points[i]
-                    end = cut_points[i + 1]
-                    group_nodes = nodes[start:end]
-                    groups.append(group_nodes)
+                # Partition nodes into groups of ≥ 2 members.
+                # Phase 1: assign 2 nodes per group (minimum viable group).
+                # Phase 2: distribute remaining nodes randomly.
+                groups = [[] for _ in range(sessions_number)]
+                idx = 0
+                for g in range(sessions_number):
+                    groups[g].append(nodes[idx])
+                    groups[g].append(nodes[idx + 1])
+                    idx += 2
+                remaining = nodes[idx:]
+                for node in remaining:
+                    g = int(self.rng.integers(0, sessions_number))
+                    groups[g].append(node)
 
                 one_to_many_paths = []
                 one_to_one_return_paths = []
                 sessions = []
                 id = 0
-                # for each group, generate all the one-to-many paths
+                # For each group, every member generates a broadcast tree
+                # reaching all other group members.
                 for group in groups:
                     session = Session()
-                    session.set_protocol(self.protocol)
+                    session.set_protocol(self.params["protocol"])
                     session.set_nodes(group)
                     session.set_id(id)
                     for sender in group:
@@ -756,17 +1055,13 @@ class NetworkGenerator:
                         else:
                             ratchet_size = int(self.rng.integers(self.params.get("ls_size_ratchet_range")[0], self.params.get("ls_size_ratchet_range")[1] + 1))
 
-                        destinations = [node for node in group if node != sender]
-                        tree = nx.DiGraph()
-                        tree.add_node(sender)
-                        tree.nodes[sender]['epoch_size'] = epoch_size
-                        tree.nodes[sender]['ratchet_size'] = ratchet_size
-                        # for each destination, generate the shortest path from sender to destination and add it to the tree
+                        # Build broadcast tree: for each destination, merge the
+                        # shortest path into the tree.
                         for dest in destinations:
                             path = nx.DiGraph()
                             nx.add_path(path, nx.shortest_path(self.G, sender, dest))
                             nx.add_path(tree, path)
-                            # mark the destination node as receiver
+                            # Mark the destination node as a receiver
                             tree.nodes[dest]['is_receiver'] = True
                             tree.nodes[dest]['epoch_size'] = epoch_size
                             tree.nodes[dest]['ratchet_size'] = ratchet_size
@@ -781,28 +1076,47 @@ class NetworkGenerator:
                         id += 1
                         sessions.append(session)
 
-                self.attributes["sessions"] = sessions
-                self.attributes["one_to_many_paths"] = one_to_many_paths
-                self.attributes["one_to_one_return_paths"] = one_to_one_return_paths
-
-                # correspondence between paths and sessions
-                for session in sessions:
-                    print(f"Session ID: {session.get_id()}, Nodes: {session.get_nodes()}")
-                    print("Paths:")
-                    for p in session.get_paths():
-                        print(list(p.edges()))
-                    print("Subsessions:")
-                    for ss in session.get_subsessions():
-                        print(f"  Subsession ID: {ss.get_id()}, Nodes: {ss.get_nodes()}")
-                        for p in ss.get_paths():
-                            print(f"    {list(p.edges())}")
-                    print("\n")
+                self.sessions = sessions
 
 
-    def _generate_rewards(self):
-        self.attributes["rewards"] = []
+    # ── Reward generation ────────────────────────────────────────────────────
+
+    def _generate_rewards(self) -> None:
+        """Build PRISM reward structures and store them in ``self.rewards``.
+
+        The following reward families are generated:
+
+        * **Message rewards** (per protocol):
+          - ``reward_data_message_<proto>`` — counts data-message sends.
+          - ``reward_system_message_<proto>`` — counts system-message sends.
+        * **Aggregate message rewards**:
+          - ``reward_total_messages_sent`` — total sends across all paths.
+          - ``reward_total_messages_received`` — messages that reached receivers.
+          - ``reward_total_messages_lost`` — messages not received.
+          - ``reward_total_messages_check_success / _check_failure``.
+        * **Resource rewards**:
+          - ``reward_bandwidth_availability`` — average relative channel usage.
+          - ``reward_memory_availability`` — average relative buffer usage.
+        * **Security & availability rewards**:
+          - ``reward_network_vulnerability`` — fraction of sessions with ≥ 1
+            compromised node.
+          - ``reward_network_availability`` — fraction of nodes ON plus
+            non-failed channels/interfaces.
+          - ``reward_network_degradation`` — fraction of channels/interfaces
+            in the *error* state.
+
+        All values are expressed as PRISM arithmetic expressions referencing
+        the generated module variable names.
+        """
+        self.rewards = []
 
         def generate_message_reward():
+            """Inner helper that builds all reward structures.
+
+            Uses closures over ``self.sessions``, ``self.G``,
+            ``self.nodes_buffer_sizes`` and ``self.channel_bandwidth``.
+            Results are appended to ``self.rewards``.
+            """
             with open("config/netgen_files.json", "r") as f:
                 files_config = json.load(f)
             
@@ -823,34 +1137,48 @@ class NetworkGenerator:
                 "mls": Reward("reward_system_message_mls")
             }
 
-            reward_message = Reward("reward_total_messages")
+            reward_message_sent = Reward("reward_total_messages_sent")
+            reward_message_received = Reward("reward_total_messages_received")
+            reward_message_lost = Reward("reward_total_messages_lost")
+            reward_message_check_success = Reward("reward_total_messages_check_success")
+            reward_message_check_failure = Reward("reward_total_messages_check_failure")
 
-            sessions = self.attributes["sessions"].copy()
-            for session in self.attributes["sessions"]:
+            reward_bandwidth_availability = Reward("reward_bandwidth_availability")
+            reward_memory_availability = Reward("reward_memory_availability")
+            reward_network_vulnerability = Reward("reward_network_vulnerability")
+    
+            reward_network_availability = Reward("reward_network_availability")
+            reward_network_degradation = Reward("reward_network_degradation")
+
+
+            # Flatten all sessions (including sub-sessions) for iteration
+            sessions = self.sessions.copy()
+            for session in self.sessions:
                 ss = session.get_subsessions()
                 sessions.extend(ss)
 
+            # ── Per-path message rewards (data vs. system) ────────────────
             for session in sessions:
                 for i, path in enumerate(session.paths):
                     id = session.id
                     session_path = f"{i}_{id}" 
                     command = f"cmd_send_session_path_{session_path}"
 
-                    reward_message.add_contribution(Contribution(command, "true", "1"))
+                    reward_message_sent.add_contribution(Contribution(command, "true", "1"))
 
                     match session.protocol:
                         case "hpke":
-                            condition = f"(sender_path_system_message_{session_path} = {consts['const_message_data']}) | (sender_path_system_message_{session_path} = {consts['const_message_ratchet']})"
+                            condition = f"(session_path_data_message_{session_path} = {consts['const_message_data']})"
                             value = "1" 
                             rewards_data["hpke"].add_contribution(Contribution(command, condition, value))
-                            condition = f"(sender_path_system_message_{session_path} = {consts['const_message_reset']})"
+                            condition = f"(session_path_system_message_{session_path} = {consts['const_message_reset']})"
                             rewards_system["hpke"].add_contribution(Contribution(command, condition, value))
 
                         case "double_ratchet":
-                            condition = f"(sender_path_system_message_{session_path} = {consts['const_message_ratchet']})"
+                            condition = f"(session_path_data_message_{session_path} = {consts['const_message_data']})"
                             value = "1" 
                             rewards_data["double_ratchet"].add_contribution(Contribution(command, condition, value))
-                            condition = f"(sender_path_system_message_{session_path} = {consts['const_message_reset']})"
+                            condition = f"(session_path_system_message_{session_path} = {consts['const_message_reset']})"
                             rewards_system["double_ratchet"].add_contribution(Contribution(command, condition, value))
 
                         case "hpke_sender_key" | "double_ratchet_sender_key":
@@ -864,24 +1192,123 @@ class NetworkGenerator:
                             rewards_data["sender_key"].add_contribution(Contribution(command, condition, value))
 
                         case "mls":                    
-                            condition = f"(sender_path_system_message_{session_path} != {consts['const_message_tree_refresh']}) & (sender_path_system_message_{session_path} != {consts['const_message_current_tree']})"
+                            condition = f"(session_path_system_message_{session_path} != {consts['const_message_tree_refresh']}) & (session_path_system_message_{session_path} != {consts['const_message_current_tree']})"
                             value = "1" 
                             rewards_data["mls"].add_contribution(Contribution(command, condition, value))
-                            condition = f"(sender_path_system_message_{session_path} == {consts['const_message_tree_refresh']}) | (sender_path_system_message_{session_path} == {consts['const_message_current_tree']})"
+                            condition = f"(session_path_system_message_{session_path} == {consts['const_message_tree_refresh']}) | (session_path_system_message_{session_path} == {consts['const_message_current_tree']})"
                             rewards_system["mls"].add_contribution(Contribution(command, condition, value))
+                    
+                    for node in self._get_receivers_from_path(path):
+                        command = f"cmd_cleanup_session_checker_of_node_{node}_of_path_{i}_{id}"
+                        condition = f"(session_checker_message_arrived_{node}_{i}_{id} = true)"
+                        value = "1"
+                        reward_message_received.add_contribution(Contribution(command, condition, value))
+                        condition = f"(session_checker_message_arrived_{node}_{i}_{id} = false)"
+                        reward_message_lost.add_contribution(Contribution(command, condition, value))
 
-            self.attributes["rewards"].extend(list(rewards_data.values()) + list(rewards_system.values()) + [reward_message])
+                        command = f"cmd_check_success_session_checker_of_node_{node}_of_path_{i}_{id}"
+                        condition = "true"
+                        value = "1"
+                        reward_message_check_success.add_contribution(Contribution(command, condition, value))
+                        command = f"cmd_check_failure_session_checker_of_node_{node}_of_path_{i}_{id}"
+                        reward_message_check_failure.add_contribution(Contribution(command, condition, value))
+
+            # ── Network vulnerability reward ──────────────────────────────
+            # Value = fraction of sessions that have at least one compromised node.
+            command = ""
+            condition = "true"
+            value = "("
+            for session in sessions:
+                value += "(("
+                for node in session.nodes:
+                    value += f"(local_session_compromised_{node}_{session.id} = true ? 1 : 0) + "
+                value = value[:-3] + ") >= 1 ? 1 : 0) + "
+            value = value[:-3] + f") / {len(sessions)}"
+            reward_network_vulnerability.add_contribution(Contribution(command, condition, value))
+
+
+            # ── Resource availability rewards (memory & bandwidth) ────────
+            # Memory: average ratio of remaining buffer / total buffer per node.
+            command = ""
+            condition = "true"
+            value = "("
+            for node in list(self.G.nodes()):
+                value += f"node_buffer_{node} / {self.nodes_buffer_sizes[node]} + "
+
+            value = value[:-3] + f") / {len(list(self.G.nodes()))}" 
+            reward_memory_availability.add_contribution(Contribution(command, condition, value))
+
+            # Bandwidth: average ratio of remaining bandwidth / total per channel.
+            value = "("
+            for edge in list(self.G.edges()):
+                command = ""
+                condition = "true"
+                value += f"channel_bandwidth_{edge[0]}_{edge[1]} / {self.channel_bandwidth[f'{edge[0]}_{edge[1]}']} + "
+                value += f"channel_bandwidth_{edge[1]}_{edge[0]} / {self.channel_bandwidth[f'{edge[1]}_{edge[0]}']} + "
+            value = value[:-3] + f") / {len(list(self.G.edges()))}" 
+            reward_bandwidth_availability.add_contribution(Contribution(command, condition, value))
+
+
+            # generation of the rewards for network availability and degradation
+            command = ""
+            condition = "true"
+            value = "("
+            for node in list(self.G.nodes()):
+                value += f"(node_state_{node} = {consts['const_on']} ? 1 : 0) + "
+            for edge in list(self.G.edges()):
+                value += f"(channel_state_{edge[0]}_{edge[1]} != {consts['const_failure']} ? 1 : 0) + "
+                value += f"(channel_state_{edge[1]}_{edge[0]} != {consts['const_failure']} ? 1 : 0) + "
+                value += f"(interface_state_{edge[0]}_{edge[1]} != {consts['const_failure']} & interface_state_{edge[0]}_{edge[1]} != {consts['const_off']} ? 1 : 0) + "
+                value += f"(interface_state_{edge[1]}_{edge[0]} != {consts['const_failure']} & interface_state_{edge[1]}_{edge[0]} != {consts['const_off']} ? 1 : 0) + "
+            value = value[:-3] + f") / {(len(list(self.G.nodes())) + 4 * len(list(self.G.edges())))}"
+            reward_network_availability.add_contribution(Contribution(command, condition, value))
+
+            value = "("
+            for edge in list(self.G.edges()):
+                value += f"(channel_state_{edge[0]}_{edge[1]} = {consts['const_error']} ? 1 : 0) + "
+                value += f"(channel_state_{edge[1]}_{edge[0]} = {consts['const_error']} ? 1 : 0) + "
+                value += f"(interface_state_{edge[0]}_{edge[1]} = {consts['const_error']} ? 1 : 0) + "
+                value += f"(interface_state_{edge[1]}_{edge[0]} = {consts['const_error']} ? 1 : 0) + "
+            value = value[:-3] + f") / {(4 * len(list(self.G.edges())))}"
+            reward_network_degradation.add_contribution(Contribution(command, condition, value))
+            
+            self.rewards.extend(list(rewards_data.values()) + list(rewards_system.values()) + [reward_message_sent, reward_message_received, reward_message_lost, reward_message_check_success, reward_message_check_failure, reward_bandwidth_availability, reward_memory_availability, reward_network_vulnerability, reward_network_availability, reward_network_degradation])
         
         generate_message_reward()
 
 
-    def _generate_policies(self):
-        pass
+    # ── JSON serialisation ───────────────────────────────────────────────────
 
+    def _generate_json(self) -> dict:
+        """Assemble the complete PRISM-ready network descriptor.
 
-    def _generate_json(self):
-        # Logic to convert the network structure into JSON format
-        # first add the constants from the consts.json file
+        The output dictionary has the shape::
+
+            {
+                "consts": { ... },    # shared PRISM constants + abstraction level
+                "items": [
+                    { "name": "node_modules",            ... },
+                    { "name": "interface_modules",       ... },
+                    { "name": "channel_modules",         ... },
+                    { "name": "link_modules",            ... },
+                    { "name": "link_ref_modules",        ... },
+                    { "name": "session_path_modules",    ... },
+                    { "name": "local_session_modules",   ... },
+                    { "name": "session_checker_modules",  ... },
+                    { "name": "rewards_modules",         ... }
+                ]
+            }
+
+        Each item in ``items`` is produced by the corresponding
+        ``_add_<component>_to_dict()`` method.  The order matters for the
+        preprocessor, which iterates ``items`` sequentially.
+
+        Returns
+        -------
+        dict
+            The full network descriptor.
+        """
+        # Load shared constants from the external JSON files
         with open("config/netgen_files.json", "r") as f:
             files_config = json.load(f)
 
@@ -891,6 +1318,7 @@ class NetworkGenerator:
         
         network_dict = {}
 
+        consts["abstraction"] = self.params["abstraction"]
         network_dict["consts"] = consts
         network_dict["items"] = []
 
@@ -927,13 +1355,93 @@ class NetworkGenerator:
         network_dict["items"].append(session_checkers_dict)
 
         # add rewards
+        self._generate_rewards()
         rewards_dict = self._add_rewards_to_dict()
         network_dict["items"].append(rewards_dict)
 
         return network_dict
 
     
-    def _add_nodes_to_dict(self):
+    def _generate_sessions_summary(self) -> dict:
+        """Generate a hierarchical JSON-ready summary of all sessions.
+
+        The summary provides a human-readable (and machine-parseable) view of
+        every session, its paths (with sender/receiver annotations) and any
+        sub-sessions.  It is saved alongside the main network JSON for
+        debugging and documentation purposes.
+
+        Returns
+        -------
+        dict
+            ``{"sessions": [<session_dict>, ...]}`` where each session_dict
+            contains ``id``, ``protocol``, ``nodes``, ``paths`` and
+            ``subsessions``.
+        """
+        summary = {"sessions": []}
+        for session in self.sessions:
+            s_dict = {
+                "id": session.get_id(),
+                "protocol": session.protocol,
+                "nodes": session.get_nodes(),
+                "paths": [],
+                "subsessions": []
+            }
+            for path in session.get_paths():
+                p_dict = {
+                    "nodes": list(path.nodes()),
+                    "edges": list(path.edges()),
+                    "sender": list(path.nodes())[0],
+                    "receivers": [n for n, attr in path.nodes(data=True) if attr.get("is_receiver")]
+                }
+                s_dict["paths"].append(p_dict)
+            for sub in session.get_subsessions():
+                sub_dict = {
+                    "id": sub.get_id(),
+                    "protocol": sub.protocol,
+                    "nodes": sub.get_nodes(),
+                    "paths": []
+                }
+                for path in sub.get_paths():
+                    p_dict = {
+                        "nodes": list(path.nodes()),
+                        "edges": list(path.edges()),
+                        "sender": list(path.nodes())[0],
+                        "receivers": [n for n, attr in path.nodes(data=True) if attr.get("is_receiver")]
+                    }
+                    sub_dict["paths"].append(p_dict)
+                s_dict["subsessions"].append(sub_dict)
+            summary["sessions"].append(s_dict)
+        return summary
+
+    
+    # ── Component serialisation helpers ─────────────────────────────────────
+    # Each ``_add_<component>_to_dict`` method reads the shared config files
+    # (ranges, init, consts) and iterates over the topology graph and/or
+    # sessions to produce a dict with keys ``name``, ``template`` and
+    # ``instances``.  Every instance maps 1-to-1 to a PRISM module file
+    # emitted by the preprocessor.
+
+    def _add_nodes_to_dict(self) -> dict:
+        """Serialise node PRISM modules.
+
+        For each node in the topology graph, builds an instance dict containing:
+
+        * State range and initial values (from ``ranges.json`` / ``init.json``).
+        * Buffer size (sampled from ``buffer_size_range``).
+        * Transition probabilities (``off_to_on``, ``on_to_off``).
+        * Synchronisation commands for power-on, power-off and shutdown.
+        * Cross-references to links arriving at this node, link_refs owned by
+          this node, session paths departing from it, and session checkers.
+
+        Side-effects
+        ------------
+        Populates ``self.nodes_buffer_sizes`` for downstream methods.
+
+        Returns
+        -------
+        dict
+            ``{"name": "node_modules", "template": ..., "instances": [...]}``
+        """
         with open("config/netgen_files.json", "r") as f:
             files_config = json.load(f)
 
@@ -948,32 +1456,32 @@ class NetworkGenerator:
         nodes_dict["name"] = "node_modules"
         nodes_dict["template"] = files_config.get("node_template")
         nodes_dict["instances"] = []
-        range = ranges.get("node_range_state")
+        range_state = ranges.get("node_range_state")
         sizes = {}
         nodes = list(self.G.nodes())
         for node in nodes:
             node_to_add = {}
             node_to_add["name"] = f"node_{node}.prism"
             node_to_add["#"] = node
-            node_to_add["range_state"] = range
+            node_to_add["range_state"] = range_state
             node_to_add["init_state"] = init.get("node_init_state")
             node_to_add["init_on_to_off"] = init.get("node_on_to_off_init")
-            if self.attributes.get("buffer_size_range")[0] == self.attributes.get("buffer_size_range")[1]:
-                size_buffer = self.attributes.get("buffer_size_range")[0]
+            if self.params["buffer_size_range"][0] == self.params["buffer_size_range"][1]:
+                size_buffer = self.params["buffer_size_range"][0]
             else:
-                size_buffer = int(self.rng.integers(self.attributes.get("buffer_size_range")[0], self.attributes.get("buffer_size_range")[1] + 1))
+                size_buffer = int(self.rng.integers(self.params["buffer_size_range"][0], self.params["buffer_size_range"][1] + 1))
             node_to_add["size_buffer"] = size_buffer    
             sizes[node] = size_buffer
             node_to_add["init_buffer"] = init.get("node_init_buffer")
-            if self.attributes.get("node_prob_off_to_on")[0] == self.attributes.get("node_prob_off_to_on")[1]:
-                prob_off_to_on = self.attributes.get("node_prob_off_to_on")[0]
+            if self.params["node_prob_off_to_on"][0] == self.params["node_prob_off_to_on"][1]:
+                prob_off_to_on = self.params["node_prob_off_to_on"][0]
             else:
-                prob_off_to_on = round(self.rng.uniform(self.attributes.get("node_prob_off_to_on")[0], self.attributes.get("node_prob_off_to_on")[1]), 2)
+                prob_off_to_on = round(self.rng.uniform(self.params["node_prob_off_to_on"][0], self.params["node_prob_off_to_on"][1]), 2)
             node_to_add["prob_off_to_on"] = prob_off_to_on
-            if self.attributes.get("node_prob_on_to_off")[0] == self.attributes.get("node_prob_on_to_off")[1]:
-                prob_on_to_off = self.attributes.get("node_prob_on_to_off")[0]
+            if self.params["node_prob_on_to_off"][0] == self.params["node_prob_on_to_off"][1]:
+                prob_on_to_off = self.params["node_prob_on_to_off"][0]
             else:
-                prob_on_to_off = round(self.rng.uniform(self.attributes.get("node_prob_on_to_off")[0], self.attributes.get("node_prob_on_to_off")[1]), 2)
+                prob_on_to_off = round(self.rng.uniform(self.params["node_prob_on_to_off"][0], self.params["node_prob_on_to_off"][1]), 2)
             node_to_add["prob_on_to_off"] = prob_on_to_off
 
             # commands
@@ -981,10 +1489,11 @@ class NetworkGenerator:
             node_to_add["cmd_on_to_off"] = f"cmd_on_to_off_node_{node}"
             node_to_add["cmd_shutting_down"] = f"cmd_shutting_down_node_{node}"
 
-            # now i need all the links that arrives to this node
+            # Collect all links that deliver messages TO this node
+            # (used for buffer decrement synchronisation in the PRISM model).
             links = []
-            sessions = self.attributes.get("sessions").copy()
-            for session in self.attributes.get("sessions"):
+            sessions = self.sessions.copy()
+            for session in self.sessions:
                 ss = session.get_subsessions()
                 sessions.extend(ss)
             for session in sessions:
@@ -1000,7 +1509,7 @@ class NetworkGenerator:
 
             node_to_add["links"] = links
 
-            # here i need the list of the link_refs of this node
+            # Collect link_ref counters owned by this node (non-receiver roles)
             link_refs = []
             for session in sessions:
                 for i, path in enumerate(session.paths):
@@ -1012,7 +1521,7 @@ class NetworkGenerator:
 
             node_to_add["link_refs"] = link_refs
 
-            # i need all the session paths that start from this node
+            # Collect session paths where this node is the sender
             session_paths = []
             for session in sessions:
                 for i, path in enumerate(session.paths):
@@ -1024,7 +1533,7 @@ class NetworkGenerator:
                                 
             node_to_add["session_paths"] = session_paths
 
-            # i need all the session checker on this node
+            # Collect session checkers where this node is a receiver
             session_checkers = []
             for session in sessions:
                 if node in session.nodes:
@@ -1039,11 +1548,28 @@ class NetworkGenerator:
             node_to_add["session_checkers"] = session_checkers
 
             nodes_dict["instances"].append(node_to_add)
-        self.attributes["nodes_buffer_sizes"] = sizes
+        self.nodes_buffer_sizes = sizes
         return nodes_dict
             
 
-    def _add_interfaces_to_dict(self):
+    def _add_interfaces_to_dict(self) -> dict:
+        """Serialise interface PRISM modules — two per undirected edge (A→B, B→A).
+
+        Each interface instance records:
+
+        * State range and initial value.
+        * Six transition probabilities for the interface state machine
+          (off→working, off→error, off→failure, working→error, error→working,
+          failure→working).
+        * Synchronisation commands for state transitions and node shutdown.
+        * Lists of incoming / outgoing link commands that traverse this
+          interface (derived by scanning all session paths).
+
+        Returns
+        -------
+        dict
+            ``{"name": "interface_modules", "template": ..., "instances": [...]}``
+        """
         with open("config/netgen_files.json", "r") as f:
             files_config = json.load(f)
 
@@ -1071,31 +1597,31 @@ class NetworkGenerator:
             interface_ab["init_state"] = init.get("interface_init_state")
            
             # probabilities
-            if self.attributes.get("if_prob_off_to_working")[0] == self.attributes.get("if_prob_off_to_working")[1]:
-                interface_ab["prob_off_to_working"] = self.attributes.get("if_prob_off_to_working")[0]
+            if self.params["if_prob_off_to_working"][0] == self.params["if_prob_off_to_working"][1]:
+                interface_ab["prob_off_to_working"] = self.params["if_prob_off_to_working"][0]
             else:
-                interface_ab["prob_off_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_working")[0], self.attributes.get("if_prob_off_to_working")[1]), 2)
-            if self.attributes.get("if_prob_off_to_error")[0] == self.attributes.get("if_prob_off_to_error")[1]:
-                interface_ab["prob_off_to_error"] = self.attributes.get("if_prob_off_to_error")[0]
+                interface_ab["prob_off_to_working"] = round(self.rng.uniform(self.params["if_prob_off_to_working"][0], self.params["if_prob_off_to_working"][1]), 2)
+            if self.params["if_prob_off_to_error"][0] == self.params["if_prob_off_to_error"][1]:
+                interface_ab["prob_off_to_error"] = self.params["if_prob_off_to_error"][0]
             else:
-                interface_ab["prob_off_to_error"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_error")[0], self.attributes.get("if_prob_off_to_error")[1]), 2)
+                interface_ab["prob_off_to_error"] = round(self.rng.uniform(self.params["if_prob_off_to_error"][0], self.params["if_prob_off_to_error"][1]), 2)
             
-            if self.attributes.get("if_prob_off_to_failure")[0] == self.attributes.get("if_prob_off_to_failure")[1]:
-                interface_ab["prob_off_to_failure"] = self.attributes.get("if_prob_off_to_failure")[0]
+            if self.params["if_prob_off_to_failure"][0] == self.params["if_prob_off_to_failure"][1]:
+                interface_ab["prob_off_to_failure"] = self.params["if_prob_off_to_failure"][0]
             else:
-                interface_ab["prob_off_to_failure"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_failure")[0], self.attributes.get("if_prob_off_to_failure")[1]), 2)
-            if self.attributes.get("if_prob_working_to_error")[0] == self.attributes.get("if_prob_working_to_error")[1]:
-                interface_ab["prob_working_to_error"] = self.attributes.get("if_prob_working_to_error")[0]
+                interface_ab["prob_off_to_failure"] = round(self.rng.uniform(self.params["if_prob_off_to_failure"][0], self.params["if_prob_off_to_failure"][1]), 2)
+            if self.params["if_prob_working_to_error"][0] == self.params["if_prob_working_to_error"][1]:
+                interface_ab["prob_working_to_error"] = self.params["if_prob_working_to_error"][0]
             else:
-                interface_ab["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("if_prob_working_to_error")[0], self.attributes.get("if_prob_working_to_error")[1]), 2)
-            if self.attributes.get("if_prob_error_to_working")[0] == self.attributes.get("if_prob_error_to_working")[1]:
-                interface_ab["prob_error_to_working"] = self.attributes.get("if_prob_error_to_working")[0]
+                interface_ab["prob_working_to_error"] = round(self.rng.uniform(self.params["if_prob_working_to_error"][0], self.params["if_prob_working_to_error"][1]), 2)
+            if self.params["if_prob_error_to_working"][0] == self.params["if_prob_error_to_working"][1]:
+                interface_ab["prob_error_to_working"] = self.params["if_prob_error_to_working"][0]
             else:
-                interface_ab["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_error_to_working")[0], self.attributes.get("if_prob_error_to_working")[1]), 2)
-            if self.attributes.get("if_prob_failure_to_working")[0] == self.attributes.get("if_prob_failure_to_working")[1]:
-                interface_ab["prob_failure_to_working"] = self.attributes.get("if_prob_failure_to_working")[0]
+                interface_ab["prob_error_to_working"] = round(self.rng.uniform(self.params["if_prob_error_to_working"][0], self.params["if_prob_error_to_working"][1]), 2)
+            if self.params["if_prob_failure_to_working"][0] == self.params["if_prob_failure_to_working"][1]:
+                interface_ab["prob_failure_to_working"] = self.params["if_prob_failure_to_working"][0]
             else:
-                interface_ab["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_failure_to_working")[0], self.attributes.get("if_prob_failure_to_working")[1]), 2)
+                interface_ab["prob_failure_to_working"] = round(self.rng.uniform(self.params["if_prob_failure_to_working"][0], self.params["if_prob_failure_to_working"][1]), 2)
             
             interface_ab["ref_node"] = f"{node_a}"
 
@@ -1114,30 +1640,30 @@ class NetworkGenerator:
             interface_ba["init_state"] = 0
 
             # probabilities
-            if self.attributes.get("if_prob_off_to_working")[0] == self.attributes.get("if_prob_off_to_working")[1]:
-                interface_ba["prob_off_to_working"] = self.attributes.get("if_prob_off_to_working")[0]
+            if self.params["if_prob_off_to_working"][0] == self.params["if_prob_off_to_working"][1]:
+                interface_ba["prob_off_to_working"] = self.params["if_prob_off_to_working"][0]
             else:
-                interface_ba["prob_off_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_working")[0], self.attributes.get("if_prob_off_to_working")[1]), 2)
-            if self.attributes.get("if_prob_off_to_error")[0] == self.attributes.get("if_prob_off_to_error")[1]:
-                interface_ba["prob_off_to_error"] = self.attributes.get("if_prob_off_to_error")[0]
+                interface_ba["prob_off_to_working"] = round(self.rng.uniform(self.params["if_prob_off_to_working"][0], self.params["if_prob_off_to_working"][1]), 2)
+            if self.params["if_prob_off_to_error"][0] == self.params["if_prob_off_to_error"][1]:
+                interface_ba["prob_off_to_error"] = self.params["if_prob_off_to_error"][0]
             else:
-                interface_ba["prob_off_to_error"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_error")[0], self.attributes.get("if_prob_off_to_error")[1]), 2)
-            if self.attributes.get("if_prob_off_to_failure")[0] == self.attributes.get("if_prob_off_to_failure")[1]:
-                interface_ba["prob_off_to_failure"] = self.attributes.get("if_prob_off_to_failure")[0]
+                interface_ba["prob_off_to_error"] = round(self.rng.uniform(self.params["if_prob_off_to_error"][0], self.params["if_prob_off_to_error"][1]), 2)
+            if self.params["if_prob_off_to_failure"][0] == self.params["if_prob_off_to_failure"][1]:
+                interface_ba["prob_off_to_failure"] = self.params["if_prob_off_to_failure"][0]
             else:
-                interface_ba["prob_off_to_failure"] = round(self.rng.uniform(self.attributes.get("if_prob_off_to_failure")[0], self.attributes.get("if_prob_off_to_failure")[1]), 2)
-            if self.attributes.get("if_prob_working_to_error")[0] == self.attributes.get("if_prob_working_to_error")[1]:
-                interface_ba["prob_working_to_error"] = self.attributes.get("if_prob_working_to_error")[0]
+                interface_ba["prob_off_to_failure"] = round(self.rng.uniform(self.params["if_prob_off_to_failure"][0], self.params["if_prob_off_to_failure"][1]), 2)
+            if self.params["if_prob_working_to_error"][0] == self.params["if_prob_working_to_error"][1]:
+                interface_ba["prob_working_to_error"] = self.params["if_prob_working_to_error"][0]
             else:
-                interface_ba["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("if_prob_working_to_error")[0], self.attributes.get("if_prob_working_to_error")[1]), 2)
-            if self.attributes.get("if_prob_error_to_working")[0] == self.attributes.get("if_prob_error_to_working")[1]:
-                interface_ba["prob_error_to_working"] = self.attributes.get("if_prob_error_to_working")[0]  
+                interface_ba["prob_working_to_error"] = round(self.rng.uniform(self.params["if_prob_working_to_error"][0], self.params["if_prob_working_to_error"][1]), 2)
+            if self.params["if_prob_error_to_working"][0] == self.params["if_prob_error_to_working"][1]:
+                interface_ba["prob_error_to_working"] = self.params["if_prob_error_to_working"][0]  
             else:
-                interface_ba["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_error_to_working")[0], self.attributes.get("if_prob_error_to_working")[1]), 2)
-            if self.attributes.get("if_prob_failure_to_working")[0] == self.attributes.get("if_prob_failure_to_working")[1]:
-                interface_ba["prob_failure_to_working"] = self.attributes.get("if_prob_failure_to_working")[0]  
+                interface_ba["prob_error_to_working"] = round(self.rng.uniform(self.params["if_prob_error_to_working"][0], self.params["if_prob_error_to_working"][1]), 2)
+            if self.params["if_prob_failure_to_working"][0] == self.params["if_prob_failure_to_working"][1]:
+                interface_ba["prob_failure_to_working"] = self.params["if_prob_failure_to_working"][0]  
             else:
-                interface_ba["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("if_prob_failure_to_working")[0], self.attributes.get("if_prob_failure_to_working")[1]), 2)
+                interface_ba["prob_failure_to_working"] = round(self.rng.uniform(self.params["if_prob_failure_to_working"][0], self.params["if_prob_failure_to_working"][1]), 2)
 
             # commands
             interface_ba["cmd_off_to_on"] = f"cmd_off_to_on_interface_{node_b}_{node_a}"
@@ -1149,14 +1675,15 @@ class NetworkGenerator:
             interface_ba["ref_node"] = f"{node_b}"
 
 
-            # now i need the list of the incoming links and outgoing links for each interface
+            # Build in/out link command lists by scanning all session paths
+            # that traverse this edge in either direction.
             in_links_ab = []
             out_links_ab = []
             in_links_ba = []
             out_links_ba = []
 
-            sessions = self.attributes.get("sessions").copy()
-            for session in self.attributes.get("sessions"):
+            sessions = self.sessions.copy()
+            for session in self.sessions:
                 ss = session.get_subsessions()
                 sessions.extend(ss)
             
@@ -1195,7 +1722,27 @@ class NetworkGenerator:
         return interfaces_dict
 
 
-    def _add_channels_to_dict(self):
+    def _add_channels_to_dict(self) -> dict:
+        """Serialise channel PRISM modules — two per undirected edge (A→B, B→A).
+
+        Each channel instance records:
+
+        * State range, initial state, bandwidth capacity and initial bandwidth.
+        * Transition probabilities (working→error, error→working,
+          failure→working).
+        * Synchronisation commands for state transitions.
+        * Lists of link commands that use this channel (send/receive
+          success/failure), derived by scanning all session paths.
+
+        Side-effects
+        ------------
+        Populates ``self.channel_bandwidth`` for reward generation.
+
+        Returns
+        -------
+        dict
+            ``{"name": "channel_modules", "template": ..., "instances": [...]}``
+        """
         with open("config/netgen_files.json", "r") as f:
             files_config = json.load(f)
 
@@ -1205,7 +1752,7 @@ class NetworkGenerator:
         with open(files_config.get("init"), "r") as f:
             init = json.load(f)
 
-
+        bandwidth_sizes = {}
         channels_dict = {}
         channels_dict["name"] = "channel_modules"
         channels_dict["template"] = files_config.get("channel_template")
@@ -1221,32 +1768,32 @@ class NetworkGenerator:
             channel["#"] = f"{node_a}_{node_b}"
             channel["range_state"] = range_state
             channel["init_state"] = init.get("channel_init_state")
-            if self.attributes.get("channel_bandwidth_range")[0] == self.attributes.get("channel_bandwidth_range")[1]:
-                size_bandwidth = self.attributes.get("channel_bandwidth_range")[0]
+            if self.params["channel_bandwidth_range"][0] == self.params["channel_bandwidth_range"][1]:
+                size_bandwidth = self.params["channel_bandwidth_range"][0]
             else:
-                size_bandwidth = int(self.rng.integers(self.attributes.get("channel_bandwidth_range")[0], self.attributes.get("channel_bandwidth_range")[1] + 1))
+                size_bandwidth = int(self.rng.integers(self.params["channel_bandwidth_range"][0], self.params["channel_bandwidth_range"][1] + 1))
             channel["size_bandwidth"] = size_bandwidth
             channel["init_bandwidth"] = size_bandwidth
-
+            bandwidth_sizes[f"{node_a}_{node_b}"] = size_bandwidth
             # probabilities
-            if self.attributes.get("channel_prob_working_to_error")[0] == self.attributes.get("channel_prob_working_to_error")[1]:
-                channel["prob_working_to_error"] = self.attributes.get("channel_prob_working_to_error")[0]
+            if self.params["channel_prob_working_to_error"][0] == self.params["channel_prob_working_to_error"][1]:
+                channel["prob_working_to_error"] = self.params["channel_prob_working_to_error"][0]
             else:
-                channel["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("channel_prob_working_to_error")[0], self.attributes.get("channel_prob_working_to_error")[1]), 2)
-            if self.attributes.get("channel_prob_error_to_working")[0] == self.attributes.get("channel_prob_error_to_working")[1]:
-                channel["prob_error_to_working"] = self.attributes.get("channel_prob_error_to_working")[0]
+                channel["prob_working_to_error"] = round(self.rng.uniform(self.params["channel_prob_working_to_error"][0], self.params["channel_prob_working_to_error"][1]), 2)
+            if self.params["channel_prob_error_to_working"][0] == self.params["channel_prob_error_to_working"][1]:
+                channel["prob_error_to_working"] = self.params["channel_prob_error_to_working"][0]
             else:
-                channel["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("channel_prob_error_to_working")[0], self.attributes.get("channel_prob_error_to_working")[1]), 2)
-            if self.attributes.get("channel_prob_failure_to_working")[0] == self.attributes.get("channel_prob_failure_to_working")[1]:
-                channel["prob_failure_to_working"] = self.attributes.get("channel_prob_failure_to_working")[0]
+                channel["prob_error_to_working"] = round(self.rng.uniform(self.params["channel_prob_error_to_working"][0], self.params["channel_prob_error_to_working"][1]), 2)
+            if self.params["channel_prob_failure_to_working"][0] == self.params["channel_prob_failure_to_working"][1]:
+                channel["prob_failure_to_working"] = self.params["channel_prob_failure_to_working"][0]
             else:
-                channel["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("channel_prob_failure_to_working")[0], self.attributes.get("channel_prob_failure_to_working")[1]), 2)
+                channel["prob_failure_to_working"] = round(self.rng.uniform(self.params["channel_prob_failure_to_working"][0], self.params["channel_prob_failure_to_working"][1]), 2)
             
             # commands
             channel["cmd_working_to_error"] = f"cmd_working_to_error_channel_{node_a}_{node_b}"
             channel["cmd_error_to_working"] = f"cmd_error_to_working_channel_{node_a}_{node_b}"
             channel["cmd_failure_to_working"] = f"cmd_failure_to_working_channel_{node_a}_{node_b}"
-
+            
             # channel b a
             channel_ba = {}
             channel_ba["name"] = f"channel_{node_b}_{node_a}.prism"
@@ -1254,26 +1801,27 @@ class NetworkGenerator:
             channel_ba["range_state"] = range_state
             init_value = int(range_state.split('..')[0])
             channel_ba["init_state"] = init_value
-            if self.attributes.get("channel_bandwidth_range")[0] == self.attributes.get("channel_bandwidth_range")[1]:
-                size_bandwidth = self.attributes.get("channel_bandwidth_range")[0]
+            if self.params["channel_bandwidth_range"][0] == self.params["channel_bandwidth_range"][1]:
+                size_bandwidth = self.params["channel_bandwidth_range"][0]
             else:
-                size_bandwidth = int(self.rng.integers(self.attributes.get("channel_bandwidth_range")[0], self.attributes.get("channel_bandwidth_range")[1] + 1))
+                size_bandwidth = int(self.rng.integers(self.params["channel_bandwidth_range"][0], self.params["channel_bandwidth_range"][1] + 1))
             channel_ba["size_bandwidth"] = size_bandwidth
             channel_ba["init_bandwidth"] = size_bandwidth   
+            bandwidth_sizes[f"{node_b}_{node_a}"] = size_bandwidth
 
             # probabilities
-            if self.attributes.get("channel_prob_working_to_error")[0] == self.attributes.get("channel_prob_working_to_error")[1]:
-                channel_ba["prob_working_to_error"] = self.attributes.get("channel_prob_working_to_error")[0]
+            if self.params["channel_prob_working_to_error"][0] == self.params["channel_prob_working_to_error"][1]:
+                channel_ba["prob_working_to_error"] = self.params["channel_prob_working_to_error"][0]
             else:
-                channel_ba["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("channel_prob_working_to_error")[0], self.attributes.get("channel_prob_working_to_error")[1]), 2)
-            if self.attributes.get("channel_prob_error_to_working")[0] == self.attributes.get("channel_prob_error_to_working")[1]:
-                channel_ba["prob_error_to_working"] = self.attributes.get("channel_prob_error_to_working")[0]
+                channel_ba["prob_working_to_error"] = round(self.rng.uniform(self.params["channel_prob_working_to_error"][0], self.params["channel_prob_working_to_error"][1]), 2)
+            if self.params["channel_prob_error_to_working"][0] == self.params["channel_prob_error_to_working"][1]:
+                channel_ba["prob_error_to_working"] = self.params["channel_prob_error_to_working"][0]
             else:
-                channel_ba["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("channel_prob_error_to_working")[0], self.attributes.get("channel_prob_error_to_working")[1]), 2)
-            if self.attributes.get("channel_prob_failure_to_working")[0] == self.attributes.get("channel_prob_failure_to_working")[1]:
-                channel_ba["prob_failure_to_working"] = self.attributes.get("channel_prob_failure_to_working")[0]
+                channel_ba["prob_error_to_working"] = round(self.rng.uniform(self.params["channel_prob_error_to_working"][0], self.params["channel_prob_error_to_working"][1]), 2)
+            if self.params["channel_prob_failure_to_working"][0] == self.params["channel_prob_failure_to_working"][1]:
+                channel_ba["prob_failure_to_working"] = self.params["channel_prob_failure_to_working"][0]
             else:
-                channel_ba["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("channel_prob_failure_to_working")[0], self.attributes.get("channel_prob_failure_to_working")[1]), 2)    
+                channel_ba["prob_failure_to_working"] = round(self.rng.uniform(self.params["channel_prob_failure_to_working"][0], self.params["channel_prob_failure_to_working"][1]), 2)    
 
             # commands
             channel_ba["cmd_working_to_error"] = f"cmd_working_to_error_channel_{node_b}_{node_a}"
@@ -1281,11 +1829,12 @@ class NetworkGenerator:
             channel_ba["cmd_failure_to_working"] = f"cmd_failure_to_working_channel_{node_b}_{node_a}"
 
 
-            # now i have to find all the links that use this channel and add the synchronous commands
+            # Scan all session paths to find links traversing this channel
+            # and collect their synchronisation commands.
             links_ab = []
             links_ba = []
-            sessions = self.attributes.get("sessions").copy()
-            for session in self.attributes.get("sessions"):
+            sessions = self.sessions.copy()
+            for session in self.sessions:
                 sessions.extend(session.get_subsessions())
             for session in sessions:
                 session_id = session.get_id()
@@ -1313,6 +1862,7 @@ class NetworkGenerator:
 
             channel["links"] = links_ab
             channel_ba["links"] = links_ba
+            self.channel_bandwidth = bandwidth_sizes
 
             channels_dict["instances"].append(channel)
             channels_dict["instances"].append(channel_ba)
@@ -1320,7 +1870,26 @@ class NetworkGenerator:
         return channels_dict
 
 
-    def _add_links_to_dict(self):
+    def _add_links_to_dict(self) -> dict:
+        """Serialise link PRISM modules — one per directed edge per path.
+
+        Links are the per-hop transmission units.  Each instance records:
+
+        * State and phase ranges, initial values, outcome flag.
+        * References to the underlying channel, sender/receiver interfaces,
+          sender/receiver node buffers, and channel bandwidth.
+        * Transmission probabilities (working/error/failure transitions,
+          retry, sending success).
+        * Synchronisation commands for all link lifecycle events.
+        * The ``cmd_link_start`` command, which is synchronised either with
+          the session-path's ``cmd_send`` (for the first hop) or with the
+          previous link's ``cmd_receive_success`` (for subsequent hops).
+
+        Returns
+        -------
+        dict
+            ``{"name": "link_modules", "template": ..., "instances": [...]}``
+        """
         with open("config/netgen_files.json", "r") as f:
             files_config = json.load(f)
 
@@ -1330,8 +1899,7 @@ class NetworkGenerator:
         with open(files_config.get("init"), "r") as f:
             init = json.load(f)
 
-        # generate links and link_ref_counters for each path
-
+        # One link instance per directed edge per path across all sessions
         links_dict = {}
         links_dict["name"] = "link_modules"
         links_dict["template"] = files_config.get("link_template")
@@ -1339,8 +1907,8 @@ class NetworkGenerator:
         range_state = ranges.get("link_range_state")
         range_phase = ranges.get("link_range_phase")
 
-        sessions = self.attributes.get("sessions").copy()
-        for session in self.attributes.get("sessions"):
+        sessions = self.sessions.copy()
+        for session in self.sessions:
             sessions.extend(session.get_subsessions())
 
         for session in sessions:
@@ -1378,31 +1946,31 @@ class NetworkGenerator:
                     # link["number_next_links"] = len(successors)
                     link["ref_interface_receiver"] = f"{node_b}_{node_a}"
                     link["ref_node_buffer_receiver"] = f"{node_b}"
-                    link["size_node_buffer_receiver"] = self.attributes["nodes_buffer_sizes"][node_b]
+                    link["size_node_buffer_receiver"] = self.nodes_buffer_sizes[node_b]
                     link["ref_channel_bandwidth"] = f"{node_a}_{node_b}"
 
                     # probabilities
-                    if self.attributes.get("link_prob_working_to_error")[0] == self.attributes.get("link_prob_working_to_error")[1]:
-                        link["prob_working_to_error"] = self.attributes.get("link_prob_working_to_error")[0]
+                    if self.params["link_prob_working_to_error"][0] == self.params["link_prob_working_to_error"][1]:
+                        link["prob_working_to_error"] = self.params["link_prob_working_to_error"][0]
                     else:
-                        link["prob_working_to_error"] = round(self.rng.uniform(self.attributes.get("link_prob_working_to_error")[0], self.attributes.get("link_prob_working_to_error")[1]), 2)
-                    if self.attributes.get("link_prob_error_to_working")[0] == self.attributes.get("link_prob_error_to_working")[1]:
-                        link["prob_error_to_working"] = self.attributes.get("link_prob_error_to_working")[0]
+                        link["prob_working_to_error"] = round(self.rng.uniform(self.params["link_prob_working_to_error"][0], self.params["link_prob_working_to_error"][1]), 2)
+                    if self.params["link_prob_error_to_working"][0] == self.params["link_prob_error_to_working"][1]:
+                        link["prob_error_to_working"] = self.params["link_prob_error_to_working"][0]
                     else:
-                        link["prob_error_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_error_to_working")[0], self.attributes.get("link_prob_error_to_working")[1]), 2)
+                        link["prob_error_to_working"] = round(self.rng.uniform(self.params["link_prob_error_to_working"][0], self.params["link_prob_error_to_working"][1]), 2)
                     
-                    if self.attributes.get("link_prob_failure_to_working")[0] == self.attributes.get("link_prob_failure_to_working")[1]:
-                        link["prob_failure_to_working"] = self.attributes.get("link_prob_failure_to_working")[0]
+                    if self.params["link_prob_failure_to_working"][0] == self.params["link_prob_failure_to_working"][1]:
+                        link["prob_failure_to_working"] = self.params["link_prob_failure_to_working"][0]
                     else:
-                        link["prob_failure_to_working"] = round(self.rng.uniform(self.attributes.get("link_prob_failure_to_working")[0], self.attributes.get("link_prob_failure_to_working")[1]), 2)
-                    if self.attributes.get("link_prob_retry")[0] == self.attributes.get("link_prob_retry")[1]:
-                        link["prob_retry"] = self.attributes.get("link_prob_retry")[0]
+                        link["prob_failure_to_working"] = round(self.rng.uniform(self.params["link_prob_failure_to_working"][0], self.params["link_prob_failure_to_working"][1]), 2)
+                    if self.params["link_prob_retry"][0] == self.params["link_prob_retry"][1]:
+                        link["prob_retry"] = self.params["link_prob_retry"][0]
                     else:
-                        link["prob_retry"] = round(self.rng.uniform(self.attributes.get("link_prob_retry")[0], self.attributes.get("link_prob_retry")[1]), 2)
-                    if self.attributes.get("link_prob_sending")[0] == self.attributes.get("link_prob_sending")[1]:
-                        link["prob_sending"] = self.attributes.get("link_prob_sending")[0]
+                        link["prob_retry"] = round(self.rng.uniform(self.params["link_prob_retry"][0], self.params["link_prob_retry"][1]), 2)
+                    if self.params["link_prob_sending"][0] == self.params["link_prob_sending"][1]:
+                        link["prob_sending"] = self.params["link_prob_sending"][0]
                     else:
-                        link["prob_sending"] = round(self.rng.uniform(self.attributes.get("link_prob_sending")[0], self.attributes.get("link_prob_sending")[1]), 2)
+                        link["prob_sending"] = round(self.rng.uniform(self.params["link_prob_sending"][0], self.params["link_prob_sending"][1]), 2)
 
                     # commands
                     link["cmd_working_to_error"] = f"cmd_working_to_error_link_{node_a}_{node_b}_of_path_{i}_{session_id}"
@@ -1415,8 +1983,9 @@ class NetworkGenerator:
                     link["cmd_receive_failure"] = f"cmd_receive_failure_link_{node_a}_{node_b}_of_path_{i}_{session_id}"
                     link["cmd_link_cleanup"] = f"cmd_link_cleanup_link_{node_a}_{node_b}_of_path_{i}_{session_id}"
 
-                    # if the link is the first link of the path, this command is syncronous with the cmd send of the path
-                    # if the link is not the first link of the path, this command is syncronous with the cmd receive of the previous link
+                    # Determine the link start trigger:
+                    # - First hop: synchronised with the session path's send command.
+                    # - Subsequent hops: synchronised with the previous link's receive_success.
                     if node_a == sender:
                         link["cmd_link_start"] = f"cmd_send_session_path_{i}_{session_id}"
                     else:
@@ -1428,7 +1997,21 @@ class NetworkGenerator:
         return links_dict
 
     
-    def _add_link_refs_to_dict(self):
+    def _add_link_refs_to_dict(self) -> dict:
+        """Serialise link-reference-counter PRISM modules.
+
+        A link_ref tracks how many outgoing links from a given node within a
+        given path have completed their cleanup phase.  This is used to
+        coordinate fan-out in broadcast trees: the node waits for all child
+        links to finish before proceeding.
+
+        One instance is created for every non-leaf node in every path.
+
+        Returns
+        -------
+        dict
+            ``{"name": "link_ref_modules", "template": ..., "instances": [...]}``
+        """
         with open("config/netgen_files.json", "r") as f:
             files_config = json.load(f)
 
@@ -1437,8 +2020,8 @@ class NetworkGenerator:
         link_refs_dict["template"] = files_config.get("link_ref_template")
         link_refs_dict["instances"] = []
 
-        sessions = self.attributes.get("sessions").copy()
-        for session in self.attributes.get("sessions"):
+        sessions = self.sessions.copy()
+        for session in self.sessions:
             sessions.extend(session.get_subsessions())
 
         for session in sessions:
@@ -1470,7 +2053,28 @@ class NetworkGenerator:
         return link_refs_dict
         
 
-    def _add_session_paths_to_dict(self):
+    def _add_session_paths_to_dict(self) -> dict:
+        """Serialise session-path PRISM modules.
+
+        A session path represents one directed path tree within a session.
+        Each instance records:
+
+        * Protocol type, state/message ranges and initial values.
+        * Epoch cache size and receiver counter.
+        * Reference to the sender node and local session.
+        * Scheduling probability (``prob_run``), forced to 0 for support
+          sub-protocols.
+        * Protocol-specific commands and flags, dispatched via a
+          ``match session.protocol`` block covering all six protocol variants
+          (hpke, double_ratchet, hpke_sender_key, double_ratchet_sender_key,
+          sender_key, mls).
+        * Lists of session-checker cleanup commands.
+
+        Returns
+        -------
+        dict
+            ``{"name": "session_path_modules", "template": ..., "instances": [...]}``
+        """
 
         with open("config/netgen_files.json", "r") as f:
             files_config = json.load(f)
@@ -1494,8 +2098,8 @@ class NetworkGenerator:
  
 
             
-        sessions = self.attributes.get("sessions").copy()
-        for s in self.attributes.get("sessions"):
+        sessions = self.sessions.copy()
+        for s in self.sessions:
             subs = s.get_subsessions()
             sessions.extend(subs)
 
@@ -1506,12 +2110,8 @@ class NetworkGenerator:
                 receivers = self._get_receivers_from_path(path)    
                 session_path = {}
 
-                if session.protocol == "hpke_sender_key" or session.protocol == "double_ratchet_sender_key":
-                    session_path["name"] = f"session_path_{i}_{session_id}.prism"
-                    session_path["#"] = f"{i}_{session_id}"
-                else:
-                    session_path["name"] = f"session_path_{i}_{session_id}.prism"
-                    session_path["#"] = f"{i}_{session_id}"
+                session_path["name"] = f"session_path_{i}_{session_id}.prism"
+                session_path["#"] = f"{i}_{session_id}"
 
                 session_path["protocol"] = session.protocol
 
@@ -1530,16 +2130,16 @@ class NetworkGenerator:
                 # references
                 session_path["ref_node_sender"] = f"{sender}"
                 session_path["ref_local_session_sender"] = f"{sender}_{session_id}"
-                session_path["size_buffer_sender"] = self.attributes["nodes_buffer_sizes"][sender]
+                session_path["size_buffer_sender"] = self.nodes_buffer_sizes[sender]
 
                 # probabilities
                 if session.protocol in {"hpke_sender_key", "double_ratchet_sender_key"}:
                     session_path["prob_run"] = 0.0
                 else:
-                    if self.attributes.get("sp_prob_run")[0] == self.attributes.get("sp_prob_run")[1]:
-                        prob_run = self.attributes.get("sp_prob_run")[0]
+                    if self.params["sp_prob_run"][0] == self.params["sp_prob_run"][1]:
+                        prob_run = self.params["sp_prob_run"][0]
                     else:
-                        prob_run = round(self.rng.uniform(self.attributes.get("sp_prob_run")[0], self.attributes.get("sp_prob_run")[1]), 2)
+                        prob_run = round(self.rng.uniform(self.params["sp_prob_run"][0], self.params["sp_prob_run"][1]), 2)
                     session_path["prob_run"] = prob_run
 
                 
@@ -1662,7 +2262,28 @@ class NetworkGenerator:
         return session_paths_dict
 
 
-    def _add_local_sessions_to_dict(self):
+    def _add_local_sessions_to_dict(self) -> dict:
+        """Serialise local-session PRISM modules.
+
+        Each node participating in a session holds a local session that tracks
+        the session's cryptographic state (epoch counter, ratchet counter,
+        compromised flag, mutex).  One instance is created per (node, session)
+        pair.
+
+        The method also resolves cross-references to the broadest session
+        path (the one with the most receivers departing from this node) and
+        the session checkers that notify this local session of incoming
+        messages.
+
+        Local-session transition probabilities (reset, ratchet, none,
+        compromised) are sampled from their respective ranges with a
+        normalisation step that ensures the sum stays below 1.0.
+
+        Returns
+        -------
+        dict
+            ``{"name": "local_session_modules", "template": ..., "instances": [...]}``
+        """
         with open("config/netgen_files.json", "r") as f:
             files_config = json.load(f)
 
@@ -1681,7 +2302,7 @@ class NetworkGenerator:
         local_sessions_dict["instances"] = []
         range_state = ranges.get("local_session_range_state")
 
-        sessions = self.attributes.get("sessions")
+        sessions = self.sessions
         sessions_copy = sessions.copy()
         for session in sessions:
             subs = session.get_subsessions()
@@ -1815,12 +2436,45 @@ class NetworkGenerator:
         return local_sessions_dict
 
 
-    def _get_receivers_from_path(self, path):
+    def _get_receivers_from_path(self, path: nx.DiGraph) -> list[int]:
+        """Return the list of receiver node ids in *path*.
+
+        Receivers are nodes whose ``is_receiver`` attribute is ``True``.
+        """
         return [node_id for node_id in path.nodes if path.nodes[node_id].get("is_receiver", False)]
 
                     
-    def _add_session_checkers_to_dict(self):
-        # one session checker for each receiver in each path
+    def _add_session_checkers_to_dict(self) -> dict:
+        """Serialise session-checker PRISM modules.
+
+        A session checker is instantiated for **each receiver in each path**.
+        It monitors whether a message has been successfully received and drives
+        the protocol-specific verification / key-management logic.
+
+        Protocol-specific behaviour is dispatched via a ``match`` block:
+
+        * **hpke / double_ratchet**: references the return path to the sender
+          for reset/failure commands; includes read_reset, read_ratchet and
+          resolve_system commands.
+        * **hpke_sender_key / double_ratchet_sender_key**: additionally
+          references the supersession broadcast path and sender-refresh
+          commands.
+        * **sender_key**: references the sub-session path to the sender;
+          includes sender_key reset/failure commands.
+        * **mls**: includes read_refresh, read_current and mls_reset/failure
+          commands; references the broadcast path.
+
+        Common commands (freeze, trigger, read_data, check_success/failure,
+        resolve_data, cleanup, update) are appended for all protocols.
+        The checker also records the chain of links from sender to receiver
+        for coordinated cleanup.
+
+        Returns
+        -------
+        dict
+            ``{"name": "session_checker_modules", "template": ..., "instances": [...]}``
+        """
+        # One session checker for each receiver in each path
 
         with open("config/netgen_files.json", "r") as f:
             files_config = json.load(f)
@@ -1841,8 +2495,8 @@ class NetworkGenerator:
         session_checkers_dict["template"] = files_config.get("session_checker_template")
         session_checkers_dict["instances"] = []
 
-        sessions = self.attributes.get("sessions").copy()
-        for session in self.attributes.get("sessions"):
+        sessions = self.sessions.copy()
+        for session in self.sessions:
             sessions.extend(session.get_subsessions())
 
         for session in sessions:
@@ -1925,9 +2579,11 @@ class NetworkGenerator:
                             session_checker["cmd_resolve_system"] = f"cmd_resolve_system_session_checker_of_node_{node}_of_path_{i}_{session_id}"
 
                     # commands
-                    session_checker["cmd_freeze"] = f"cmd_send_session_path_{i}_{session_id}" # synchronized with the send command of the session path
+                    # Freeze is synchronised with the session path's send command
+                    session_checker["cmd_freeze"] = f"cmd_send_session_path_{i}_{session_id}"
 
-                    # here i need the link to the receiver in the path. The path is a tree, so I can use predecessors to find the previous node.
+                    # Trigger: the link delivering to this receiver completes
+                    # (predecessors yields exactly one node in a tree path).
                     prec = list(path.predecessors(node))[0]
                     session_checker["cmd_trigger"] = f"cmd_receive_success_link_{prec}_{node}_of_path_{i}_{session_id}"
                     session_checker["cmd_read_data"] = f"cmd_read_data_session_checker_of_node_{node}_of_path_{i}_{session_id}"
@@ -1937,7 +2593,8 @@ class NetworkGenerator:
                     session_checker["cmd_check_failure"] = f"cmd_check_failure_session_checker_of_node_{node}_of_path_{i}_{session_id}"
                     session_checker["cmd_update"] = f"cmd_update_session_checker_of_node_{node}_of_path_{i}_{session_id}"
 
-                    # i need the list of the links from the sender to this receiver
+                    # Walk backwards from receiver to sender collecting the
+                    # link chain for coordinated cleanup.
                     links = []
                     current_node = node
                     while current_node != sender:
@@ -1954,7 +2611,17 @@ class NetworkGenerator:
         return session_checkers_dict      
 
 
-    def _add_rewards_to_dict(self):
+    def _add_rewards_to_dict(self) -> dict:
+        """Serialise reward PRISM modules from ``self.rewards``.
+
+        Each :class:`Reward` becomes an instance with a list of contribution
+        dicts ``{"command": ..., "condition": ..., "value": ...}``.
+
+        Returns
+        -------
+        dict
+            ``{"name": "rewards_modules", "template": ..., "instances": [...]}``
+        """
         with open("config/netgen_files.json", "r") as f:
             files_config = json.load(f)
             
@@ -1962,7 +2629,7 @@ class NetworkGenerator:
         rewards_dict["name"] = "rewards_modules"
         rewards_dict["template"] = files_config.get("rewards_template")
         rewards_dict["instances"] = []
-        for reward in self.attributes.get("rewards", []):
+        for reward in self.rewards:
             instance = {}
             instance["name"] = f"{reward.name}.prism"
             instance["#"] = reward.name

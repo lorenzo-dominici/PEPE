@@ -22,7 +22,7 @@
     "node_prob_off_to_on": [0.8, 0.9],
     "node_prob_on_to_off": [0.02, 0.05],
     "channel_bandwidth_range": [1, 2],
-    "path_perc": 1.0,
+    "path_perc": 0.2,
     "channel_prob_working_to_error": [0.05, 0.1],
     "channel_prob_error_to_working": [0.7, 0.8],
     "channel_prob_failure_to_working": [0.7, 0.8],
@@ -43,5 +43,6 @@
     "ls_prob_ratchet_reset": [0.4, 0.5],
     "ls_prob_none": [0.1, 0.5],
     "ls_prob_compromised": [0.1, 0.2],
-    "sp_prob_run": [0.4, 0.5]
+    "sp_prob_run": [0.4, 0.5],
+    "abstraction": "high"
 }
