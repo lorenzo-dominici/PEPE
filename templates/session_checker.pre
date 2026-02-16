@@ -1,0 +1,202 @@
+module session_checker_{{#}}
+
+    session_checker_state_{{#}}: [{{range_state}}] init {{init_state}};
+    session_checker_message_arrived_{{#}}: bool init {{init_message_arrived}};
+
+    [{{cmd_trigger}}] true -> (session_checker_state_{{#}}' = {{const_triggered}})
+                            & (session_checker_message_arrived_{{#}}' = true);
+
+    [{{cmd_read_data}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                        (session_checker_state_{{#}} = {{const_triggered}}) &
+                        (session_path_system_message_{{ref_session_path}} = {{const_message_data}}) &
+                        (session_path_data_message_{{ref_session_path}} = {{const_message_data}}) -> (session_checker_state_{{#}}' = {{const_update}});
+
+    [{{cmd_update}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                             (session_checker_state_{{#}} = {{const_update}}) &
+                             (local_session_state_{{ref_local_session_receiver}} = {{const_idle}}) -> (session_checker_state_{{#}}' = (((local_session_epoch_{{ref_local_session_receiver}} = 0) & (local_session_ratchet_{{ref_local_session_receiver}} = 0))
+                                                                                                                                      ? {{const_reset}}
+                                                                                                                                      : {{const_check}}));
+
+    [{{cmd_check_success}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                            (session_checker_state_{{#}} = {{const_check}}) &
+                            (local_session_state_{{ref_local_session_receiver}} = {{const_idle}}) &
+                            (local_session_epoch_{{ref_local_session_receiver}} = session_path_cache_local_session_epoch_sender_{{ref_session_path}}) -> (session_checker_state_{{#}}' = {{const_resolve}});
+                            
+    [{{cmd_resolve_data}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                           (session_checker_state_{{#}} = {{const_resolve}}) &
+                           (session_path_system_message_{{ref_session_path}} = {{const_message_data}}) &
+                           (session_path_data_message_{{ref_session_path}} = {{const_message_data}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                           
+    [{{cmd_cleanup}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                      (session_checker_state_{{#}} = {{const_cleanup}}) -> (session_checker_state_{{#}}' = {{const_idle}})
+                                                                         & (session_checker_message_arrived_{{#}}' = false);
+    
+    [{{cmd_check_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                            (session_checker_state_{{#}} = {{const_check}}) &
+                            (local_session_state_{{ref_local_session_receiver}} = {{const_idle}}) &
+                            (local_session_epoch_{{ref_local_session_receiver}} != session_path_cache_local_session_epoch_sender_{{ref_session_path}}) -> (session_checker_state_{{#}}' = {{const_failure}});
+    {%match||protocol
+           ||hpke||
+    [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                         (session_checker_state_{{#}} = {{const_triggered}}) &
+                         (session_path_system_message_{{ref_session_path}} = {{const_message_reset}}) -> (session_checker_state_{{#}}' = {{const_check}});
+
+    [{{cmd_read_ratchet}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                           (session_checker_state_{{#}} = {{const_triggered}}) &
+                           (session_path_system_message_{{ref_session_path}} = {{const_message_ratchet}}) -> (session_checker_state_{{#}}' = {{const_check}});
+
+    [{{cmd_resolve_system}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                             (session_checker_state_{{#}} = {{const_resolve}}) &
+                             (session_path_system_message_{{ref_session_path}} != {{const_message_data}}) &
+                             (session_path_data_message_{{ref_session_path}} = {{const_message_data}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_hpke_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                         (session_checker_state_{{#}} = {{const_reset}}) &
+                         (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_hpke_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                           (session_checker_state_{{#}} = {{const_failure}}) &
+                           (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+           ||hpke_sender_key||
+    [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                         (session_checker_state_{{#}} = {{const_triggered}}) &
+                         (session_path_system_message_{{ref_session_path}} = {{const_message_reset}}) -> (session_checker_state_{{#}}' = {{const_check}});
+
+    [{{cmd_read_ratchet}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                           (session_checker_state_{{#}} = {{const_triggered}}) &
+                           (session_path_system_message_{{ref_session_path}} = {{const_message_ratchet}}) -> (session_checker_state_{{#}}' = {{const_check}});
+
+    [{{cmd_resolve_system}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                             (session_checker_state_{{#}} = {{const_resolve}}) &
+                             (session_path_system_message_{{ref_session_path}} != {{const_message_data}}) &
+                             (session_path_data_message_{{ref_session_path}} = {{const_message_data}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_hpke_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                         (session_checker_state_{{#}} = {{const_reset}}) &
+                         (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_hpke_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                           (session_checker_state_{{#}} = {{const_failure}}) &
+                           (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                                                                                                 
+    [{{cmd_resolve_sender_new_key}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                     (session_checker_state_{{#}} = {{const_resolve}}) &
+                                     (session_path_data_message_{{ref_session_path}} = {{const_message_sender_new_key}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_resolve_sender_refresh}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                     (session_checker_state_{{#}} = {{const_resolve}}) &
+                                     (session_path_data_message_{{ref_session_path}} = {{const_message_sender_refresh}}) &
+                                     (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_resolve_sender_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                   (session_checker_state_{{#}} = {{const_resolve}}) &
+                                   (session_path_data_message_{{ref_session_path}} = {{const_message_sender_reset}}) &
+                                   (session_path_state_{{ref_session_path_broadcast}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+           ||double_ratchet||
+    [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                         (session_checker_state_{{#}} = {{const_triggered}}) &
+                         (session_path_system_message_{{ref_session_path}} = {{const_message_reset}}) -> (session_checker_state_{{#}}' = {{const_check}});
+    
+    [{{cmd_read_ratchet}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                           (session_checker_state_{{#}} = {{const_triggered}}) &
+                           (session_path_system_message_{{ref_session_path}} = {{const_message_ratchet}}) -> (session_checker_state_{{#}}' = {{const_check}});
+
+    [{{cmd_resolve_system}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                             (session_checker_state_{{#}} = {{const_resolve}}) &
+                             (session_path_system_message_{{ref_session_path}} != {{const_message_data}}) &
+                             (session_path_data_message_{{ref_session_path}} = {{const_message_data}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_double_ratchet_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                   (session_checker_state_{{#}} = {{const_reset}}) &
+                                   (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_double_ratchet_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                     (session_checker_state_{{#}} = {{const_failure}}) &
+                                     (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+           ||double_ratchet_sender_key||
+    [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                         (session_checker_state_{{#}} = {{const_triggered}}) &
+                         (session_path_system_message_{{ref_session_path}} = {{const_message_reset}}) -> (session_checker_state_{{#}}' = {{const_check}});
+    
+    [{{cmd_read_ratchet}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                           (session_checker_state_{{#}} = {{const_triggered}}) &
+                           (session_path_system_message_{{ref_session_path}} = {{const_message_ratchet}}) -> (session_checker_state_{{#}}' = {{const_check}});
+
+    [{{cmd_resolve_system}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                             (session_checker_state_{{#}} = {{const_resolve}}) &
+                             (session_path_system_message_{{ref_session_path}} != {{const_message_data}}) &
+                             (session_path_data_message_{{ref_session_path}} = {{const_message_data}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_double_ratchet_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                   (session_checker_state_{{#}} = {{const_reset}}) &
+                                   (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_double_ratchet_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                     (session_checker_state_{{#}} = {{const_failure}}) &
+                                     (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_resolve_sender_new_key}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                     (session_checker_state_{{#}} = {{const_resolve}}) &
+                                     (session_path_data_message_{{ref_session_path}} = {{const_message_sender_new_key}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_resolve_sender_refresh}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                     (session_checker_state_{{#}} = {{const_resolve}}) &
+                                     (session_path_data_message_{{ref_session_path}} = {{const_message_sender_refresh}}) &
+                                     (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_resolve_sender_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                   (session_checker_state_{{#}} = {{const_resolve}}) &
+                                   (session_path_data_message_{{ref_session_path}} = {{const_message_sender_reset}}) &
+                                   (session_path_state_{{ref_session_path_broadcast}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+           ||sender_key||
+    [{{cmd_resolve_sender_new_key}}] true -> (session_checker_state_{{#}}' = session_checker_state_{{#}});
+
+    [{{cmd_sender_key_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                               (session_checker_state_{{#}} = {{const_reset}}) &
+                               (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_sender_key_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                                 (session_checker_state_{{#}} = {{const_failure}}) &
+                                 (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+           ||mls||
+    [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                         (session_checker_state_{{#}} = {{const_triggered}}) &
+                         (session_path_system_message_{{ref_session_path}} = {{const_message_reset}}) -> (session_checker_state_{{#}}' = {{const_check}});
+
+    [{{cmd_read_ratchet}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                           (session_checker_state_{{#}} = {{const_triggered}}) &
+                           (session_path_system_message_{{ref_session_path}} = {{const_message_ratchet}}) -> (session_checker_state_{{#}}' = {{const_check}});
+
+    [{{cmd_resolve_system}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                             (session_checker_state_{{#}} = {{const_resolve}}) &
+                             (session_path_system_message_{{ref_session_path}} != {{const_message_data}}) &
+                             (session_path_data_message_{{ref_session_path}} = {{const_message_data}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_read_refresh}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                           (session_checker_state_{{#}} = {{const_resolve}}) &
+                           (session_path_system_message_{{ref_session_path}} = {{const_message_tree_refresh}}) &
+                           (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_read_current}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                           (session_checker_state_{{#}} = {{const_resolve}}) &
+                           (session_path_system_message_{{ref_session_path}} = {{const_message_current_tree}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_mls_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                        (session_checker_state_{{#}} = {{const_reset}}) &
+                        (session_path_state_{{ref_session_path_broadcast}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+
+    [{{cmd_mls_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
+                          (session_checker_state_{{#}} = {{const_failure}}) & 
+                          (session_path_state_{{ref_session_path_to_sender}}) = {{const_idle}} -> (session_checker_state_{{#}}' = {{const_cleanup}});
+    %}
+
+    {%loop||links||
+    [{{links[].cmd_cleanup}}] true -> (session_checker_message_arrived_{{#}}' = (link_outcome_{{links[].#}} = false
+                                                                                ? false
+                                                                                : session_checker_message_arrived_{{#}}))
+                                    & (session_checker_state_{{#}}' = (link_outcome_{{links[].#}} = false
+                                                                      ? {{const_cleanup}}
+                                                                      : session_checker_state_{{#}}));
+    %}
+
+endmodule

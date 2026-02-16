@@ -1,0 +1,106 @@
+module local_session_{{#}}
+
+    local_session_state_{{#}}: [{{range_state}}] init {{init_state}};
+    local_session_epoch_{{#}}: [0..{{size_epoch}}] init {{init_epoch}};
+    local_session_ratchet_{{#}}: [0..{{size_ratchet}}] init {{init_ratchet}};
+    local_session_compromised_{{#}}: bool init {{init_compromised}};
+    local_session_mutex_{{#}}: bool init {{init_mutex}};
+
+    [{{cmd_session_update}}] (node_state_{{ref_node}} = {{const_on}}) &
+                             (local_session_state_{{#}} = {{const_session_trigger_update}}) &
+                             (local_session_compromised_{{#}} = false) -> (1 - ({{prob_ratchet}} + {{prob_reset}} + {{prob_none}})) : (local_session_state_{{#}}' = {{const_session_update}})
+                                                                        + {{prob_ratchet}} : (local_session_state_{{#}}' = {{const_session_ratchet}})
+                                                                        + {{prob_reset}} : (local_session_state_{{#}}' = {{const_session_reset}})
+                                                                        + {{prob_none}} : (local_session_state_{{#}}' = {{const_session_none}});
+
+    [{{cmd_session_update_compromised}}] (node_state_{{ref_node}} = {{const_on}}) &
+                                         (local_session_state_{{#}} = {{const_session_trigger_update}}) &
+                                         (local_session_compromised_{{#}} = true) -> (local_session_state_{{#}}' = {{const_session_reset}});
+
+    [{{cmd_update}}] (local_session_state_{{#}} = {{const_session_update}}) -> (local_session_state_{{#}}' = {{const_session_idle}})
+                                                                     & (local_session_ratchet_{{#}}' = mod(local_session_ratchet_{{#}} + 1, ({{size_ratchet}} + 1)))
+                                                                     & (local_session_epoch_{{#}}' = (mod(local_session_ratchet_{{#}} + 1, ({{size_ratchet}} + 1)) = 0
+                                                                                                     ? mod(local_session_epoch_{{#}} + 1, ({{size_epoch}} + 1))
+                                                                                                     : local_session_epoch_{{#}}));
+
+    [{{cmd_ratchet}}] (local_session_state_{{#}} = {{const_session_ratchet}}) -> (local_session_state_{{#}}' = {{const_session_idle}})
+                                                                      & (local_session_ratchet_{{#}}' = 0)
+                                                                      & (local_session_epoch_{{#}}' = mod(local_session_epoch_{{#}} + 1, ({{size_epoch}} + 1)));
+
+    [{{cmd_reset}}] (local_session_state_{{#}} = {{const_session_reset}}) -> (local_session_state_{{#}}' = {{const_session_idle}})
+                                                                    & (local_session_epoch_{{#}}' = 0)
+                                                                    & (local_session_ratchet_{{#}}' = 0); 
+
+    [{{cmd_none}}] (local_session_state_{{#}} = {{const_session_none}}) -> (local_session_state_{{#}}' = {{const_session_idle}});
+
+    [{{cmd_compromise}}] (node_state_{{ref_node}} = {{const_on}}) &
+                         (local_session_compromised_{{#}} = false) -> (1 - {{prob_compromised}}) : (local_session_compromised_{{#}}' = local_session_compromised_{{#}})
+                                                                    + {{prob_compromised}} : (local_session_compromised_{{#}}' = true);
+
+    [{{cmd_alert}}] (node_state_{{ref_node}} = {{const_on}}) &
+                    (local_session_compromised_{{#}} = true) &
+                    (session_path_state_{{ref_broadest_session_path}} = {{const_session_idle}}) -> (local_session_compromised_{{#}}' = true);
+
+    [{{cmd_decompromise}}] true -> (local_session_compromised_{{#}}' = false); //on cmd_resolve of ref_broadest_session_path
+
+    {%loop||session_paths||
+    [{{session_paths[].cmd_update_data}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_session_trigger_update}})
+                                                                              & (local_session_mutex_{{#}}' = false);
+
+    [{{session_paths[].cmd_set_message}}] (local_session_mutex_{{#}} = false) &
+                                          (local_session_state_{{#}} = {{const_session_idle}}) -> (local_session_mutex_{{#}}' = true);
+    %}
+
+    {%loop||session_checkers||
+    [{{session_checkers[].cmd_read_data}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_session_trigger_update}})
+                                                                               & (local_session_mutex_{{#}}' = false);
+    {%match||protocol
+            ||hpke||
+    [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_session_ratchet}})
+                                                                                  & (local_session_mutex_{{#}}' = false);
+                                                                    
+    [{{session_checkers[].cmd_read_reset}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_session_reset}})
+                                                                                & (local_session_mutex_{{#}}' = false);
+
+    [{{session_checker[].cmd_hpke_failure}}] true -> (local_session_state_{{#}}' = {{const_session_reset}});
+            ||hpke_sender_key||
+    [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_session_ratchet}})
+                                                                                  & (local_session_mutex_{{#}}' = false);
+                                                                    
+    [{{session_checkers[].cmd_read_reset}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_session_reset}})
+                                                                                & (local_session_mutex_{{#}}' = false);
+
+    [{{session_checkers[].cmd_hpke_failure}}] true -> (local_session_state_{{#}}' = {{const_session_reset}});
+            ||double_ratchet||
+    [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_session_ratchet}})
+                                                                                  & (local_session_mutex_{{#}}' = false);
+                                                                    
+    [{{session_checkers[].cmd_read_reset}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_session_reset}})
+                                                                                & (local_session_mutex_{{#}}' = false);
+
+    [{{session_checkers[].cmd_double_ratchet_failure}}] true -> (local_session_state_{{#}}' = {{const_session_reset}});
+            ||double_ratchet_sender_key||
+    [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_session_ratchet}})
+                                                                                  & (local_session_mutex_{{#}}' = false);
+                                                                    
+    [{{session_checkers[].cmd_read_reset}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_session_reset}})
+                                                                                & (local_session_mutex_{{#}}' = false);
+
+    [{{session_checkers[].cmd_double_ratchet_failure}}] true -> (local_session_state_{{#}}' = {{const_session_reset}});
+            ||sender_key||
+    [{{session_checkers[].cmd_resolve_sender_new_key}}] (local_session_mutex_{{#}} = true) -> (local_session_epoch_{{#}}' = session_path_cache_local_session_epoch_sender_{{session_checkers[].ref_session_path}})
+                                                                                           & (local_session_ratchet_{{#}}' = 0);
+            ||mls||
+    [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_session_ratchet}})
+                                                                                  & (local_session_mutex_{{#}}' = false);
+                                                                    
+    [{{session_checkers[].cmd_read_reset}}] (local_session_mutex_{{#}} = true) -> (local_session_state_{{#}}' = {{const_session_reset}})
+                                                                                & (local_session_mutex_{{#}}' = false);
+
+    [{{session_checkers[].cmd_read_current}}] (local_session_mutex_{{#}} = true) -> (local_session_epoch_{{#}}' = session_path_cache_local_session_epoch_sender_{{session_checkers[].ref_session_path}})
+                                                                                 & (local_session_ratchet_{{#}}' = 0);
+    %}
+    [{{session_checkers[].cmd_cleanup}}] (local_session_mutex_{{#}} = false) -> (local_session_mutex_{{#}}' = true);
+    %}
+
+endmodule

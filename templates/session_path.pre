@@ -1,0 +1,202 @@
+module session_path_{{#}}
+
+    session_path_state_{{#}}: [{{range_state}}] init {{init_state}};
+    session_path_system_message_{{#}}: [{{range_system_message}}] init {{init_system_message}};
+    session_path_data_message_{{#}}: [{{range_data_message}}] init {{init_data_message}};
+    session_path_cache_local_session_epoch_sender_{{#}}: [0..{{size_cache_local_session_epoch_sender}}] init {{init_cache_local_session_epoch_sender}};
+    session_path_receivers_counter_{{#}}: [0..{{size_receivers_counter}}] init {{init_receivers_counter}};
+
+    [{{cmd_run}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
+                  (session_path_state_{{#}} = {{const_idle}}) -> (1 - {{prob_run}}) : (session_path_state_{{#}}' = {{const_idle}})
+                                                               + {{prob_run}} : (session_path_state_{{#}}' = {{const_update}});
+
+    {%match||is_broadest
+           ||true||
+    [{{cmd_alert}}] true -> (session_path_state_{{#}}' = {{const_update}})
+                          {%match||protocol
+                                 ||hpke_sender_key||
+                          & (session_path_data_message_{{#}}' = {{const_message_sender_reset}})
+                                 ||double_ratchet_sender_key||
+                          & (session_path_data_message_{{#}}' = {{const_message_sender_reset}})
+                                 ||_||%};
+           ||_||%}
+
+    {%match||protocol
+           ||hpke||
+    [{{cmd_hpke_reset}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                               & (session_path_system_message_{{#}}' = {{const_message_reset}})
+                               & (session_path_state_{{#}}' = {{const_run}});
+
+    [{{cmd_hpke_failure}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                 & (session_path_system_message_{{#}}' = {{const_message_reset}})
+                                 & (session_path_state_{{#}}' = {{const_run}});
+           ||hpke_sender_key||
+           {%match||direction
+                  ||sender_to_receiver||
+    [{{cmd_sub_run}}] (session_path_state_{{#}} = {{const_idle}}) -> (session_path_state_{{#}}' = {{const_update}})
+                                                                   & (session_path_data_message_{{#}}' = {{const_message_sender_new_key}});
+
+    [{{cmd_resolve_sender_refresh}}] true -> (session_path_data_message_{{#}}' = {{const_message_sender_new_key}})
+                                           & (session_path_state_{{#}}' = {{const_update}});
+                  ||receiver_to_sender||
+    [{{cmd_sender_key_reset}}] true -> (session_path_data_message_{{#}}' = {{const_message_sender_reset}})
+                                     & (session_path_state_{{#}}' = {{const_update}});
+
+    [{{cmd_sender_key_failure}}] true -> (session_path_data_message_{{#}}' = {{const_message_sender_refresh}})
+                                       & (session_path_state_{{#}}' = {{const_update}});
+                  ||_||%}
+    [{{cmd_hpke_reset}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                               & (session_path_system_message_{{#}}' = {{const_message_reset}})
+                               & (session_path_state_{{#}}' = {{const_run}});
+
+    [{{cmd_hpke_failure}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                 & (session_path_system_message_{{#}}' = {{const_message_reset}})
+                                 & (session_path_state_{{#}}' = {{const_run}});
+           ||double_ratchet||
+    [{{cmd_double_ratchet_reset}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                         & (session_path_system_message_{{#}}' = {{const_message_reset}})
+                                         & (session_path_state_{{#}}' = {{const_run}});
+
+    [{{cmd_double_ratchet_failure}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                           & (session_path_system_message_{{#}}' = {{const_message_reset}})
+                                           & (session_path_state_{{#}}' = {{const_run}});
+           ||double_ratchet_sender_key||
+           {%match||direction
+                  ||sender_to_receiver||
+    [{{cmd_sub_run}}] (session_path_state_{{#}} = {{const_idle}}) -> (session_path_state_{{#}}' = {{const_update}})
+                                                                   & (session_path_data_message_{{#}}' = {{const_message_sender_new_key}});
+
+    [{{cmd_resolve_sender_refresh}}] true -> (session_path_data_message_{{#}}' = {{const_message_sender_new_key}})
+                                           & (session_path_state_{{#}}' = {{const_update}});
+                  ||receiver_to_sender||
+    [{{cmd_sender_key_reset}}] true -> (session_path_data_message_{{#}}' = {{const_message_sender_reset}})
+                                     & (session_path_state_{{#}}' = {{const_update}});
+
+    [{{cmd_sender_key_failure}}] true -> (session_path_data_message_{{#}}' = {{const_message_sender_refresh}})
+                                       & (session_path_state_{{#}}' = {{const_update}});
+                  ||_||%}
+    [{{cmd_double_ratchet_reset}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                         & (session_path_system_message_{{#}}' = {{const_message_reset}})
+                                         & (session_path_state_{{#}}' = {{const_run}});
+
+    [{{cmd_double_ratchet_failure}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                           & (session_path_system_message_{{#}}' = {{const_message_reset}})
+                                           & (session_path_state_{{#}}' = {{const_run}});
+           ||sender_key||
+           {%loop||self_session_checkers||
+    [{{self_session_checkers[].cmd_resolve_sender_reset}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                                                 & (session_path_state_{{#}}' = {{const_wait}});
+           %}
+           ||mls||
+           {%loop||self_session_checkers||
+               {%match||is_broadest
+                      ||true||
+    [{{self_session_checkers[].cmd_mls_reset}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                              & (session_path_system_message_{{#}}' = {{const_message_reset}})
+                              & (session_path_state_{{#}}' = {{const_run}});
+                   {%match||one_to_one||
+                          ||true||
+    [{{self_session_checkers[].cmd_mls_failure}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                & (session_path_system_message_{{#}}' = {{const_message_tree_refresh}})
+                                & (session_path_state_{{#}}' = {{const_run}});
+                      
+    [{{self_session_checkers[].cmd_read_refresh}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                 & (session_path_system_message_{{#}}' = {{const_message_current_tree}})
+                                 & (session_path_state_{{#}}' = {{const_run}});                   
+                          ||_||%}
+                      ||_||
+    [{{self_session_checkers[].cmd_mls_failure}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                & (session_path_system_message_{{#}}' = {{const_message_tree_refresh}})
+                                & (session_path_state_{{#}}' = {{const_run}});
+                      
+    [{{self_session_checkers[].cmd_read_refresh}}] true -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                 & (session_path_system_message_{{#}}' = {{const_message_current_tree}})
+                                 & (session_path_state_{{#}}' = {{const_run}});
+                      %}
+               
+           %}
+
+    %}
+
+    {%match||protocol
+          ||mls||
+    [{{cmd_update_data}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
+                          (session_path_state_{{#}} = {{const_update}}) &
+                          (session_path_system_message_{{#}} = {{const_message_data}}) -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                                                                        & (session_path_state_{{#}}' = {{const_wait}});
+
+    [{{cmd_update_not_data}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
+                              (session_path_state_{{#}} = {{const_update}}) &
+                              (session_path_system_message_{{#}} != {{const_message_data}}) -> (session_path_state_{{#}}' = {{const_run}});
+          ||_||
+    [{{cmd_update_data}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
+                     (session_path_state_{{#}} = {{const_update}}) -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                                                    & (session_path_state_{{#}}' = {{const_wait}});
+    %}
+
+    [{{cmd_set_message}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
+                          (session_path_state_{{#}} = {{const_wait}}) &
+                          (local_session_state_{{ref_local_session_sender}} = {{const_idle}}) -> (session_path_cache_local_session_epoch_sender_{{#}}' = local_session_epoch_{{ref_local_session_sender}})
+                                                                                               & {%match||protocol
+                                                                                                        ||hpke||(session_path_state_{{#}}' = {{const_run}})
+                                                                                               & (session_path_system_message_{{#}}' = (((local_session_epoch_{{ref_local_session_sender}} = 0) & (local_session_ratchet_{{ref_local_session_sender}} = 0))
+                                                                                                                                       ? {{const_message_reset}}
+                                                                                                                                       : (local_session_epoch_{{ref_local_session_sender}} > session_path_cache_local_session_epoch_sender_{{#}}
+                                                                                                                                         ? {{const_message_ratchet}}
+                                                                                                                                         : {{const_message_data}})));
+                                                                                                        ||hpke_sender_key||(session_path_state_{{#}}' = {{const_run}})
+                                                                                               & (session_path_system_message_{{#}}' = (((local_session_epoch_{{ref_local_session_sender}} = 0) & (local_session_ratchet_{{ref_local_session_sender}} = 0))
+                                                                                                                                       ? {{const_message_reset}}
+                                                                                                                                       : (local_session_epoch_{{ref_local_session_sender}} > session_path_cache_local_session_epoch_sender_{{#}}
+                                                                                                                                         ? {{const_message_ratchet}}
+                                                                                                                                         : {{const_message_data}})));
+                                                                                                        ||double_ratchet||(session_path_state_{{#}}' = {{const_run}})
+                                                                                               & (session_path_system_message_{{#}}' = (((local_session_epoch_{{ref_local_session_sender}} = 0) & (local_session_ratchet_{{ref_local_session_sender}} = 0))
+                                                                                                                                       ? {{const_message_reset}}
+                                                                                                                                       : {{const_message_ratchet}}));
+                                                                                                        ||double_ratchet_sender_key||(session_path_state_{{#}}' = {{const_run}})
+                                                                                               & (session_path_system_message_{{#}}' = (((local_session_epoch_{{ref_local_session_sender}} = 0) & (local_session_ratchet_{{ref_local_session_sender}} = 0))
+                                                                                                                                       ? {{const_message_reset}}
+                                                                                                                                       : {{const_message_ratchet}}));
+                                                                                                        ||sender_key||(session_path_state_{{#}}' = (local_session_epoch_{{ref_local_session_sender}} = session_path_cache_local_session_epoch_sender_{{#}}
+                                                                                                                                                   ? {{const_run}}
+                                                                                                                                                   : {{const_sub_run}}))
+                                                                                               & (session_path_system_message_{{#}}' = {{const_message_data}});
+                                                                                                        ||mls||(session_path_state_{{#}}' = {{const_run}})
+                                                                                               & (session_path_system_message_{{#}}' = (((local_session_epoch_{{ref_local_session_sender}} = 0) & (local_session_ratchet_{{ref_local_session_sender}} = 0))
+                                                                                                                                       ? {{const_message_reset}}
+                                                                                                                                       : (local_session_epoch_{{ref_local_session_sender}} > session_path_cache_local_session_epoch_sender_{{#}}
+                                                                                                                                         ? {{const_message_ratchet}}
+                                                                                                                                         : {{const_message_data}})));
+                                                                                                 %}
+
+    [{{cmd_send}}] (node_state_{{ref_node_sender}} = {{const_on}}) &
+                   (session_path_state_{{#}} = {{const_run}}) &
+                   (node_buffer_{{ref_node_sender}} < {{size_buffer_sender}}) -> (session_path_state_{{#}}' = {{const_resolve}});
+
+    {%match||protocol
+           ||sender_key||                                           
+    [{{cmd_sub_run}}] session_path_state_{{#}} = {{const_sub_run}} -> (session_path_state_{{#}}' = {{const_sub_resolve}});
+
+    [{{cmd_sub_resolve}}] (session_path_receivers_counter_{{#}} = 0) &
+                          (session_path_state_{{#}} = {{const_resolve}}) -> (session_path_state_{{#}}' = {{const_idle}})
+                                                                          & (session_path_receivers_counter_{{#}}' = {{init_receivers_counter}})
+                                                                          & (session_path_system_message_{{#}}' = {{const_message_data}})
+                                                                          & (session_path_data_message_{{#}}' = {{const_message_data}});
+
+    {%loop||sub_session_paths||
+    [{{sub_session_paths[].cmd_resolve}}] true -> (session_path_receivers_counter_{{#}}' = session_path_receivers_counter_{{#}} - 1);
+    %}
+          ||_||%}
+
+    [{{cmd_resolve}}] (session_path_receivers_counter_{{#}} = 0) &
+                      (session_path_state_{{#}} = {{const_resolve}}) -> (session_path_state_{{#}}' = {{const_idle}})
+                                                                      & (session_path_receivers_counter_{{#}}' = {{init_receivers_counter}})
+                                                                      & (session_path_system_message_{{#}}' = {{const_message_data}})
+                                                                      & (session_path_data_message_{{#}}' = {{const_message_data}});
+
+    {%loop||session_checkers||
+    [{{session_checkers[].cmd_cleanup}}] true -> (session_path_receivers_counter_{{#}}' = session_path_receivers_counter_{{#}} - 1);
+    %}
+
+endmodule
