@@ -1,5 +1,0 @@
-netgen/output/*
-/preprocessor/__pycache__/
-/examples/preprocessor_test/
-venv/
-netgen/__pycache__/

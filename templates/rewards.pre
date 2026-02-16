@@ -1,7 +1,0 @@
-rewards "{{#}}"
-
-    {%loop||contributions||
-    [{{contributions[].command}}] {{contributions[].condition}} : {{contributions[].value}};
-    %}
-
-endrewards
