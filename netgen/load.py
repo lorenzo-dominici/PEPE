@@ -32,7 +32,7 @@ def validate_data(data):
                 raise ValueError("mls_sessions_range must be a list of two positive integers [min, max] with min <= max")
         else:
             raise ValueError("Missing parameter: mls_sessions_range")
-    mls_sessions_range = 1
+    
 
     support_protocol = data.get("support_protocol")
     if support_protocol:
