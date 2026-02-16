@@ -1,5 +1,5 @@
 {
-    "protocol": "mls",
+    "protocol": "double_ratchet",
     "support_protocol": "double_ratchet_sender_key",
     "mls_sessions_range": [2, 2],
     "seed": 1357,

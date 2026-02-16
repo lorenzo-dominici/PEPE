@@ -741,6 +741,10 @@ class NetworkGenerator:
                 id = 0
                 # for each group, generate all the one-to-many paths
                 for group in groups:
+                    session = Session()
+                    session.set_protocol(self.protocol)
+                    session.set_nodes(group)
+                    session.set_id(id)
                     for sender in group:
                         if self.params.get("ls_size_epoch_range")[0] == self.params.get("ls_size_epoch_range")[1]:
                             epoch_size = int(self.params.get("ls_size_epoch_range")[0])
@@ -766,31 +770,15 @@ class NetworkGenerator:
                             tree.nodes[dest]['is_receiver'] = True
                             tree.nodes[dest]['epoch_size'] = epoch_size
                             tree.nodes[dest]['ratchet_size'] = ratchet_size
-                        one_to_many_paths.append(tree)
-
-                        session = Session()
-                        session.set_protocol(self.protocol)
-                        session.set_nodes([sender] + destinations)
+                            if len(destinations) > 1:
+                                path.nodes[sender]['epoch_size'] = epoch_size
+                                path.nodes[sender]['ratchet_size'] = ratchet_size
+                                path.nodes[dest]['epoch_size'] = epoch_size
+                                path.nodes[dest]['ratchet_size'] = ratchet_size
+                                path.nodes[dest]['is_receiver'] = True
+                                session.add_path(path)
                         session.add_path(tree)
-                        session.set_id(id)
                         id += 1
-
-                        # now generate all the one-to-one return paths to the sender
-                        for dest in destinations:
-                            path = nx.DiGraph()
-                            nx.add_path(path, nx.shortest_path(self.G, dest, sender))
-
-                            path.nodes[sender]['epoch_size'] = epoch_size
-                            path.nodes[sender]['ratchet_size'] = ratchet_size
-                            path.nodes[dest]['epoch_size'] = epoch_size
-                            path.nodes[dest]['ratchet_size'] = ratchet_size
-                            path.nodes[dest]['is_receiver'] = True
-                            path['return_path'] = True
-
-                            one_to_one_return_paths.append(path)
-
-                            session.add_path(path)
-
                         sessions.append(session)
 
                 self.attributes["sessions"] = sessions
@@ -876,16 +864,11 @@ class NetworkGenerator:
                             rewards_data["sender_key"].add_contribution(Contribution(command, condition, value))
 
                         case "mls":                    
-                            if path['return_path'] == True:
-                                condition = "true" # all messages should be system
-                                value = "1"
-                                rewards_system["mls"].add_contribution(Contribution(command, condition, value))
-                            else:
-                                condition = f"(sender_path_system_message_{session_path} = {consts['const_message_data']}) | (sender_path_system_message_{session_path} = {consts['const_message_ratchet']})"
-                                value = "1" 
-                                rewards_data["mls"].add_contribution(Contribution(command, condition, value))
-                                condition = f"(sender_path_system_message_{session_path} = {consts['const_message_reset']})"
-                                rewards_system["mls"].add_contribution(Contribution(command, condition, value))
+                            condition = f"(sender_path_system_message_{session_path} != {consts['const_message_tree_refresh']}) & (sender_path_system_message_{session_path} != {consts['const_message_current_tree']})"
+                            value = "1" 
+                            rewards_data["mls"].add_contribution(Contribution(command, condition, value))
+                            condition = f"(sender_path_system_message_{session_path} == {consts['const_message_tree_refresh']}) | (sender_path_system_message_{session_path} == {consts['const_message_current_tree']})"
+                            rewards_system["mls"].add_contribution(Contribution(command, condition, value))
 
             self.attributes["rewards"].extend(list(rewards_data.values()) + list(rewards_system.values()) + [reward_message])
         
@@ -1046,7 +1029,7 @@ class NetworkGenerator:
             for session in sessions:
                 if node in session.nodes:
                     for i, path in enumerate(session.paths):
-                        if path.nodes[node].get("is_receiver") == True:
+                        if node in path.nodes and path.nodes[node].get("is_receiver") == True:
                             commands = {}
                             session_checker_name = f"session_checker_of_node_{node}_of_path_{i}_{session.id}"
                             commands["cmd_cleanup"] = f"cmd_cleanup_{session_checker_name}"
@@ -1715,9 +1698,9 @@ class NetworkGenerator:
                 # states
                 local_session["range_state"] = range_state
                 local_session["init_state"] = init.get("local_session_init_state")
-                local_session["size_epoch"] = list(session.paths)[0].nodes[node]['epoch_size']
+                local_session["size_epoch"] = session.paths[0].nodes[list(session.paths[0].nodes)[0]]['epoch_size']
                 local_session["init_epoch"] = init.get("local_session_init_epoch")
-                local_session["size_ratchet"] = list(session.paths)[0].nodes[node]['ratchet_size']
+                local_session["size_ratchet"] = session.paths[0].nodes[list(session.paths[0].nodes)[0]]['ratchet_size']
                 local_session["init_ratchet"] = init.get("local_session_init_ratchet")
                 local_session["init_compromised"] = init.get("local_session_init_compromised")
                 local_session["init_mutex"] = "true"
