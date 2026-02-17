@@ -34,7 +34,7 @@ from __future__ import annotations
 
 import argparse
 import multiprocessing as mp
- 
+
 from multiprocessing import Queue
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
@@ -47,6 +47,10 @@ from .store import write_file, ensure_dir, join_files, delete_files
 from .models import Config, PreprocessorData, JoinMode
 from .logger import configure_logging, get_logger, task_context, set_task_label
 from tqdm import tqdm
+
+# Use 'spawn' start method to avoid deadlocks caused by fork() inheriting
+# held locks (e.g. logging queue locks) on Linux/macOS.
+_ctx = mp.get_context('spawn')
 
 
 def _worker_task(args_tuple: tuple[Config, str, Dict[str, Any], Dict[str, Any]]):
@@ -165,7 +169,7 @@ def run(
     logger.info(f"Starting processing: {len(tasks)} tasks, pool size={pool_size}")
 
     # Process tasks in parallel using a process pool
-    with mp.Pool(
+    with _ctx.Pool(
         pool_size,
         initializer=_worker_init,
         initargs=(log_level, log_file, log_queue),
@@ -230,7 +234,7 @@ def main(argv: List[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     # Set up centralized logging with queue for multiprocessing
-    log_queue: Queue[Any] = mp.Queue()
+    log_queue: Queue[Any] = _ctx.Queue()
     listener = configure_logging(args.log_level, args.log_file, queue=log_queue, start_listener=True)
     set_task_label("main")
     logger = get_logger("preprocessor.cli")
