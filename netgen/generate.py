@@ -2356,7 +2356,7 @@ class NetworkGenerator:
                 local_session["size_ratchet"] = session.paths[0].nodes[list(session.paths[0].nodes)[0]]['ratchet_size']
                 local_session["init_ratchet"] = init.get("local_session_init_ratchet")
                 local_session["init_compromised"] = init.get("local_session_init_compromised")
-                local_session["init_mutex"] = "true"
+                local_session["init_mutex"] = "3"
 
                 # references
                 local_session["ref_node"] = f"{node}"
