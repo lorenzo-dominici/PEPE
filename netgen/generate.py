@@ -1542,7 +1542,7 @@ class NetworkGenerator:
             link_refs = []
             for session in sessions:
                 for i, path in enumerate(session.paths):
-                    if node in path.nodes() and path.nodes[node].get("is_receiver") == False:
+                    if node in path.nodes() and path.nodes[node].get("is_receiver", False) == False:
                         commands = {}
                         link_ref_name = f"link_ref_{node}_of_path_{i}_{session.id}"
                         commands["cmd_reset"] = f"cmd_reset_{link_ref_name}"
@@ -1554,7 +1554,7 @@ class NetworkGenerator:
             session_paths = []
             for session in sessions:
                 for i, path in enumerate(session.paths):
-                    if node in path.nodes() and path.nodes[node].get("is_receiver") == False:
+                    if node in path.nodes() and path.nodes[node].get("is_receiver", False) == False:
                         commands = {}
                         session_path_name = f"session_path_{i}_{session.id}"
                         commands["cmd_send"] = f"cmd_send_{session_path_name}"
@@ -1666,7 +1666,7 @@ class NetworkGenerator:
             interface_ba["name"] = f"interface_{node_b}_{node_a}.prism"
             interface_ba["#"] = f"{node_b}_{node_a}"
             interface_ba["range_state"] = range_state
-            interface_ba["init_state"] = 0
+            interface_ba["init_state"] = init.get("interface_init_state")
 
             # probabilities
             if self.params["if_prob_off_to_working"][0] == self.params["if_prob_off_to_working"][1]:
@@ -1828,8 +1828,7 @@ class NetworkGenerator:
             channel_ba["name"] = f"channel_{node_b}_{node_a}.prism"
             channel_ba["#"] = f"{node_b}_{node_a}"
             channel_ba["range_state"] = range_state
-            init_value = int(range_state.split('..')[0])
-            channel_ba["init_state"] = init_value
+            channel_ba["init_state"] = init.get("channel_init_state")  
             if self.params["channel_bandwidth_range"][0] == self.params["channel_bandwidth_range"][1]:
                 size_bandwidth = self.params["channel_bandwidth_range"][0]
             else:
