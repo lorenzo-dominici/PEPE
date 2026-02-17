@@ -2095,6 +2095,7 @@ class NetworkGenerator:
         range_state = ranges.get("session_path_state_range")
         range_system_message = ranges.get("session_path_system_message_range")
         range_data_message = ranges.get("session_path_data_message_range")
+        range_return_pending = ranges.get("session_path_return_pending_range")
  
 
             
@@ -2126,6 +2127,8 @@ class NetworkGenerator:
                 session_path["init_cache_local_session_epoch_sender"] = init.get("session_path_init_cache_local_session_epoch_sender")
                 session_path["size_receivers_counter"] = len(receivers)  # one session checker for each receiver
                 session_path["init_receivers_counter"] = len(receivers)
+                session_path["range_return_pending"] = range_return_pending
+                session_path["init_return_pending"] = init.get("session_path_init_return_pending")
 
                 # references
                 session_path["ref_node_sender"] = f"{sender}"
@@ -2248,6 +2251,7 @@ class NetworkGenerator:
                                 
                 # commands
                 session_path["cmd_run"] = f"cmd_run_session_path_{i}_{session_id}"
+                session_path["cmd_process_pending"] = f"cmd_process_pending_session_path_{i}_{session_id}"
                 session_path["cmd_update_data"] = f"cmd_update_data_session_path_{i}_{session_id}"
                 session_path["cmd_set_message"] = f"cmd_set_message_session_path_{i}_{session_id}"
                 session_path["cmd_send"] = f"cmd_send_session_path_{i}_{session_id}"

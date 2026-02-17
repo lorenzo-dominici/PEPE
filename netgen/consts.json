@@ -33,5 +33,10 @@
     "const_phase_fired": 31,
     "const_phase_sending": 32,
     "const_phase_receiving": 33,
-    "const_phase_cleanup": 34
+    "const_phase_cleanup": 34,
+    "const_pending_none": 35,
+    "const_pending_reset": 36,
+    "const_pending_failure": 37,
+    "const_pending_refresh": 38,
+    "const_pending_sender_reset": 39
 }

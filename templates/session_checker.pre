@@ -51,12 +51,10 @@ module session_checker_{{#}}
                              (session_path_data_message_{{ref_session_path}} = {{const_message_data}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_hpke_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                         (session_checker_state_{{#}} = {{const_reset}}) &
-                         (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                         (session_checker_state_{{#}} = {{const_reset}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_hpke_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                           (session_checker_state_{{#}} = {{const_failure}}) &
-                           (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                           (session_checker_state_{{#}} = {{const_failure}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
            ||hpke_sender_key||
     [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                          (session_checker_state_{{#}} = {{const_triggered}}) &
@@ -72,12 +70,10 @@ module session_checker_{{#}}
                              (session_path_data_message_{{ref_session_path}} = {{const_message_data}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_hpke_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                         (session_checker_state_{{#}} = {{const_reset}}) &
-                         (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                         (session_checker_state_{{#}} = {{const_reset}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_hpke_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                           (session_checker_state_{{#}} = {{const_failure}}) &
-                           (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                           (session_checker_state_{{#}} = {{const_failure}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
                                                                                                  
     [{{cmd_resolve_sender_new_key}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                                      (session_checker_state_{{#}} = {{const_resolve}}) &
@@ -85,13 +81,11 @@ module session_checker_{{#}}
 
     [{{cmd_resolve_sender_refresh}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                                      (session_checker_state_{{#}} = {{const_resolve}}) &
-                                     (session_path_data_message_{{ref_session_path}} = {{const_message_sender_refresh}}) &
-                                     (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                                     (session_path_data_message_{{ref_session_path}} = {{const_message_sender_refresh}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_resolve_sender_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                                    (session_checker_state_{{#}} = {{const_resolve}}) &
-                                   (session_path_data_message_{{ref_session_path}} = {{const_message_sender_reset}}) &
-                                   (session_path_state_{{ref_session_path_broadcast}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                                   (session_path_data_message_{{ref_session_path}} = {{const_message_sender_reset}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
            ||double_ratchet||
     [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                          (session_checker_state_{{#}} = {{const_triggered}}) &
@@ -107,12 +101,10 @@ module session_checker_{{#}}
                              (session_path_data_message_{{ref_session_path}} = {{const_message_data}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_double_ratchet_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                                   (session_checker_state_{{#}} = {{const_reset}}) &
-                                   (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                                   (session_checker_state_{{#}} = {{const_reset}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_double_ratchet_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                                     (session_checker_state_{{#}} = {{const_failure}}) &
-                                     (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                                     (session_checker_state_{{#}} = {{const_failure}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
            ||double_ratchet_sender_key||
     [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                          (session_checker_state_{{#}} = {{const_triggered}}) &
@@ -128,12 +120,10 @@ module session_checker_{{#}}
                              (session_path_data_message_{{ref_session_path}} = {{const_message_data}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_double_ratchet_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                                   (session_checker_state_{{#}} = {{const_reset}}) &
-                                   (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                                   (session_checker_state_{{#}} = {{const_reset}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_double_ratchet_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                                     (session_checker_state_{{#}} = {{const_failure}}) &
-                                     (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                                     (session_checker_state_{{#}} = {{const_failure}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_resolve_sender_new_key}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                                      (session_checker_state_{{#}} = {{const_resolve}}) &
@@ -141,23 +131,19 @@ module session_checker_{{#}}
 
     [{{cmd_resolve_sender_refresh}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                                      (session_checker_state_{{#}} = {{const_resolve}}) &
-                                     (session_path_data_message_{{ref_session_path}} = {{const_message_sender_refresh}}) &
-                                     (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                                     (session_path_data_message_{{ref_session_path}} = {{const_message_sender_refresh}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_resolve_sender_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                                    (session_checker_state_{{#}} = {{const_resolve}}) &
-                                   (session_path_data_message_{{ref_session_path}} = {{const_message_sender_reset}}) &
-                                   (session_path_state_{{ref_session_path_broadcast}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                                   (session_path_data_message_{{ref_session_path}} = {{const_message_sender_reset}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
            ||sender_key||
     [{{cmd_resolve_sender_new_key}}] true -> (session_checker_state_{{#}}' = session_checker_state_{{#}});
 
     [{{cmd_sender_key_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                               (session_checker_state_{{#}} = {{const_reset}}) &
-                               (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                               (session_checker_state_{{#}} = {{const_reset}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_sender_key_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                                 (session_checker_state_{{#}} = {{const_failure}}) &
-                                 (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                                 (session_checker_state_{{#}} = {{const_failure}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
            ||mls||
     [{{cmd_read_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                          (session_checker_state_{{#}} = {{const_triggered}}) &
@@ -174,20 +160,17 @@ module session_checker_{{#}}
 
     [{{cmd_read_refresh}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                            (session_checker_state_{{#}} = {{const_resolve}}) &
-                           (session_path_system_message_{{ref_session_path}} = {{const_message_tree_refresh}}) &
-                           (session_path_state_{{ref_session_path_to_sender}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                           (session_path_system_message_{{ref_session_path}} = {{const_message_tree_refresh}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_read_current}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                            (session_checker_state_{{#}} = {{const_resolve}}) &
                            (session_path_system_message_{{ref_session_path}} = {{const_message_current_tree}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_mls_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                        (session_checker_state_{{#}} = {{const_reset}}) &
-                        (session_path_state_{{ref_session_path_broadcast}} = {{const_idle}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                        (session_checker_state_{{#}} = {{const_reset}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_mls_failure}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                          (session_checker_state_{{#}} = {{const_failure}}) & 
-                          (session_path_state_{{ref_session_path_to_sender}}) = {{const_idle}} -> (session_checker_state_{{#}}' = {{const_cleanup}});
+                          (session_checker_state_{{#}} = {{const_failure}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
     %}
 
     {%loop||links||
