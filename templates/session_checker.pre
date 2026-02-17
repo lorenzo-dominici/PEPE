@@ -159,11 +159,11 @@ module session_checker_{{#}}
                              (session_path_data_message_{{ref_session_path}} = {{const_message_data}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_read_refresh}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                           (session_checker_state_{{#}} = {{const_resolve}}) &
+                           (session_checker_state_{{#}} = {{const_triggered}}) &
                            (session_path_system_message_{{ref_session_path}} = {{const_message_tree_refresh}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_read_current}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
-                           (session_checker_state_{{#}} = {{const_resolve}}) &
+                           (session_checker_state_{{#}} = {{const_triggered}}) &
                            (session_path_system_message_{{ref_session_path}} = {{const_message_current_tree}}) -> (session_checker_state_{{#}}' = {{const_cleanup}});
 
     [{{cmd_mls_reset}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
