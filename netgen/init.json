@@ -14,6 +14,7 @@
     "local_session_init_epoch": 0,
     "local_session_init_ratchet": 0,
     "local_session_init_compromised": "false",
+    "local_session_init_mutex": 43,
     "session_checker_init_state": 10,
     "session_path_init_return_pending": 35
 }

@@ -4,7 +4,7 @@ module local_session_{{#}}
     local_session_epoch_{{#}}: [0..{{size_epoch}}] init {{init_epoch}};
     local_session_ratchet_{{#}}: [0..{{size_ratchet}}] init {{init_ratchet}};
     local_session_compromised_{{#}}: bool init {{init_compromised}};
-    local_session_mutex_{{#}}: [0..3] init {{init_mutex}};
+    local_session_mutex_{{#}}: [{{range_mutex}}] init {{init_mutex}};
 
     [{{cmd_session_update}}] (node_state_{{ref_node}} = {{const_on}}) &
                              (local_session_state_{{#}} = {{const_session_trigger_update}}) &
@@ -48,63 +48,63 @@ module local_session_{{#}}
     %}
 
     {%loop||session_paths||
-    [{{session_paths[].cmd_update_data}}] (local_session_mutex_{{#}} = 1 | local_session_mutex_{{#}} = 3) -> (local_session_state_{{#}}' = {{const_session_trigger_update}})
-                                                                              & (local_session_mutex_{{#}}' = 0);
+    [{{session_paths[].cmd_update_data}}] (local_session_mutex_{{#}} = {{const_mutex_free}} | local_session_mutex_{{#}} = {{const_mutex_init}}) -> (local_session_state_{{#}}' = {{const_session_trigger_update}})
+                                                                              & (local_session_mutex_{{#}}' = {{const_mutex_session_path}});
 
-    [{{session_paths[].cmd_set_message}}] (local_session_mutex_{{#}} = 0) &
-                                          (local_session_state_{{#}} = {{const_session_idle}}) -> (local_session_mutex_{{#}}' = 1);
+    [{{session_paths[].cmd_set_message}}] (local_session_mutex_{{#}} = {{const_mutex_session_path}}) &
+                                          (local_session_state_{{#}} = {{const_session_idle}}) -> (local_session_mutex_{{#}}' = {{const_mutex_free}});
     %}
 
     {%loop||session_checkers||
-    [{{session_checkers[].cmd_read_data}}] (local_session_mutex_{{#}} = 2 | local_session_mutex_{{#}} = 3) -> (local_session_state_{{#}}' = {{const_session_trigger_update}})
-                                                                               & (local_session_mutex_{{#}}' = 0);
+    [{{session_checkers[].cmd_read_data}}] (local_session_mutex_{{#}} = {{const_mutex_free}} | local_session_mutex_{{#}} = {{const_mutex_init}}) -> (local_session_state_{{#}}' = {{const_session_trigger_update}})
+                                                                               & (local_session_mutex_{{#}}' = {{const_mutex_session_checker}});
     {%match||protocol
             ||hpke||
-    [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = 2 | local_session_mutex_{{#}} = 3) -> (local_session_state_{{#}}' = {{const_session_ratchet}})
-                                                                                  & (local_session_mutex_{{#}}' = 0);
+    [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = {{const_mutex_free}} | local_session_mutex_{{#}} = {{const_mutex_init}}) -> (local_session_state_{{#}}' = {{const_session_ratchet}})
+                                                                                  & (local_session_mutex_{{#}}' = {{const_mutex_session_checker}});
                                                                     
-    [{{session_checkers[].cmd_read_reset}}] (local_session_mutex_{{#}} = 2 | local_session_mutex_{{#}} = 3) -> (local_session_state_{{#}}' = {{const_session_reset}})
-                                                                                & (local_session_mutex_{{#}}' = 0);
+    [{{session_checkers[].cmd_read_reset}}] (local_session_mutex_{{#}} = {{const_mutex_free}} | local_session_mutex_{{#}} = {{const_mutex_init}}) -> (local_session_state_{{#}}' = {{const_session_reset}})
+                                                                                & (local_session_mutex_{{#}}' = {{const_mutex_session_checker}});
 
     [{{session_checkers[].cmd_hpke_failure}}] true -> (local_session_state_{{#}}' = {{const_session_reset}});
             ||hpke_sender_key||
-    [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = 2 | local_session_mutex_{{#}} = 3) -> (local_session_state_{{#}}' = {{const_session_ratchet}})
-                                                                                  & (local_session_mutex_{{#}}' = 0);
+    [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = {{const_mutex_free}} | local_session_mutex_{{#}} = {{const_mutex_init}}) -> (local_session_state_{{#}}' = {{const_session_ratchet}})
+                                                                                  & (local_session_mutex_{{#}}' = {{const_mutex_session_checker}});
                                                                     
-    [{{session_checkers[].cmd_read_reset}}] (local_session_mutex_{{#}} = 2 | local_session_mutex_{{#}} = 3) -> (local_session_state_{{#}}' = {{const_session_reset}})
-                                                                                & (local_session_mutex_{{#}}' = 0);
+    [{{session_checkers[].cmd_read_reset}}] (local_session_mutex_{{#}} = {{const_mutex_free}} | local_session_mutex_{{#}} = {{const_mutex_init}}) -> (local_session_state_{{#}}' = {{const_session_reset}})
+                                                                                & (local_session_mutex_{{#}}' = {{const_mutex_session_checker}});
 
     [{{session_checkers[].cmd_hpke_failure}}] true -> (local_session_state_{{#}}' = {{const_session_reset}});
             ||double_ratchet||
-    [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = 2 | local_session_mutex_{{#}} = 3) -> (local_session_state_{{#}}' = {{const_session_ratchet}})
-                                                                                  & (local_session_mutex_{{#}}' = 0);
+    [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = {{const_mutex_free}} | local_session_mutex_{{#}} = {{const_mutex_init}}) -> (local_session_state_{{#}}' = {{const_session_ratchet}})
+                                                                                  & (local_session_mutex_{{#}}' = {{const_mutex_session_checker}});
                                                                     
-    [{{session_checkers[].cmd_read_reset}}] (local_session_mutex_{{#}} = 2 | local_session_mutex_{{#}} = 3) -> (local_session_state_{{#}}' = {{const_session_reset}})
-                                                                                & (local_session_mutex_{{#}}' = 0);
+    [{{session_checkers[].cmd_read_reset}}] (local_session_mutex_{{#}} = {{const_mutex_free}} | local_session_mutex_{{#}} = {{const_mutex_init}}) -> (local_session_state_{{#}}' = {{const_session_reset}})
+                                                                                & (local_session_mutex_{{#}}' = {{const_mutex_session_checker}});
 
     [{{session_checkers[].cmd_double_ratchet_failure}}] true -> (local_session_state_{{#}}' = {{const_session_reset}});
             ||double_ratchet_sender_key||
-    [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = 2 | local_session_mutex_{{#}} = 3) -> (local_session_state_{{#}}' = {{const_session_ratchet}})
-                                                                                  & (local_session_mutex_{{#}}' = 0);
+    [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = {{const_mutex_free}} | local_session_mutex_{{#}} = {{const_mutex_init}}) -> (local_session_state_{{#}}' = {{const_session_ratchet}})
+                                                                                  & (local_session_mutex_{{#}}' = {{const_mutex_session_checker}});
                                                                     
-    [{{session_checkers[].cmd_read_reset}}] (local_session_mutex_{{#}} = 2 | local_session_mutex_{{#}} = 3) -> (local_session_state_{{#}}' = {{const_session_reset}})
-                                                                                & (local_session_mutex_{{#}}' = 0);
+    [{{session_checkers[].cmd_read_reset}}] (local_session_mutex_{{#}} = {{const_mutex_free}} | local_session_mutex_{{#}} = {{const_mutex_init}}) -> (local_session_state_{{#}}' = {{const_session_reset}})
+                                                                                & (local_session_mutex_{{#}}' = {{const_mutex_session_checker}});
 
     [{{session_checkers[].cmd_double_ratchet_failure}}] true -> (local_session_state_{{#}}' = {{const_session_reset}});
             ||sender_key||
-    [{{session_checkers[].cmd_resolve_sender_new_key}}] (local_session_mutex_{{#}} != 0) -> (local_session_epoch_{{#}}' = session_path_cache_local_session_epoch_sender_{{session_checkers[].ref_session_path}})
+    [{{session_checkers[].cmd_resolve_sender_new_key}}] (local_session_mutex_{{#}} != {{const_mutex_free}}) -> (local_session_epoch_{{#}}' = session_path_cache_local_session_epoch_sender_{{session_checkers[].ref_session_path}})
                                                                                            & (local_session_ratchet_{{#}}' = 0);
             ||mls||
-    [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = 2 | local_session_mutex_{{#}} = 3) -> (local_session_state_{{#}}' = {{const_session_ratchet}})
-                                                                                  & (local_session_mutex_{{#}}' = 0);
+    [{{session_checkers[].cmd_read_ratchet}}] (local_session_mutex_{{#}} = {{const_mutex_free}} | local_session_mutex_{{#}} = {{const_mutex_init}}) -> (local_session_state_{{#}}' = {{const_session_ratchet}})
+                                                                                  & (local_session_mutex_{{#}}' = {{const_mutex_session_checker}});
                                                                     
-    [{{session_checkers[].cmd_read_reset}}] (local_session_mutex_{{#}} = 2 | local_session_mutex_{{#}} = 3) -> (local_session_state_{{#}}' = {{const_session_reset}})
-                                                                                & (local_session_mutex_{{#}}' = 0);
+    [{{session_checkers[].cmd_read_reset}}] (local_session_mutex_{{#}} = {{const_mutex_free}} | local_session_mutex_{{#}} = {{const_mutex_init}}) -> (local_session_state_{{#}}' = {{const_session_reset}})
+                                                                                & (local_session_mutex_{{#}}' = {{const_mutex_session_checker}});
 
-    [{{session_checkers[].cmd_read_current}}] (local_session_mutex_{{#}} != 0) -> (local_session_epoch_{{#}}' = session_path_cache_local_session_epoch_sender_{{session_checkers[].ref_session_path}})
+    [{{session_checkers[].cmd_read_current}}] (local_session_mutex_{{#}} != {{const_mutex_free}}) -> (local_session_epoch_{{#}}' = session_path_cache_local_session_epoch_sender_{{session_checkers[].ref_session_path}})
                                                                                  & (local_session_ratchet_{{#}}' = 0);
     %}
-    [{{session_checkers[].cmd_cleanup}}] (local_session_mutex_{{#}} = 0) -> (local_session_mutex_{{#}}' = 2);
+    [{{session_checkers[].cmd_cleanup}}] (local_session_mutex_{{#}} = {{const_mutex_session_checker}}) -> (local_session_mutex_{{#}}' = {{const_mutex_free}});
     %}
 
 endmodule

@@ -38,5 +38,9 @@
     "const_pending_reset": 36,
     "const_pending_failure": 37,
     "const_pending_refresh": 38,
-    "const_pending_sender_reset": 39
+    "const_pending_sender_reset": 39,
+    "const_mutex_free": 40,
+    "const_mutex_session_path": 41,
+    "const_mutex_session_checker": 42,
+    "const_mutex_init": 43
 }
