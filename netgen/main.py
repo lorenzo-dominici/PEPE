@@ -74,7 +74,10 @@ def main():
 
     # Primary outputs inside the timestamped (or named) directory
     store_network(network_dict, f"{output_dir}/{base_name}.json")
-    store_network(sessions_summary, f"{output_dir}/{base_name}_sessions.json")
+    
+    # Sessions summary as human-readable text
+    sessions_path = Path(f"{output_dir}/{base_name}_sessions.txt")
+    sessions_path.write_text(sessions_summary, encoding="utf-8")
 
     # --- 5. Fixed directory copy (network JSON only) ---
     fixed_dir = Path(FIXED_DIR)

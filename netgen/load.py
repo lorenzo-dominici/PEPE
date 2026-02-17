@@ -387,6 +387,8 @@ def validate_data(data: dict) -> dict:
 
     if ls_prob_none[0] + ls_prob_session_reset[0] + ls_prob_ratchet_reset[0] >= 1.0:
         raise ValueError("the sum of minimum ls_prob_none, ls_prob_session_reset and ls_prob_ratchet_reset must be lower than 1.0")
+    if ls_prob_none[1] + ls_prob_session_reset[1] + ls_prob_ratchet_reset[1] >= 1.0:
+        raise ValueError("the sum of maximum ls_prob_none, ls_prob_session_reset and ls_prob_ratchet_reset must be lower than 1.0")
 
     params["ls_prob_compromised"] = _require_prob_range(data, "ls_prob_compromised")
 

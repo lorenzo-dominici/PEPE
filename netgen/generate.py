@@ -783,13 +783,21 @@ class NetworkGenerator:
         pos = nx.spring_layout(self.G, seed = self.params["seed"])
         centrality = nx.degree_centrality(self.G)
         scale_factor = 10000
-        nodes_sizes = [ (v ** 2) * scale_factor + 50 for v in centrality.values() ]
+        nodes_sizes = [ (v ** 2) * scale_factor + 500 for v in centrality.values() ]
+
+        # Determine max label length to scale font appropriately
+        import math
+        max_label_len = max(len(str(n)) for n in self.G.nodes())
+        min_size = min(nodes_sizes)
+        min_radius = math.sqrt(min_size / math.pi)
+        # Font must fit the widest label inside the smallest node
+        font_size = max(12, min(22, int(min_radius * 1.1 / max(max_label_len * 0.55, 1))))
 
         node_colors = [data['color'] for _, data in self.G.nodes(data=True)]
         edge_colors = [data['color'] for _, _, data in self.G.edges(data=True)]
 
         plt.figure(figsize=(10, 10))
-        nx.draw(self.G, pos, with_labels=True, node_size=nodes_sizes, node_color=node_colors, edge_color = edge_colors, font_size=7, font_weight='bold')
+        nx.draw(self.G, pos, with_labels=True, node_size=nodes_sizes, node_color=node_colors, edge_color = edge_colors, font_size=font_size, font_weight='bold', font_color='white')
         plt.title("Grafo")
         plt.axis('off')
         if output_path:
@@ -812,10 +820,12 @@ class NetworkGenerator:
 
         **sender_key** (one-to-many + one-to-one sub-sessions):
             Each node is selected as a sender with probability ``path_perc``.
-            For each sender, receivers are sampled (again with ``path_perc``),
-            producing a broadcast tree (``nx.DiGraph``).  Additionally, a
-            one-to-one sub-session (using the configured support protocol) is
-            created for every sender-receiver pair (forward + return path).
+            For each sender, other nodes are selected as receivers with
+            probability ``path_perc``, with a minimum of 2 receivers guaranteed
+            (true one-to-many).  A broadcast tree (``nx.DiGraph``) is built.
+            Additionally, a one-to-one sub-session (using the configured
+            support protocol) is created for every sender-receiver pair
+            (forward + return path).
 
         **mls** (group multicast):
             Nodes are shuffled and partitioned into groups of ≥ 2 nodes.
@@ -891,13 +901,19 @@ class NetworkGenerator:
             # For sender_key, we need one-to-many paths and all the one-to-one
             # paths sender→receiver and receiver→sender (via support protocol).
             case "sender_key":
-                # Step 1: select senders with probability path_perc
+                # Step 1: select senders with probability path_perc.
+                # Since sender_key is a broadcast protocol, each selected sender
+                # will transmit to ALL other nodes (true one-to-many).
                 senders = []
                 for node in nodes:
                     if self.rng.random() < self.params["path_perc"]:
                         senders.append(node)
-                # Step 2: for each sender, select receivers and build broadcast
-                # tree via shortest paths on the undirected topology graph.
+                # Guarantee at least one sender
+                if len(senders) == 0:
+                    senders.append(self.rng.choice(nodes))
+                # Step 2: for each sender, select receivers using path_perc as
+                # the inclusion probability per node (at least 1 guaranteed).
+                # With high path_perc the paths are naturally one-to-many.
                 one_to_many_paths = []
                 sessions = []
                 for sender in senders:
@@ -911,12 +927,11 @@ class NetworkGenerator:
                     else:
                         ratchet_size = int(self.rng.integers(self.params.get("ls_size_ratchet_range")[0], self.params.get("ls_size_ratchet_range")[1] + 1))
 
-                    destinations = []
-                    for node in nodes:
-                        if node != sender and self.rng.random() < self.params["path_perc"]:
-                            destinations.append(node)
+                    candidates = [n for n in nodes if n != sender]
+                    destinations = [n for n in candidates if self.rng.random() < self.params["path_perc"]]
+                    # Guarantee at least 1 receiver
                     if len(destinations) == 0:
-                        destinations.append(self.rng.choice([n for n in nodes if n != sender]))
+                        destinations.append(self.rng.choice(candidates))
                     tree = nx.DiGraph()
                     tree.add_node(sender)
                     tree.nodes[sender]['epoch_size'] = epoch_size
@@ -1057,6 +1072,11 @@ class NetworkGenerator:
 
                         # Build broadcast tree: for each destination, merge the
                         # shortest path into the tree.
+                        destinations = [n for n in group if n != sender]
+                        tree = nx.DiGraph()
+                        tree.add_node(sender)
+                        tree.nodes[sender]['epoch_size'] = epoch_size
+                        tree.nodes[sender]['ratchet_size'] = ratchet_size
                         for dest in destinations:
                             path = nx.DiGraph()
                             nx.add_path(path, nx.shortest_path(self.G, sender, dest))
@@ -1073,8 +1093,8 @@ class NetworkGenerator:
                                 path.nodes[dest]['is_receiver'] = True
                                 session.add_path(path)
                         session.add_path(tree)
-                        id += 1
-                        sessions.append(session)
+                    id += 1
+                    sessions.append(session)
 
                 self.sessions = sessions
 
@@ -1195,7 +1215,7 @@ class NetworkGenerator:
                             condition = f"(session_path_system_message_{session_path} != {consts['const_message_tree_refresh']}) & (session_path_system_message_{session_path} != {consts['const_message_current_tree']})"
                             value = "1" 
                             rewards_data["mls"].add_contribution(Contribution(command, condition, value))
-                            condition = f"(session_path_system_message_{session_path} == {consts['const_message_tree_refresh']}) | (session_path_system_message_{session_path} == {consts['const_message_current_tree']})"
+                            condition = f"(session_path_system_message_{session_path} = {consts['const_message_tree_refresh']}) | (session_path_system_message_{session_path} = {consts['const_message_current_tree']})"
                             rewards_system["mls"].add_contribution(Contribution(command, condition, value))
                     
                     for node in self._get_receivers_from_path(path):
@@ -1362,56 +1382,65 @@ class NetworkGenerator:
         return network_dict
 
     
-    def _generate_sessions_summary(self) -> dict:
-        """Generate a hierarchical JSON-ready summary of all sessions.
+    def _generate_sessions_summary(self) -> str:
+        """Generate a human-readable text summary of all sessions.
 
-        The summary provides a human-readable (and machine-parseable) view of
-        every session, its paths (with sender/receiver annotations) and any
+        The summary provides a clearly formatted, indented view of every
+        session, its paths (with sender -> receiver flow) and any
         sub-sessions.  It is saved alongside the main network JSON for
         debugging and documentation purposes.
 
         Returns
         -------
-        dict
-            ``{"sessions": [<session_dict>, ...]}`` where each session_dict
-            contains ``id``, ``protocol``, ``nodes``, ``paths`` and
-            ``subsessions``.
+        str
+            Multi-line text summary.
         """
-        summary = {"sessions": []}
-        for session in self.sessions:
-            s_dict = {
-                "id": session.get_id(),
-                "protocol": session.protocol,
-                "nodes": session.get_nodes(),
-                "paths": [],
-                "subsessions": []
-            }
-            for path in session.get_paths():
-                p_dict = {
-                    "nodes": list(path.nodes()),
-                    "edges": list(path.edges()),
-                    "sender": list(path.nodes())[0],
-                    "receivers": [n for n, attr in path.nodes(data=True) if attr.get("is_receiver")]
-                }
-                s_dict["paths"].append(p_dict)
-            for sub in session.get_subsessions():
-                sub_dict = {
-                    "id": sub.get_id(),
-                    "protocol": sub.protocol,
-                    "nodes": sub.get_nodes(),
-                    "paths": []
-                }
-                for path in sub.get_paths():
-                    p_dict = {
-                        "nodes": list(path.nodes()),
-                        "edges": list(path.edges()),
-                        "sender": list(path.nodes())[0],
-                        "receivers": [n for n, attr in path.nodes(data=True) if attr.get("is_receiver")]
-                    }
-                    sub_dict["paths"].append(p_dict)
-                s_dict["subsessions"].append(sub_dict)
-            summary["sessions"].append(s_dict)
-        return summary
+        lines = []
+        sep = "=" * 70
+        thin_sep = "-" * 50
+
+        lines.append(sep)
+        lines.append(f"  SESSIONS SUMMARY — {len(self.sessions)} session(s)")
+        lines.append(sep)
+        lines.append("")
+
+        for idx, session in enumerate(self.sessions):
+            lines.append(f"  Session {session.get_id()}")
+            lines.append(f"    Protocol : {session.protocol}")
+            lines.append(f"    Nodes    : {session.get_nodes()}")
+            lines.append(f"    Paths    : {len(session.get_paths())}")
+
+            for i, path in enumerate(session.get_paths()):
+                nodes = list(path.nodes())
+                sender = nodes[0]
+                receivers = [n for n, attr in path.nodes(data=True) if attr.get("is_receiver")]
+                hops = " -> ".join(str(n) for n in nodes)
+                lines.append(f"      Path {i}: {hops}")
+                lines.append(f"               Sender    : node {sender}")
+                lines.append(f"               Receivers : {receivers}")
+
+            subsessions = session.get_subsessions()
+            if subsessions:
+                lines.append(f"    Sub-sessions : {len(subsessions)}")
+                for sub in subsessions:
+                    lines.append(f"      Sub-session {sub.get_id()}")
+                    lines.append(f"        Protocol : {sub.protocol}")
+                    lines.append(f"        Nodes    : {sub.get_nodes()}")
+                    for j, path in enumerate(sub.get_paths()):
+                        nodes = list(path.nodes())
+                        sender = nodes[0]
+                        receivers = [n for n, attr in path.nodes(data=True) if attr.get("is_receiver")]
+                        hops = " -> ".join(str(n) for n in nodes)
+                        lines.append(f"          Path {j}: {hops}")
+                        lines.append(f"                   Sender    : node {sender}")
+                        lines.append(f"                   Receivers : {receivers}")
+
+            if idx < len(self.sessions) - 1:
+                lines.append(f"  {thin_sep}")
+
+        lines.append("")
+        lines.append(sep)
+        return "\n".join(lines)
 
     
     # ── Component serialisation helpers ─────────────────────────────────────
@@ -2355,29 +2384,32 @@ class NetworkGenerator:
                     local_session["ref_broadest_session_path"] = f"{i}_{id}"
                     local_session["cmd_alert"] = f"cmd_alert_session_path_{i}_{id}"
 
-                # probabilities
+                # probabilities — generate and ensure sum < 1.0
                 if self.params["ls_prob_session_reset"][0] == self.params["ls_prob_session_reset"][1]:
-                    local_session["prob_reset"] = self.params["ls_prob_session_reset"][0]
+                    prob_reset = self.params["ls_prob_session_reset"][0]
                 else:
-                    prob_session_reset = round(self.rng.uniform(self.params["ls_prob_session_reset"][0], self.params["ls_prob_session_reset"][1]), 2)
-                if prob_session_reset + self.params["ls_prob_ratchet_reset"][0] >= 1.0:
-                    prob_session_reset = round(1.0 - self.params["ls_prob_ratchet_reset"][0] - self.params["ls_prob_none"][0] - self.params["ls_prob_compromised"][0], 2)
-                local_session["prob_reset"] = prob_session_reset
+                    prob_reset = round(self.rng.uniform(self.params["ls_prob_session_reset"][0], self.params["ls_prob_session_reset"][1]), 2)
 
                 if self.params["ls_prob_ratchet_reset"][0] == self.params["ls_prob_ratchet_reset"][1]:
-                    local_session["prob_ratchet"] = self.params["ls_prob_ratchet_reset"][0]
-                else:   
+                    prob_ratchet = self.params["ls_prob_ratchet_reset"][0]
+                else:
                     prob_ratchet = round(self.rng.uniform(self.params["ls_prob_ratchet_reset"][0], self.params["ls_prob_ratchet_reset"][1]), 2)
-                if prob_session_reset + prob_ratchet >= 1.0:
-                    prob_ratchet = round(1.0 - local_session["prob_reset"] - self.params["ls_prob_none"][0] - self.params["ls_prob_compromised"][0], 2)
-                local_session["prob_ratchet"] = prob_ratchet
-                
+
                 if self.params["ls_prob_none"][0] == self.params["ls_prob_none"][1]:
-                    local_session["prob_none"] = self.params["ls_prob_none"][0]
+                    prob_none = self.params["ls_prob_none"][0]
                 else:
                     prob_none = round(self.rng.uniform(self.params["ls_prob_none"][0], self.params["ls_prob_none"][1]), 2)
-                if prob_session_reset + prob_ratchet + prob_none >= 1.0:
-                    prob_none = round(1.0 - local_session["prob_reset"] - local_session["prob_ratchet"] - self.params["ls_prob_compromised"][0], 2)
+
+                # Safety clamp: ensure prob_reset + prob_ratchet + prob_none < 1.0
+                total = prob_reset + prob_ratchet + prob_none
+                if total >= 1.0:
+                    scale = 0.99 / total
+                    prob_reset = round(prob_reset * scale, 2)
+                    prob_ratchet = round(prob_ratchet * scale, 2)
+                    prob_none = round(1.0 - prob_reset - prob_ratchet - 0.01, 2)
+
+                local_session["prob_reset"] = prob_reset
+                local_session["prob_ratchet"] = prob_ratchet
                 local_session["prob_none"] = prob_none
                 
                 if self.params["ls_prob_compromised"][0] == self.params["ls_prob_compromised"][1]:
