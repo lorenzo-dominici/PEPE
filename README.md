@@ -1,6 +1,6 @@
 # PEPE — PRISM Encryption Protocols Evaluation
 
-PEPE is a research-oriented repository that provides parametric PRISM model templates for the quantitative evaluation of encryption communication protocols. The models are written as `.pre` template files: they contain PRISM-compatible module code enriched with a small custom templating syntax (for example, `{{...}}` placeholders and `{%...||...%}` constructs) which is preprocessed into concrete PRISM models by the included preprocessor.
+PEPE is a research-oriented repository that provides parametric PRISM model templates for the quantitative evaluation of encryption communication protocols. The models are written as `.pre` template files: they contain PRISM-compatible module code enriched with a small custom templating syntax (for example, `{{...}}` placeholders and `{%...||...%}` constructs) which is preprocessed into concrete PRISM models by the included preprocessor. Companion tools generate network topologies and the corresponding data files automatically.
 
 This project was developed as part of a course on Quantitative Evaluation of Stochastic Models and targets protocol families such as HPKE, Double Ratchet, Sender Key and MLS. The goals are to provide modular, parameterisable building blocks so researchers can compose network, channel and cryptographic protocol models, then explore reliability, robustness and session-security properties with PRISM.
 
@@ -20,11 +20,16 @@ This project was developed as part of a course on Quantitative Evaluation of Sto
   - [local_session](#local_session)
   - [session_path](#session_path)
   - [session_checker](#session_checker)
+  - [policy](#policy)
+  - [rewards](#rewards)
 - [Installation](#installation)
 - [Usage](#usage)
+  - [Running the network generator](#running-the-network-generator)
   - [Running the preprocessor](#running-the-preprocessor)
-  - [Configuration](#configuration)
+  - [Netgen configuration](#netgen-configuration)
+  - [Preprocessor configuration](#preprocessor-configuration)
   - [Data format](#data-format)
+  - [PCTL properties](#pctl-properties)
 - [Project Status](#project-status)
   - [Current status](#current-status)
   - [Limitations](#limitations)
@@ -35,45 +40,58 @@ This project was developed as part of a course on Quantitative Evaluation of Sto
 
 ## What this repository contains
 
-The workspace contains `.pre` template files and a fully functional preprocessor that transforms them into PRISM modules.
+The workspace contains `.pre` template files, a fully functional preprocessor that transforms them into PRISM modules, a network topology generator that produces preprocessor-ready data files, and PCTL property files for PRISM model checking.
 
 ### Directory structure
 
 ```text
 PEPE/
-├── config/                    # Configuration files
-│   ├── netgen.json           # Network generator config (empty placeholder)
-│   └── preprocessor.json     # Preprocessor config (empty placeholder)
-├── examples/                  # Example configurations and data
-│   ├── netgen.json           # Network generator example (empty)
+├── config/                        # Configuration files
+│   ├── netgen.json               # Working network generator config
+│   ├── netgen_files.json         # Paths to data files and templates used by netgen
+│   ├── net_params.md             # Documentation of netgen parameters
+│   └── preprocessor.json        # Preprocessor config (placeholder)
+├── examples/                      # Example configurations and data
+│   ├── netgen.json               # Network generator example (placeholder)
 │   ├── preprocessor_test_config.json  # Working preprocessor config
-│   └── preprocessor_test_data.json    # Working test data
-├── netgen/                    # Network generator (not yet implemented)
-│   ├── generate.py           # Placeholder
-│   ├── load.py               # Placeholder
-│   ├── main.py               # Placeholder
-│   └── store.py              # Placeholder
-├── preprocessor/              # Template preprocessor (fully implemented)
-│   ├── load.py               # JSON/template loading utilities
-│   ├── logger.py             # Logging with color support & multiprocessing
-│   ├── macro.py              # Macro resolution engine (match, loop)
-│   ├── main.py               # CLI entry point and orchestration
-│   ├── models.py             # Pydantic models for config/data validation
-│   ├── process.py            # Template processing pipeline
-│   ├── replace.py            # Placeholder substitution with JSON-path
-│   ├── requirements.txt      # Python dependencies
-│   └── store.py              # File output and joining utilities
-├── templates/                 # PRISM module templates
-│   ├── channel.pre           # Physical channel model
-│   ├── interface.pre         # Network interface model
-│   ├── link.pre              # Logical link model
-│   ├── link_ref.pre          # Reference counter helper
-│   ├── local_session.pre     # Per-node session state
-│   ├── node.pre              # Device/node model
-│   ├── policy.pre            # Policy definitions
-│   ├── rewards.pre           # Reward structures
-│   ├── session_checker.pre   # Receiver-side validation (WIP)
-│   └── session_path.pre      # Session path controller (WIP)
+│   └── preprocessor_test_data.json    # Working test data (generated by netgen)
+├── netgen/                        # Network topology generator (fully implemented)
+│   ├── main.py                   # CLI entry point and pipeline orchestration
+│   ├── generate.py               # Core engine: topology, paths, JSON serialisation, rewards
+│   ├── load.py                   # Configuration loader and validator
+│   ├── store.py                  # JSON persistence utilities
+│   ├── consts.json               # Named integer constants for PRISM state machines
+│   ├── init.json                 # Initial values for module variables
+│   ├── ranges.json               # PRISM variable range definitions
+│   ├── requirements.txt          # Python dependencies
+│   └── output/                   # Generated outputs (git-ignored)
+│       └── networks/             # Fixed-path copies of network JSONs
+├── preprocessor/                  # Template preprocessor (fully implemented)
+│   ├── main.py                   # CLI entry point and orchestration
+│   ├── process.py                # Template processing pipeline
+│   ├── macro.py                  # Macro resolution engine (match, loop)
+│   ├── replace.py                # Placeholder substitution with JSON-path
+│   ├── load.py                   # JSON/template loading utilities
+│   ├── store.py                  # File output and joining utilities
+│   ├── logger.py                 # Logging with colour support & multiprocessing
+│   ├── models.py                 # Pydantic models for config/data validation
+│   └── requirements.txt          # Python dependencies
+├── properties/                    # PCTL property files for PRISM model checking
+│   ├── properties_hpke.pctl
+│   ├── properties_double_ratchet.pctl
+│   ├── properties_sender_key.pctl
+│   └── properties_mls.pctl
+├── templates/                     # PRISM module templates (.pre)
+│   ├── channel.pre               # Physical channel model
+│   ├── interface.pre             # Network interface model
+│   ├── link.pre                  # Logical link model
+│   ├── link_ref.pre              # Reference counter helper
+│   ├── local_session.pre         # Per-node session state
+│   ├── node.pre                  # Device/node model
+│   ├── policy.pre                # Policy definitions
+│   ├── rewards.pre               # Reward structures
+│   ├── session_checker.pre       # Receiver-side validation
+│   └── session_path.pre          # Session path controller
 └── README.md
 ```
 
@@ -120,62 +138,111 @@ Each template implements a PRISM module whose state is expressed with small sets
 
 ### node
 
-- node_state: on | off
-- node_buffer: integer buffer for outgoing messages
-- transitions that coordinate with attached interfaces and link_ref counters
+- `node_state`: on | off
+- `node_buffer`: integer buffer for outgoing messages
+- Transitions that coordinate with attached interfaces and link_ref counters
 
 ### interface
 
-- interface_state: working | error | failure
-- probabilistic transitions modeling transient errors and repairs
+- `interface_state`: off | working | error | failure
+- Probabilistic transitions modeling transient errors and repairs
 
 ### channel
 
-- channel_state: working | error | failure
-- channel_bandwidth: numeric available bandwidth
+- `channel_state`: working | error | failure
+- `channel_bandwidth`: numeric available bandwidth
 
 ### link_ref
 
-- link_ref_counter: reference counter to ensure a single buffer decrement across multiple outgoing links
+- `link_ref_counter`: reference counter to ensure a single buffer decrement across multiple outgoing links
 
 ### link
 
-- link_state, link_prev, link_sending, link_receiving
-- encoding of send/receive success, retry and bandwidth checks
+- `link_state`, `link_phase`, `link_outcome`
+- Five-phase lifecycle (idle → fired → sending → receiving → cleanup) encoding send/receive success, retry and bandwidth checks
 
 ### local_session
 
-- local_session_state, local_session_epoch, local_session_ratchet, local_session_compromised
-- models ratchet/epoch progression, resets, compromise and recovery transitions
+- `local_session_state`, `local_session_epoch`, `local_session_ratchet`, `local_session_compromised`, `local_session_mutex`
+- Models ratchet/epoch progression, resets, compromise and recovery transitions with protocol-specific branching for all six protocol variants (HPKE, Double Ratchet, Sender Key, MLS, HPKE Sender Key, Double Ratchet Sender Key)
 
 ### session_path
 
-- session_path_state and counters used to orchestrate message production and multi-recipient delivery
+- `session_path_state`, `session_path_system_message`, `session_path_data_message`, `session_path_receivers_counter`, `session_path_return_pending`
+- Orchestrates message production, message type classification, pending return handling and per-protocol dispatch
 
 ### session_checker
 
-- receiver-side validation logic that depends on the chosen protocol (patterns for HPKE, Double Ratchet, Sender Key)
+- `session_checker_state`, `session_checker_message_arrived`
+- Receiver-side validation: triggering, data reading, epoch checking and protocol-specific resolution for all six protocol variants
+
+### policy
+
+- Generic policy module: loops over policy entries with `(command, condition, side_effects)` triples
+
+### rewards
+
+- PRISM reward structure: loops over `(command, condition, value)` contribution triples
 
 ## Installation
 
-1. Ensure you have Python 3.10+ installed
-2. Install dependencies:
+1. Ensure you have Python 3.10+ installed.
+2. Install dependencies for the module you need:
 
 ```bash
+# Preprocessor only
 pip install -r preprocessor/requirements.txt
+
+# Network generator (also pulls in preprocessor deps)
+pip install -r netgen/requirements.txt
 ```
 
-Required packages:
+**Preprocessor** required packages:
 
 - `pydantic` — Configuration and data validation
-- `colorama` — Colored console output
+- `colorama` — Coloured console output
 - `tqdm` — Progress bar for parallel processing
+
+**Network generator** additional packages:
+
+- `networkx` — Graph generation and algorithms
+- `numpy` — Random number generation and array operations
+- `matplotlib` — Topology visualisation
+- `scipy` — Power-law degree distribution (Zipf)
 
 ## Usage
 
+The typical workflow is: **netgen** → **preprocessor** → **PRISM**.
+
+1. Configure a network in `config/netgen.json` and run `netgen` to produce a data JSON file.
+2. Feed that data file to the `preprocessor` together with a preprocessor config to generate concrete `.prism` modules.
+3. Load the resulting PRISM model and the matching `.pctl` property file in PRISM.
+
+### Running the network generator
+
+Run from the repository root:
+
+```bash
+# Automatic timestamped output directory
+python netgen/main.py
+
+# Custom name (no timestamp appended)
+python netgen/main.py my_network
+```
+
+The generator reads `config/netgen.json` and `config/netgen_files.json` and produces three artefacts inside `netgen/output/<name>/`:
+
+| Output | Description |
+| ------ | ----------- |
+| `<name>.json` | Full PRISM-ready network descriptor (data file for the preprocessor) |
+| `<name>_sessions.txt` | Human-readable sessions summary |
+| `<name>_graph.png` | Spring-layout topology visualisation |
+
+A copy of the network JSON is also placed in `netgen/output/networks/` at a fixed path for downstream tool consumption.
+
 ### Running the preprocessor
 
-Run the preprocessor using the module syntax:
+Run the preprocessor using module syntax:
 
 ```bash
 python -m preprocessor.main --config examples\preprocessor_test_config.json --data examples\preprocessor_test_data.json --log-file examples\preprocessor_test\_preprocessor.log
@@ -190,7 +257,72 @@ python -m preprocessor.main --config examples\preprocessor_test_config.json --da
 | `--log-level` | No | Logging level: DEBUG, INFO, WARNING, ERROR (default: INFO) |
 | `--log-file` | No | Path for log file output (defaults to stderr) |
 
-### Configuration
+### Netgen configuration
+
+The network generator configuration file (`config/netgen.json`) defines all parameters for topology generation, path establishment and component probabilities. A minimal example:
+
+```json
+{
+    "protocol": "hpke",
+    "seed": 1357,
+    "filename": "test_network",
+    "node_range": [5, 5],
+    "connected": true,
+    "gen_model": "random",
+    "conn_prob": 0.2,
+    "if_range": [1, 3],
+    "buffer_size_range": [3, 5],
+    "channel_bandwidth_range": [2, 4],
+    "node_prob_off_to_on": [0.8, 0.9],
+    "node_prob_on_to_off": [0.02, 0.05],
+    "channel_prob_working_to_error": [0.05, 0.1],
+    "channel_prob_error_to_working": [0.7, 0.8],
+    "channel_prob_failure_to_working": [0.7, 0.8],
+    "if_prob_off_to_working": [0.7, 0.8],
+    "if_prob_off_to_error": [0.02, 0.05],
+    "if_prob_off_to_failure": [0.02, 0.05],
+    "if_prob_working_to_error": [0.02, 0.05],
+    "if_prob_error_to_working": [0.7, 0.8],
+    "if_prob_failure_to_working": [0.7, 0.8],
+    "link_prob_working_to_error": [0.02, 0.05],
+    "link_prob_error_to_working": [0.7, 0.8],
+    "link_prob_failure_to_working": [0.7, 0.8],
+    "link_prob_retry": [0.6, 0.8],
+    "link_prob_sending": [0.2, 0.4],
+    "ls_size_epoch_range": [1, 10],
+    "ls_size_ratchet_range": [5, 10],
+    "ls_prob_session_reset": [0.05, 0.1],
+    "ls_prob_ratchet_reset": [0.1, 0.2],
+    "ls_prob_none": [0.0, 0.0],
+    "ls_prob_compromised": [0.05, 0.1],
+    "sp_prob_run": [0.5, 0.5],
+    "abstraction": "high"
+}
+```
+
+**Key parameters:**
+
+| Parameter | Description |
+| --------- | ----------- |
+| `protocol` | Target protocol: `hpke`, `double_ratchet`, `sender_key`, `mls` |
+| `support_protocol` | Sub-protocol for sender_key: `hpke_sender_key` or `double_ratchet_sender_key` |
+| `seed` | RNG seed for reproducibility (default: 42) |
+| `gen_model` | Topology model: `random` (Erdős–Rényi), `smart-world` (Watts-Strogatz), `scale-free` (Barabási-Albert) |
+| `node_range` | `[min, max]` number of nodes |
+| `connected` | Force connected graph (default: false) |
+| `conn_prob` | Erdős–Rényi edge probability |
+| `degree_distr` | Degree distribution: `{type, params}` with type `binomial`, `uniform`, `normal`, `powerlaw`, or `custom` |
+| `if_range` | `[min, max]` interfaces per node (post-hoc degree bounding) |
+| `clusters_number_range` | Optional multi-cluster topology |
+| `buffer_size_range` | `[min, max]` node buffer capacity |
+| `abstraction` | Model detail level: `high`, `medium`, `low` |
+| `*_prob_*` | Various `[min, max]` probability ranges for component transitions |
+| `ls_size_*_range` | Epoch and ratchet counter sizes |
+| `mls_sessions_range` | Number of MLS groups (if protocol is `mls`) |
+
+See `config/net_params.md` for the full parameter reference.
+
+### Preprocessor configuration
 
 The preprocessor configuration file (JSON) defines:
 
@@ -221,7 +353,7 @@ The preprocessor configuration file (JSON) defines:
 
 ### Data format
 
-The data file (JSON) provides constants and template instances:
+The data file (JSON) provides constants and template instances. This file is typically generated by `netgen`, but can also be created manually:
 
 ```json
 {
@@ -243,15 +375,52 @@ The data file (JSON) provides constants and template instances:
 }
 ```
 
-- `consts`: Shared values available to all instances
+- `consts`: Shared values available to all instances (44 named PRISM state-machine constants when generated by netgen)
 - `items`: List of template groups, each with:
   - `name`: Descriptive name for the group
   - `template`: Path to the `.pre` template file
   - `instances`: List of data dictionaries (each must have a `name` key for output filename)
 
+The nine item groups generated by `netgen` are: `node_modules`, `interface_modules`, `channel_modules`, `link_modules`, `link_ref_modules`, `session_path_modules`, `local_session_modules`, `session_checker_modules`, and `rewards_modules`.
+
+### PCTL properties
+
+The `properties/` directory contains one PCTL property file per protocol, ready to be loaded into PRISM alongside the generated model:
+
+| File | Protocol |
+| ---- | -------- |
+| `properties_hpke.pctl` | HPKE |
+| `properties_double_ratchet.pctl` | Double Ratchet |
+| `properties_sender_key.pctl` | Sender Key |
+| `properties_mls.pctl` | MLS |
+
+All files use a step-bound constant `T` (set via `-const T=<value>` on the PRISM command line) and query both minimum and maximum expected cumulative rewards (for MDP analysis). The properties cover:
+
+1. **Protocol-specific message counts** — data and system messages per protocol
+2. **Aggregate message metrics** — total sent, received, lost, check success/failure
+3. **Resource availability** — bandwidth and memory usage
+4. **Security** — network vulnerability (fraction of sessions with compromised nodes)
+5. **Network availability** — cumulative availability over time
+6. **Network degradation** — cumulative degradation over time
+
+Derived offline metrics (delivery ratio, loss ratio, overhead ratio) are described in comments within each file.
+
 ## Project Status
 
 ### Current status
+
+**Network Generator (netgen)** — Fully implemented with the following features:
+
+- Three topology generation models: random (Erdős–Rényi / Havel-Hakimi), smart-world (Watts-Strogatz), scale-free (Barabási-Albert)
+- Five degree distribution types: binomial, uniform, normal, power-law, custom
+- Optional multi-cluster topology with inter-cluster edge probability
+- Post-hoc degree bounding to enforce interface count limits
+- Deterministic generation via seeded NumPy random generator
+- Four protocol families: HPKE, Double Ratchet, Sender Key (with sub-protocol support), MLS
+- Automatic path generation with sender/receiver role assignment
+- PRISM reward structure generation (11 reward types covering messages, resources, security, availability and degradation)
+- Spring-layout graph visualisation output
+- Comprehensive parameter validation with informative error messages
 
 **Preprocessor** — Fully implemented with the following features:
 
@@ -261,37 +430,35 @@ The data file (JSON) provides constants and template instances:
 - Pydantic-based configuration and data validation
 - Parallel processing using multiprocessing with progress tracking
 - Configurable output file joining (`none`, `join`, `clean_join` modes)
-- Comprehensive logging with color support and multiprocessing-safe queue handlers
+- Comprehensive logging with colour support and multiprocessing-safe queue handlers
 - CLI with flexible argument handling
 
-**Templates** — Complete set of `.pre` template files for PRISM modules covering nodes, interfaces, channels, links, sessions, and protocol-specific logic.
+**Templates** — Complete set of 10 `.pre` template files for PRISM modules covering nodes, interfaces, channels, links, sessions and protocol-specific logic. All templates are fully implemented, including `session_path` and `session_checker` which support all six protocol variants.
 
-**Network Generator (netgen)** — Not yet implemented. The `netgen/` directory contains placeholder files for a planned tool to generate network topologies and corresponding preprocessor data files.
+**PCTL Properties** — Four property files (one per main protocol) with reward-based queries for message counts, resource availability, security, network health and degradation.
 
 ### Limitations
 
-- The `netgen` module is not implemented — data files must be created manually or via external tools.
-- The repository does not include top-level property files or automated PRISM experiment scripts.
-- Configuration files in `config/` are empty placeholders; use `examples/` for working configurations.
+- Configuration file `config/preprocessor.json` is still a placeholder; use `examples/preprocessor_test_config.json` for a working preprocessor configuration.
+- The repository does not include automated PRISM experiment scripts.
+- No CI pipeline or automated tests are in place.
 
 ### Next steps
 
-1. **Implement netgen**: Build the network topology generator to automatically produce data files from high-level network descriptions.
+1. **Experiment automation**: Add scripts to run PRISM experiments and collect results.
 
-2. **Add PCTL properties**: Create a property suite for safety, availability, and session-security metrics.
+2. **CI integration**: Add automated syntax checks on generated models and smoke tests if PRISM is available.
 
-3. **Experiment automation**: Add scripts to run PRISM experiments and collect results.
-
-4. **CI integration**: Add automated syntax checks on generated models and smoke tests if PRISM is available.
+3. **Testing**: Add unit tests for the preprocessor and netgen modules.
 
 ## Contributing
 
 Contributions are welcome. Suggested ways to help:
 
-- **Implement netgen**: Build the network topology generator module.
-- **Add properties**: Create PCTL property files for PRISM experiments.
+- **Experiment scripts**: Automate PRISM experiment runs and result collection.
 - **Documentation**: Improve template documentation and add usage examples.
-- **Testing**: Add unit tests for the preprocessor modules.
+- **Testing**: Add unit tests for the preprocessor and netgen modules.
+- **CI**: Set up continuous integration for model validation.
 
 ## License & authorship
 
@@ -299,4 +466,4 @@ This repository was created as course work for the Quantitative Evaluation of St
 
 ## Contacts
 
-If you want help turning templates into runnable PRISM models or extending the preprocessor, open an issue or reach out to the repository owner.
+If you want help turning templates into runnable PRISM models or extending the toolchain, open an issue or reach out to the repository owner.
