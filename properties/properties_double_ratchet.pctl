@@ -4,8 +4,7 @@
 //
 //  Conventions:
 //    T  = step bound (define with -const T=100 on PRISM command line)
-//    Rmin = minimum expected reward over all schedulers (MDP)
-//    Rmax = maximum expected reward over all schedulers (MDP)
+//    R  = expected reward (DTMC)
 // ============================================================================
 
 const int T;
@@ -15,12 +14,10 @@ const int T;
 // ──────────────────────────────────────────────────────────────────────────────
 
 // 1.1 Messaggi dati inviati (cumulativo entro T passi)
-R{"reward_data_message_double_ratchet"}min=? [ C<=T ]
-R{"reward_data_message_double_ratchet"}max=? [ C<=T ]
+R{"reward_data_message_double_ratchet"}=? [ C<=T ]
 
 // 1.2 Messaggi di sistema inviati (cumulativo entro T passi)
-R{"reward_system_message_double_ratchet"}min=? [ C<=T ]
-R{"reward_system_message_double_ratchet"}max=? [ C<=T ]
+R{"reward_system_message_double_ratchet"}=? [ C<=T ]
 
 // 1.3 Overhead protocollare (da calcolare offline):
 //     overhead = R["system_double_ratchet"] / (R["data_double_ratchet"] + R["system_double_ratchet"])
@@ -31,27 +28,22 @@ R{"reward_system_message_double_ratchet"}max=? [ C<=T ]
 // ──────────────────────────────────────────────────────────────────────────────
 
 // 2.1 Totale messaggi inviati
-R{"reward_total_messages_sent"}min=? [ C<=T ]
-R{"reward_total_messages_sent"}max=? [ C<=T ]
+R{"reward_total_messages_sent"}=? [ C<=T ]
 
 // 2.2 Totale messaggi ricevuti
-R{"reward_total_messages_received"}min=? [ C<=T ]
-R{"reward_total_messages_received"}max=? [ C<=T ]
+R{"reward_total_messages_received"}=? [ C<=T ]
 
 // 2.3 Totale messaggi persi
-R{"reward_total_messages_lost"}min=? [ C<=T ]
-R{"reward_total_messages_lost"}max=? [ C<=T ]
+R{"reward_total_messages_lost"}=? [ C<=T ]
 
 // 2.4 Totale check riusciti / falliti
-R{"reward_total_messages_check_success"}min=? [ C<=T ]
-R{"reward_total_messages_check_success"}max=? [ C<=T ]
-R{"reward_total_messages_check_failure"}min=? [ C<=T ]
-R{"reward_total_messages_check_failure"}max=? [ C<=T ]
+R{"reward_total_messages_check_success"}=? [ C<=T ]
+R{"reward_total_messages_check_failure"}=? [ C<=T ]
 
 // 2.5 Delivery ratio (da calcolare offline):
-//     delivery_ratio = Rmax["received"] / Rmax["sent"]
+//     delivery_ratio = R["received"] / R["sent"]
 // 2.6 Loss ratio (da calcolare offline):
-//     loss_ratio = Rmax["lost"] / Rmax["sent"]
+//     loss_ratio = R["lost"] / R["sent"]
 
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -59,10 +51,8 @@ R{"reward_total_messages_check_failure"}max=? [ C<=T ]
 // ──────────────────────────────────────────────────────────────────────────────
 
 // 3.1 Evoluzione nel tempo
-R{"reward_bandwidth_availability"}min=? [ C<=T ]
-R{"reward_bandwidth_availability"}max=? [ C<=T ]
-R{"reward_memory_availability"}min=? [ C<=T ]
-R{"reward_memory_availability"}max=? [ C<=T ]
+R{"reward_bandwidth_availability"}=? [ C<=T ]
+R{"reward_memory_availability"}=? [ C<=T ]
 
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -70,8 +60,7 @@ R{"reward_memory_availability"}max=? [ C<=T ]
 // ──────────────────────────────────────────────────────────────────────────────
 
 // 4.1 Vulnerabilità cumulativa nel tempo
-R{"reward_network_vulnerability"}min=? [ C<=T ]
-R{"reward_network_vulnerability"}max=? [ C<=T ]
+R{"reward_network_vulnerability"}=? [ C<=T ]
 
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -79,8 +68,7 @@ R{"reward_network_vulnerability"}max=? [ C<=T ]
 // ──────────────────────────────────────────────────────────────────────────────
 
 // 5.1 Disponibilità cumulativa nel tempo
-R{"reward_network_availability"}min=? [ C<=T ]
-R{"reward_network_availability"}max=? [ C<=T ]
+R{"reward_network_availability"}=? [ C<=T ]
 
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -88,7 +76,6 @@ R{"reward_network_availability"}max=? [ C<=T ]
 // ──────────────────────────────────────────────────────────────────────────────
 
 // 6.1 Degradazione cumulativa nel tempo
-R{"reward_network_degradation"}min=? [ C<=T ]
-R{"reward_network_degradation"}max=? [ C<=T ]
+R{"reward_network_degradation"}=? [ C<=T ]
 
 

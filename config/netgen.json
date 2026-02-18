@@ -1,6 +1,6 @@
 {
-    "protocol": "hpke",
-    "support_protocol": "double_ratchet_sender_key",
+    "protocol": "mls",
+    "support_protocol": "hpke_sender_key",
     "mls_sessions_range": [1, 1],
     "seed": 1357,
     "filename": "test_network",
