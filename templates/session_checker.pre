@@ -8,8 +8,7 @@ module session_checker_{{#}}
 
     [{{cmd_read_data}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                         (session_checker_state_{{#}} = {{const_triggered}}) &
-                        (session_path_system_message_{{ref_session_path}} = {{const_message_data}}) &
-                        (session_path_data_message_{{ref_session_path}} = {{const_message_data}}) -> (session_checker_state_{{#}}' = {{const_update}});
+                        (session_path_system_message_{{ref_session_path}} = {{const_message_data}}) -> (session_checker_state_{{#}}' = {{const_update}});
 
     [{{cmd_update}}] (node_state_{{ref_node_receiver}} = {{const_on}}) &
                              (session_checker_state_{{#}} = {{const_update}}) &

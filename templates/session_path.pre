@@ -347,7 +347,9 @@ module session_path_{{#}}
                                                                           & (session_path_data_message_{{#}}' = {{const_message_data}});
 
     {%loop||sub_session_paths||
-    [{{sub_session_paths[].cmd_resolve}}] (session_path_receivers_counter_{{#}} > 0) -> (session_path_receivers_counter_{{#}}' = session_path_receivers_counter_{{#}} - 1);
+    [{{sub_session_paths[].cmd_resolve}}] true -> (session_path_receivers_counter_{{#}}' = ((session_path_state_{{#}} = {{const_sub_resolve}}) & (session_path_receivers_counter_{{#}} > 0)
+                                                                                        ? session_path_receivers_counter_{{#}} - 1
+                                                                                        : session_path_receivers_counter_{{#}}));
     %}
           ||_||%}
 
@@ -358,7 +360,9 @@ module session_path_{{#}}
                                                                       & (session_path_data_message_{{#}}' = {{const_message_data}});
 
     {%loop||session_checkers||
-    [{{session_checkers[].cmd_cleanup}}] (session_path_receivers_counter_{{#}} > 0) -> (session_path_receivers_counter_{{#}}' = session_path_receivers_counter_{{#}} - 1);
+    [{{session_checkers[].cmd_cleanup}}] true -> (session_path_receivers_counter_{{#}}' = ((session_path_state_{{#}} = {{const_resolve}}) & (session_path_receivers_counter_{{#}} > 0)
+                                                                                      ? session_path_receivers_counter_{{#}} - 1
+                                                                                      : session_path_receivers_counter_{{#}}));
     %}
 
 endmodule
