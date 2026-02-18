@@ -105,7 +105,9 @@ module local_session_{{#}}
                                                                                  & (local_session_ratchet_{{#}}' = 0)
                                                                                  & (local_session_mutex_{{#}}' = {{const_mutex_session_checker}});
     %}
-    [{{session_checkers[].cmd_cleanup}}] (local_session_mutex_{{#}} = {{const_mutex_session_checker}}) -> (local_session_mutex_{{#}}' = {{const_mutex_free}});
+    [{{session_checkers[].cmd_cleanup}}] true -> (local_session_mutex_{{#}}' = (local_session_mutex_{{#}} = {{const_mutex_session_checker}}
+                                                                              ? {{const_mutex_free}}
+                                                                              : local_session_mutex_{{#}}));
     %}
 
 endmodule
