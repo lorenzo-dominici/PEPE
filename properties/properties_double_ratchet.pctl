@@ -60,7 +60,7 @@ R{"reward_memory_availability"}=? [ C<=T ]
 // ──────────────────────────────────────────────────────────────────────────────
 
 // 4.1 Vulnerabilità cumulativa nel tempo
-R{"reward_network_vulnerability"}=? [ C<=T ]
+// R{"reward_network_vulnerability"}=? [ C<=T ]
 
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ R{"reward_network_vulnerability"}=? [ C<=T ]
 // ──────────────────────────────────────────────────────────────────────────────
 
 // 5.1 Disponibilità cumulativa nel tempo
-R{"reward_network_availability"}=? [ C<=T ]
+// R{"reward_network_availability"}=? [ C<=T ]
 
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -76,6 +76,6 @@ R{"reward_network_availability"}=? [ C<=T ]
 // ──────────────────────────────────────────────────────────────────────────────
 
 // 6.1 Degradazione cumulativa nel tempo
-R{"reward_network_degradation"}=? [ C<=T ]
+// R{"reward_network_degradation"}=? [ C<=T ]
 
 
