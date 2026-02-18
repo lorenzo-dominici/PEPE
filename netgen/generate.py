@@ -1251,11 +1251,11 @@ class NetworkGenerator:
             # Memory: average ratio of remaining buffer / total buffer per node.
             command = ""
             condition = "true"
-            value = "("
+            value = "1.0 - (("
             for node in list(self.G.nodes()):
                 value += f"node_buffer_{node} / {self.nodes_buffer_sizes[node]}.0 + "
 
-            value = value[:-3] + f") / {len(list(self.G.nodes()))}.0" 
+            value = value[:-3] + f") / {len(list(self.G.nodes()))}.0)" 
             reward_memory_availability.add_contribution(Contribution(command, condition, value))
 
             # Bandwidth: average ratio of remaining bandwidth / total per channel.
