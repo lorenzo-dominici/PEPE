@@ -94,6 +94,12 @@ def _worker_init(log_level: str, log_file: str | None, log_queue: Any | None):
         log_file: Path to log file (for reference, actual output goes to queue).
         log_queue: Multiprocessing queue for sending logs to main process.
     """
+    # Safety net: if this worker is killed (e.g. via SIGTERM from
+    # pool.terminate()), do not block on flushing the queue's internal
+    # feeder thread.  Some log records may be lost on abnormal shutdown,
+    # but the process will not hang.
+    if log_queue is not None:
+        log_queue.cancel_join_thread()
     configure_logging(log_level, log_file, queue=log_queue)
     logger = get_logger("preprocessor.worker")
     logger.debug(f"Worker process initialized with log_level={log_level}")
@@ -168,12 +174,21 @@ def run(
     logger.debug(f"CPU count: {cpu_count}, calculated pool_size: {pool_size}")
     logger.info(f"Starting processing: {len(tasks)} tasks, pool size={pool_size}")
 
-    # Process tasks in parallel using a process pool
-    with _ctx.Pool(
+    # Process tasks in parallel using a process pool.
+    # We manage the pool lifecycle explicitly with close() + join()
+    # instead of relying on the context-manager's __exit__ (which calls
+    # terminate()).  On Linux, terminate() sends SIGTERM to workers; if
+    # a worker's queue feeder thread holds the Queue's _wlock (a POSIX
+    # semaphore) at that moment, the semaphore stays permanently locked
+    # and any subsequent Queue.put() from the main process deadlocks.
+    # close() + join() lets workers finish and flush their queues
+    # gracefully, releasing _wlock before exiting.
+    pool = _ctx.Pool(
         pool_size,
         initializer=_worker_init,
         initargs=(log_level, log_file, log_queue),
-    ) as pool:
+    )
+    try:
         logger.debug("Multiprocessing pool created")
         processed_count = 0
         
@@ -185,7 +200,10 @@ def run(
             results.append(target)
             processed_count += 1
             logger.debug(f"Task {processed_count}/{len(tasks)} completed: {out_name}")
-        logger.debug("All tasks completed, closing pool")
+    finally:
+        pool.close()
+        pool.join()
+        logger.debug("All tasks completed, pool closed")
 
     # Post-processing: join files if configured
     logger.debug(f"Join mode: {config.join_mode}, results count: {len(results)}")

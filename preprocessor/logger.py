@@ -32,8 +32,8 @@ from __future__ import annotations
 
 import logging
 import sys
+import threading
 from contextlib import contextmanager
-from contextvars import ContextVar
 from logging.handlers import QueueHandler, QueueListener
 from pathlib import Path
 from typing import Optional, Any
@@ -48,12 +48,18 @@ LEVEL_COLORS = {
     logging.CRITICAL: Fore.MAGENTA,
 }
 
-# Context variable to track current task label across async/parallel execution
-_task_var: ContextVar[str] = ContextVar("preprocessor_task", default="idle")
+# Thread-local storage for the current task label.
+# Using threading.local() instead of ContextVar for reliable behaviour
+# across all platforms when used inside multiprocessing workers spawned
+# via the 'spawn' start method.  ContextVar values are not guaranteed to
+# propagate correctly in spawned worker processes on Linux, whereas a
+# plain thread-local (or module-level global accessed from a single
+# thread) works identically everywhere.
+_task_local: threading.local = threading.local()
 
 
 def set_task_label(task: str) -> None:
-    """Set the current task label for this process.
+    """Set the current task label for this process/thread.
     
     The task label appears in log messages to identify which task
     or worker produced the log entry.
@@ -61,7 +67,7 @@ def set_task_label(task: str) -> None:
     Args:
         task: A short descriptive label for the current task.
     """
-    _task_var.set(task)
+    _task_local.task = task
 
 
 @contextmanager
@@ -80,20 +86,21 @@ def task_context(task: str):
         >>> with task_context("worker:node_1"):
         ...     logger.info("Processing node")  # logs with [worker:node_1]
     """
-    token = _task_var.set(task)
+    previous = getattr(_task_local, "task", "idle")
+    _task_local.task = task
     try:
         yield
     finally:
-        _task_var.reset(token)
+        _task_local.task = previous
 
 
 def _current_task() -> str:
-    """Get the current task label from context.
+    """Get the current task label.
     
     Returns:
         The current task label string, or "idle" if not set.
     """
-    return _task_var.get()
+    return getattr(_task_local, "task", "idle")
 
 
 class TaskFilter(logging.Filter):
@@ -104,7 +111,13 @@ class TaskFilter(logging.Filter):
     """
     
     def filter(self, record: logging.LogRecord) -> bool:
-        """Add task label to the record and allow it through.
+        """Add task label to the record if not already present.
+        
+        Only sets the task attribute when the record does not already
+        carry one.  This allows worker-originated records (which have
+        their task set before being sent through the multiprocessing
+        queue) to retain their original label when the filter runs
+        again on the listener side.
         
         Args:
             record: The log record to process.
@@ -112,7 +125,8 @@ class TaskFilter(logging.Filter):
         Returns:
             True (always allows the record).
         """
-        record.task = _current_task()
+        if not hasattr(record, 'task'):
+            record.task = _current_task()
         return True
 
 
@@ -217,21 +231,37 @@ def configure_logging(
     lvl = getattr(logging, level.upper(), logging.INFO)
     root = logging.getLogger()
     
-    # Remove existing handlers to avoid duplicate output
+    # Remove existing handlers and filters to avoid duplicates
     for h in list(root.handlers):
         root.removeHandler(h)
+    for f in list(root.filters):
+        root.removeFilter(f)
 
     listener: QueueListener | None = None
     if queue is not None:
-        # Multiprocessing mode: send logs to queue
-        queue_handler = QueueHandler(queue)
-        queue_handler.addFilter(TaskFilter())
-        root.addHandler(queue_handler)
         if start_listener:
-            # Main process: create listener to drain queue
+            # Main-process mode: log directly to the output handler so
+            # the main process never touches the multiprocessing Queue's
+            # write lock (_wlock).  Worker log records arrive via the
+            # queue and are drained by a QueueListener into the *same*
+            # handler; the handler's internal threading.RLock serialises
+            # writes from the main thread and the listener thread safely.
             target_handler = _build_handler(log_file)
+            # TaskFilter is placed on the *handler* so it runs for every
+            # record regardless of which logger emitted it (child-logger
+            # records propagate to the root's handlers without passing
+            # through root-level filters).  The filter is non-destructive:
+            # it only sets 'task' when the attribute is absent, so worker
+            # records that already carry a 'task' attribute are untouched.
+            target_handler.addFilter(TaskFilter())
+            root.addHandler(target_handler)
             listener = QueueListener(queue, target_handler)
             listener.start()
+        else:
+            # Worker mode: send all logs through the queue
+            queue_handler = QueueHandler(queue)
+            queue_handler.addFilter(TaskFilter())
+            root.addHandler(queue_handler)
     else:
         # Single-process mode: log directly
         handler = _build_handler(log_file)
