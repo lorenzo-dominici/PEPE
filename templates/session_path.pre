@@ -31,7 +31,7 @@ module session_path_{{#}}
                   (session_path_return_pending_{{#}} = {{const_pending_none}}) -> (1 - {{prob_run}}) : (session_path_state_{{#}}' = {{const_idle}})
                                                                + {{prob_run}} : (session_path_state_{{#}}' = {{const_update}});
            ||_||%}
-    %}
+    ||_||%}
     
     {%match||abstraction
            ||high||
