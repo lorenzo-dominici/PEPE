@@ -1,5 +1,5 @@
 {
-    "protocol": "mls",
+    "protocol": "sender_key",
     "support_protocol": "hpke_sender_key",
     "mls_sessions_range": [1, 1],
     "seed": 1357,

@@ -1243,7 +1243,7 @@ class NetworkGenerator:
                 for node in session.nodes:
                     value += f"(local_session_compromised_{node}_{session.id} = true ? 1 : 0) + "
                 value = value[:-3] + ") >= 1 ? 1 : 0) + "
-            value = value[:-3] + f") / {len(sessions)}"
+            value = value[:-3] + f") / {len(sessions)}.0"
             reward_network_vulnerability.add_contribution(Contribution(command, condition, value))
 
 
@@ -1253,9 +1253,9 @@ class NetworkGenerator:
             condition = "true"
             value = "("
             for node in list(self.G.nodes()):
-                value += f"node_buffer_{node} / {self.nodes_buffer_sizes[node]} + "
+                value += f"node_buffer_{node} / {self.nodes_buffer_sizes[node]}.0 + "
 
-            value = value[:-3] + f") / {len(list(self.G.nodes()))}" 
+            value = value[:-3] + f") / {len(list(self.G.nodes()))}.0" 
             reward_memory_availability.add_contribution(Contribution(command, condition, value))
 
             # Bandwidth: average ratio of remaining bandwidth / total per channel.
@@ -1263,9 +1263,9 @@ class NetworkGenerator:
             for edge in list(self.G.edges()):
                 command = ""
                 condition = "true"
-                value += f"channel_bandwidth_{edge[0]}_{edge[1]} / {self.channel_bandwidth[f'{edge[0]}_{edge[1]}']} + "
-                value += f"channel_bandwidth_{edge[1]}_{edge[0]} / {self.channel_bandwidth[f'{edge[1]}_{edge[0]}']} + "
-            value = value[:-3] + f") / {len(list(self.G.edges()))}" 
+                value += f"channel_bandwidth_{edge[0]}_{edge[1]} / {self.channel_bandwidth[f'{edge[0]}_{edge[1]}']}.0 + "
+                value += f"channel_bandwidth_{edge[1]}_{edge[0]} / {self.channel_bandwidth[f'{edge[1]}_{edge[0]}']}.0 + "
+            value = value[:-3] + f") / {2 * len(list(self.G.edges()))}.0" 
             reward_bandwidth_availability.add_contribution(Contribution(command, condition, value))
 
 
@@ -1280,7 +1280,7 @@ class NetworkGenerator:
                 value += f"(channel_state_{edge[1]}_{edge[0]} != {consts['const_failure']} ? 1 : 0) + "
                 value += f"(interface_state_{edge[0]}_{edge[1]} != {consts['const_failure']} & interface_state_{edge[0]}_{edge[1]} != {consts['const_off']} ? 1 : 0) + "
                 value += f"(interface_state_{edge[1]}_{edge[0]} != {consts['const_failure']} & interface_state_{edge[1]}_{edge[0]} != {consts['const_off']} ? 1 : 0) + "
-            value = value[:-3] + f") / {(len(list(self.G.nodes())) + 4 * len(list(self.G.edges())))}"
+            value = value[:-3] + f") / {(len(list(self.G.nodes())) + 4 * len(list(self.G.edges())))}.0"
             reward_network_availability.add_contribution(Contribution(command, condition, value))
 
             value = "("
@@ -1289,7 +1289,7 @@ class NetworkGenerator:
                 value += f"(channel_state_{edge[1]}_{edge[0]} = {consts['const_error']} ? 1 : 0) + "
                 value += f"(interface_state_{edge[0]}_{edge[1]} = {consts['const_error']} ? 1 : 0) + "
                 value += f"(interface_state_{edge[1]}_{edge[0]} = {consts['const_error']} ? 1 : 0) + "
-            value = value[:-3] + f") / {(4 * len(list(self.G.edges())))}"
+            value = value[:-3] + f") / {(4 * len(list(self.G.edges())))}.0"
             reward_network_degradation.add_contribution(Contribution(command, condition, value))
             
             self.rewards.extend(list(rewards_data.values()) + list(rewards_system.values()) + [reward_message_sent, reward_message_received, reward_message_lost, reward_message_check_success, reward_message_check_failure, reward_bandwidth_availability, reward_memory_availability, reward_network_vulnerability, reward_network_availability, reward_network_degradation])
@@ -1551,10 +1551,12 @@ class NetworkGenerator:
             node_to_add["link_refs"] = link_refs
 
             # Collect session paths where this node is the sender
+            # (only the actual sender — the root of the path tree with in-degree 0,
+            #  NOT intermediate relay nodes which are also non-receivers)
             session_paths = []
             for session in sessions:
                 for i, path in enumerate(session.paths):
-                    if node in path.nodes() and path.nodes[node].get("is_receiver", False) == False:
+                    if node in path.nodes() and path.in_degree(node) == 0:
                         commands = {}
                         session_path_name = f"session_path_{i}_{session.id}"
                         commands["cmd_send"] = f"cmd_send_{session_path_name}"
@@ -2380,7 +2382,10 @@ class NetworkGenerator:
                             local_session["cmd_alert"] = f"cmd_alert_session_path_{i}_{ss.get_id()}"
                             break
                 else:
-                    i = [e[0] for e in enumerate(session.paths) if node == list(e[1])[0]][0]
+                    i = max(
+                        [e[0] for e in enumerate(session.paths) if node == list(e[1])[0]],
+                        key=lambda idx: len(self._get_receivers_from_path(session.paths[idx]))
+                    )
                     local_session["ref_broadest_session_path"] = f"{i}_{id}"
                     local_session["cmd_alert"] = f"cmd_alert_session_path_{i}_{id}"
 

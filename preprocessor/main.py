@@ -34,6 +34,8 @@ from __future__ import annotations
 
 import argparse
 import multiprocessing as mp
+import signal
+import threading
 
 from multiprocessing import Queue
 from pathlib import Path
@@ -51,6 +53,28 @@ from tqdm import tqdm
 # Use 'spawn' start method to avoid deadlocks caused by fork() inheriting
 # held locks (e.g. logging queue locks) on Linux/macOS.
 _ctx = mp.get_context('spawn')
+
+
+def _safe_stop_listener(listener, timeout: float = 5.0) -> None:
+    """Stop a QueueListener with a timeout to prevent deadlocks.
+    
+    When workers exit with cancel_join_thread(), the multiprocessing
+    Queue's internal _wlock (a POSIX semaphore) may remain acquired if
+    the worker's feeder thread was killed mid-write.  In that case,
+    listener.stop() would block forever on queue.put_nowait(sentinel)
+    because it needs to acquire the same _wlock.
+    
+    This helper runs stop() in a daemon thread with a timeout.  If it
+    doesn't complete in time, the daemon thread is abandoned and will
+    be killed when the process exits.
+    
+    Args:
+        listener: The QueueListener instance to stop.
+        timeout: Maximum seconds to wait for a graceful stop.
+    """
+    t = threading.Thread(target=listener.stop, daemon=True)
+    t.start()
+    t.join(timeout=timeout)
 
 
 def _worker_task(args_tuple: tuple[Config, str, Dict[str, Any], Dict[str, Any]]):
@@ -183,11 +207,16 @@ def run(
     # and any subsequent Queue.put() from the main process deadlocks.
     # close() + join() lets workers finish and flush their queues
     # gracefully, releasing _wlock before exiting.
+    #
+    # KeyboardInterrupt is handled separately: we call terminate() so
+    # workers are killed immediately, then re-raise so the caller can
+    # decide what to do.
     pool = _ctx.Pool(
         pool_size,
         initializer=_worker_init,
         initargs=(log_level, log_file, log_queue),
     )
+    interrupted = False
     try:
         logger.debug("Multiprocessing pool created")
         processed_count = 0
@@ -200,10 +229,17 @@ def run(
             results.append(target)
             processed_count += 1
             logger.debug(f"Task {processed_count}/{len(tasks)} completed: {out_name}")
+    except KeyboardInterrupt:
+        logger.warning("Interrupted by user, terminating workers")
+        pool.terminate()
+        interrupted = True
     finally:
         pool.close()
         pool.join()
         logger.debug("All tasks completed, pool closed")
+    
+    if interrupted:
+        raise KeyboardInterrupt
 
     # Post-processing: join files if configured
     logger.debug(f"Join mode: {config.join_mode}, results count: {len(results)}")
@@ -251,8 +287,16 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("--log-file", default=None, help="Path for log output; defaults to stderr")
     args = ap.parse_args(argv)
 
-    # Set up centralized logging with queue for multiprocessing
+    # Set up centralized logging with queue for multiprocessing.
+    # cancel_join_thread() prevents the Queue's atexit handler from
+    # blocking on its internal feeder thread during process shutdown.
+    # Worker processes may exit while holding the Queue's _wlock
+    # semaphore (because their feeder threads are killed by
+    # cancel_join_thread on the worker side), leaving the semaphore
+    # permanently acquired.  Without this call, the main process's
+    # atexit handler would deadlock trying to join the feeder.
     log_queue: Queue[Any] = _ctx.Queue()
+    log_queue.cancel_join_thread()
     listener = configure_logging(args.log_level, args.log_file, queue=log_queue, start_listener=True)
     set_task_label("main")
     logger = get_logger("preprocessor.cli")
@@ -268,11 +312,16 @@ def main(argv: List[str] | None = None) -> int:
         exc_any: Any = exc
         logger.error(f"Validation error: {exc_any}")
         raise SystemExit(f"Error parsing input or config: {exc_any}")
+    except KeyboardInterrupt:
+        logger.warning("Processing interrupted by user")
+        raise SystemExit(130)
     finally:
-        # Always stop the log listener to flush remaining messages
+        # Always stop the log listener to flush remaining messages.
+        # Use _safe_stop_listener to avoid deadlocking on the Queue's
+        # _wlock if workers exited while their feeder thread held it.
         logger.debug("Stopping log listener")
         if listener:
-            listener.stop()
+            _safe_stop_listener(listener, timeout=5)
 
     # Print summary of generated files
     print("Generated files:")

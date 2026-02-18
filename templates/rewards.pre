@@ -1,7 +1,7 @@
 rewards "{{#}}"
 
     {%loop||contributions||
-    [{{contributions[].command}}] {{contributions[].condition}} : {{contributions[].value}};
+    {%match||contributions[].command||||||_||[{{contributions[].command}}] %}{{contributions[].condition}} : {{contributions[].value}};
     %}
 
 endrewards
