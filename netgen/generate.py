@@ -1538,11 +1538,14 @@ class NetworkGenerator:
 
             node_to_add["links"] = links
 
-            # Collect link_ref counters owned by this node (non-receiver roles)
+            # Collect link_ref counters owned by this node.
+            # A link_ref exists for every non-leaf node in every path (i.e.
+            # nodes with at least one successor).  This must mirror the
+            # criterion used in _add_link_refs_to_dict().
             link_refs = []
             for session in sessions:
                 for i, path in enumerate(session.paths):
-                    if node in path.nodes() and path.nodes[node].get("is_receiver", False) == False:
+                    if node in path.nodes() and len(list(path.successors(node))) > 0:
                         commands = {}
                         link_ref_name = f"link_ref_{node}_of_path_{i}_{session.id}"
                         commands["cmd_reset"] = f"cmd_reset_{link_ref_name}"
