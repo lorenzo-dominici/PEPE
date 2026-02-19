@@ -3,11 +3,14 @@
 // ============================================================================
 //
 //  Conventions:
-//    T  = step bound (define with -const T=100 on PRISM command line)
+//    k  = scenario index (pass -const k=1..5 on PRISM command line)
+//         k=1 → T=1000, k=2 → T=10000, k=3 → T=20000, k=4 → T=50000, k=5 → T=100000
+//    T  = step bound (derived from k)
 //    R  = expected reward (DTMC)
 // ============================================================================
 
-const int T;
+const int k;
+const int T = (k=1?1000:(k=2?10000:(k=3?20000:(k=4?50000:100000))));
 
 // ──────────────────────────────────────────────────────────────────────────────
 //  1. MESSAGGI — Conteggio per protocollo MLS
@@ -60,7 +63,7 @@ R{"reward_memory_availability"}=? [ C<=T ]
 // ──────────────────────────────────────────────────────────────────────────────
 
 // 4.1 Vulnerabilità cumulativa nel tempo
-R{"reward_network_vulnerability"}=? [ C<=T ]
+// R{"reward_network_vulnerability"}=? [ C<=T ]
 
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -68,7 +71,7 @@ R{"reward_network_vulnerability"}=? [ C<=T ]
 // ──────────────────────────────────────────────────────────────────────────────
 
 // 5.1 Disponibilità cumulativa nel tempo
-R{"reward_network_availability"}=? [ C<=T ]
+// R{"reward_network_availability"}=? [ C<=T ]
 
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -76,5 +79,5 @@ R{"reward_network_availability"}=? [ C<=T ]
 // ──────────────────────────────────────────────────────────────────────────────
 
 // 6.1 Degradazione cumulativa nel tempo
-R{"reward_network_degradation"}=? [ C<=T ]
+// R{"reward_network_degradation"}=? [ C<=T ]
 
